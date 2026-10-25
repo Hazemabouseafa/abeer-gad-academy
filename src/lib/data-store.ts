@@ -39,6 +39,7 @@ export interface CourseData {
   instructorName: string;
   isPublished: boolean;
   featured: boolean;
+  isFree?: boolean;
   durationHours: number;
   studentsCount: number;
   rating: number;
@@ -71,6 +72,7 @@ export interface SlotData {
   status: 'AVAILABLE' | 'BOOKED';
   studentName?: string;
   studentEmail?: string;
+  studentPhone?: string;
   meetingUrl?: string;
   notes?: string;
   createdAt: string;
@@ -522,8 +524,8 @@ const INITIAL_RESOURCES: ResourceData[] = [
 const INITIAL_SLOTS: SlotData[] = [
   {
     id: 'slot-1',
-    date: '2026-10-24',
-    time: '10:00 AM UTC',
+    date: '2026-10-25',
+    time: '09:00 AM UTC',
     instructor: 'Ustadha Abeer Gad',
     price: 45,
     currency: 'USD',
@@ -533,22 +535,19 @@ const INITIAL_SLOTS: SlotData[] = [
   },
   {
     id: 'slot-2',
-    date: '2026-10-24',
+    date: '2026-10-25',
     time: '02:00 PM UTC',
     instructor: 'Ustadha Abeer Gad',
     price: 45,
     currency: 'USD',
-    status: 'BOOKED',
-    studentName: 'Omar Farooq',
-    studentEmail: 'omar.farooq@example.com',
+    status: 'AVAILABLE',
     meetingUrl: 'https://meet.google.com/demo-session-2',
-    notes: 'Surah Al-Baqarah recitation check and Tajweed correction.',
     createdAt: '2026-10-20T11:00:00.000Z',
   },
   {
     id: 'slot-3',
-    date: '2026-10-25',
-    time: '09:00 AM UTC',
+    date: '2026-10-26',
+    time: '11:00 AM UTC',
     instructor: 'Ustadha Abeer Gad',
     price: 45,
     currency: 'USD',
@@ -558,17 +557,128 @@ const INITIAL_SLOTS: SlotData[] = [
   },
   {
     id: 'slot-4',
-    date: '2026-10-25',
+    date: '2026-10-26',
+    time: '04:00 PM UTC',
+    instructor: 'Ustadha Abeer Gad',
+    price: 45,
+    currency: 'USD',
+    status: 'AVAILABLE',
+    meetingUrl: 'https://meet.google.com/demo-session-4',
+    createdAt: '2026-10-20T14:00:00.000Z',
+  },
+  {
+    id: 'slot-5',
+    date: '2026-10-27',
+    time: '10:00 AM UTC',
+    instructor: 'Ustadha Abeer Gad',
+    price: 45,
+    currency: 'USD',
+    status: 'AVAILABLE',
+    meetingUrl: 'https://meet.google.com/demo-session-5',
+    createdAt: '2026-10-20T15:00:00.000Z',
+  },
+  {
+    id: 'slot-6',
+    date: '2026-10-28',
+    time: '03:00 PM UTC',
+    instructor: 'Ustadha Abeer Gad',
+    price: 45,
+    currency: 'USD',
+    status: 'AVAILABLE',
+    meetingUrl: 'https://meet.google.com/demo-session-6',
+    createdAt: '2026-10-20T16:00:00.000Z',
+  },
+  {
+    id: 'slot-7',
+    date: '2026-10-29',
+    time: '01:00 PM UTC',
+    instructor: 'Ustadha Abeer Gad',
+    price: 45,
+    currency: 'USD',
+    status: 'AVAILABLE',
+    meetingUrl: 'https://meet.google.com/demo-session-7',
+    createdAt: '2026-10-20T17:00:00.000Z',
+  },
+  {
+    id: 'slot-8',
+    date: '2026-10-31',
+    time: '10:30 AM UTC',
+    instructor: 'Ustadha Abeer Gad',
+    price: 45,
+    currency: 'USD',
+    status: 'AVAILABLE',
+    meetingUrl: 'https://meet.google.com/demo-session-8',
+    createdAt: '2026-10-20T18:00:00.000Z',
+  },
+  {
+    id: 'slot-9',
+    date: '2026-11-01',
+    time: '11:00 AM UTC',
+    instructor: 'Ustadha Abeer Gad',
+    price: 45,
+    currency: 'USD',
+    status: 'AVAILABLE',
+    meetingUrl: 'https://meet.google.com/demo-session-9',
+    createdAt: '2026-10-21T09:00:00.000Z',
+  },
+  {
+    id: 'slot-10',
+    date: '2026-11-02',
+    time: '02:00 PM UTC',
+    instructor: 'Ustadha Abeer Gad',
+    price: 45,
+    currency: 'USD',
+    status: 'AVAILABLE',
+    meetingUrl: 'https://meet.google.com/demo-session-10',
+    createdAt: '2026-10-21T10:00:00.000Z',
+  },
+  {
+    id: 'slot-11',
+    date: '2026-11-04',
     time: '05:00 PM UTC',
     instructor: 'Ustadha Abeer Gad',
     price: 45,
     currency: 'USD',
+    status: 'AVAILABLE',
+    meetingUrl: 'https://meet.google.com/demo-session-11',
+    createdAt: '2026-10-21T11:00:00.000Z',
+  },
+  {
+    id: 'slot-12',
+    date: '2026-11-06',
+    time: '09:00 AM UTC',
+    instructor: 'Ustadha Abeer Gad',
+    price: 45,
+    currency: 'USD',
+    status: 'AVAILABLE',
+    meetingUrl: 'https://meet.google.com/demo-session-12',
+    createdAt: '2026-10-21T12:00:00.000Z',
+  },
+  {
+    id: 'slot-13',
+    date: '2026-11-08',
+    time: '03:30 PM UTC',
+    instructor: 'Ustadha Abeer Gad',
+    price: 45,
+    currency: 'USD',
+    status: 'AVAILABLE',
+    meetingUrl: 'https://meet.google.com/demo-session-13',
+    createdAt: '2026-10-21T13:00:00.000Z',
+  },
+  {
+    id: 'slot-14',
+    date: '2026-10-24',
+    time: '02:00 PM UTC',
+    instructor: 'Ustadha Abeer Gad',
+    price: 45,
+    currency: 'USD',
     status: 'BOOKED',
-    studentName: 'Fatima Zahra',
-    studentEmail: 'fatima.zahra@example.fr',
-    meetingUrl: 'https://meet.google.com/demo-session-4',
-    notes: 'Arabic conversation practice and verb conjugation drill.',
-    createdAt: '2026-10-20T14:00:00.000Z',
+    studentName: 'Omar Farooq',
+    studentEmail: 'omar.farooq@example.com',
+    studentPhone: '+966500000000',
+    meetingUrl: 'https://meet.google.com/demo-session-booked-1',
+    notes: 'Surah Al-Baqarah recitation check and Tajweed correction.',
+    createdAt: '2026-10-20T11:00:00.000Z',
   },
 ];
 
@@ -1221,6 +1331,23 @@ export function deleteLessonFromChapter(courseId: string, chapterId: string, les
   return course;
 }
 
+export function toggleLessonPreview(courseId: string, chapterId: string, lessonId: string): CourseData | null {
+  const store = ensureStoreExists();
+  const course = store.courses.find((c) => c.id === courseId);
+  if (!course) return null;
+
+  const chapter = course.chapters.find((ch) => ch.id === chapterId);
+  if (!chapter) return null;
+
+  const lesson = chapter.lessons.find((les) => les.id === lessonId);
+  if (!lesson) return null;
+
+  lesson.isFree = !lesson.isFree;
+  course.updatedAt = new Date().toISOString();
+  saveStore(store);
+  return course;
+}
+
 // Resources CRUD
 export function getResources(): ResourceData[] {
   const store = ensureStoreExists();
@@ -1315,6 +1442,45 @@ export function toggleSlotStatus(id: string): SlotData | null {
   } else {
     slot.studentName = 'Assigned via Dashboard';
   }
+  saveStore(store);
+  return slot;
+}
+
+export function bookSlot(
+  id: string,
+  bookingInfo: {
+    studentName: string;
+    studentEmail: string;
+    studentPhone: string;
+    notes?: string;
+  }
+): SlotData | null {
+  const store = ensureStoreExists();
+  const slot = store.slots.find((s) => s.id === id);
+  if (!slot) return null;
+
+  slot.status = 'BOOKED';
+  slot.studentName = bookingInfo.studentName;
+  slot.studentEmail = bookingInfo.studentEmail;
+  slot.studentPhone = bookingInfo.studentPhone;
+  if (bookingInfo.notes) {
+    slot.notes = bookingInfo.notes;
+  }
+
+  // Also record a student or transaction if not existing
+  const studentExists = store.students.some((st) => st.email.toLowerCase() === bookingInfo.studentEmail.toLowerCase());
+  if (!studentExists) {
+    store.students.push({
+      id: `std-${Date.now()}`,
+      name: bookingInfo.studentName,
+      email: bookingInfo.studentEmail,
+      joinedDate: new Date().toISOString().slice(0, 10),
+      enrolledCoursesCount: 0,
+      completedLessonsCount: 1,
+      progressPercentage: 100,
+    });
+  }
+
   saveStore(store);
   return slot;
 }

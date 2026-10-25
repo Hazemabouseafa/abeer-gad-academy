@@ -40,3 +40,8 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# User uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+

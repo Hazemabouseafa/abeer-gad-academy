@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
-import { addChapterToCourse, deleteChapterFromCourse, addLessonToChapter, deleteLessonFromChapter } from '@/lib/data-store';
+import {
+  addChapterToCourse,
+  deleteChapterFromCourse,
+  addLessonToChapter,
+  deleteLessonFromChapter,
+  toggleLessonPreview,
+} from '@/lib/data-store';
 import { translateSingle } from '@/lib/translate';
 
 interface Params {
@@ -47,6 +53,14 @@ export async function POST(request: Request, { params }: Params) {
       const updatedCourse = deleteLessonFromChapter(params.id, chapterId, lessonId);
       if (!updatedCourse) {
         return NextResponse.json({ success: false, error: 'Course or chapter not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, course: updatedCourse });
+    }
+
+    if (action === 'TOGGLE_LESSON_PREVIEW') {
+      const updatedCourse = toggleLessonPreview(params.id, chapterId, lessonId);
+      if (!updatedCourse) {
+        return NextResponse.json({ success: false, error: 'Course or lesson not found' }, { status: 404 });
       }
       return NextResponse.json({ success: true, course: updatedCourse });
     }

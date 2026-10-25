@@ -7,9 +7,10 @@ const intlMiddleware = createMiddleware(routing);
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Let API and static files pass untouched
+  // Let API, uploads and static files pass untouched
   if (
     pathname.startsWith('/api') ||
+    pathname.startsWith('/uploads') ||
     pathname.startsWith('/_next') ||
     pathname.includes('.')
   ) {
@@ -35,6 +36,6 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Match all request paths except api, _next, static files
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)', '/([\\w-]+)?/users/(.+)'],
+  // Match all request paths except api, uploads, _next, static files
+  matcher: ['/((?!api|uploads|_next|_vercel|.*\\..*).*)', '/([\\w-]+)?/users/(.+)'],
 };

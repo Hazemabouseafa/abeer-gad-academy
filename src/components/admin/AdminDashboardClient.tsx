@@ -42,6 +42,7 @@ import {
   ArrowRight,
   ArrowLeft,
   ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type {
@@ -55,6 +56,7 @@ import type {
   PillarCardItem,
   ServiceCardItem,
 } from '@/lib/data-store';
+import { MediaInputWithChoice } from './MediaInputWithChoice';
 
 interface AdminDashboardClientProps {
   currentLocale: string;
@@ -155,6 +157,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     level: 'Beginner',
     levelAr: 'مبتدئ',
     price: 89,
+    isFree: false,
     durationHours: 12,
     promoVideoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
@@ -208,6 +211,10 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     quoteAr: '',
     rating: 5,
   });
+
+  // Admin Slots Calendar State
+  const [adminCalendarMonth, setAdminCalendarMonth] = useState<Date>(new Date(2026, 9, 1));
+  const [adminSelectedFilterDate, setAdminSelectedFilterDate] = useState<string | null>(null);
 
   // Trigger Toast Notification
   const triggerToast = (msg: string) => {
@@ -512,6 +519,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       level: 'Beginner',
       levelAr: 'مبتدئ',
       price: 89,
+      isFree: false,
       durationHours: 12,
       promoVideoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
       thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
@@ -531,6 +539,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
   const handleOpenEditCourseModal = (course: CourseData) => {
     setEditingCourse(course);
+    const isFree = Boolean(course.isFree || course.price === 0);
     setCourseFormData({
       title: course.title,
       titleAr: course.titleAr || '',
@@ -543,7 +552,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       categoryAr: course.categoryAr || '',
       level: course.level,
       levelAr: course.levelAr || '',
-      price: course.price,
+      price: isFree ? 0 : course.price,
+      isFree,
       durationHours: course.durationHours || 10,
       promoVideoUrl: course.promoVideoUrl || '',
       thumbnail: course.thumbnail || '',
@@ -612,7 +622,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       categoryAr: courseFormData.categoryAr,
       level: courseFormData.level,
       levelAr: courseFormData.levelAr,
-      price: Number(courseFormData.price) || 89,
+      price: courseFormData.isFree ? 0 : (Number(courseFormData.price) || 0),
+      isFree: courseFormData.isFree || Number(courseFormData.price) === 0,
       durationHours: Number(courseFormData.durationHours) || 10,
       promoVideoUrl: courseFormData.promoVideoUrl,
       thumbnail: courseFormData.thumbnail,
@@ -838,6 +849,29 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
         setSelectedCourseForCurriculum(data.course);
         setCourses((prev) => prev.map((c) => (c.id === data.course.id ? data.course : c)));
         triggerToast(isRtl ? 'تم حذف الدرس' : 'Lesson deleted');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleToggleLessonPreview = async (chapterId: string, lessonId: string) => {
+    if (!selectedCourseForCurriculum) return;
+    try {
+      const res = await fetch(`/api/admin/courses/${selectedCourseForCurriculum.id}/chapters`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'TOGGLE_LESSON_PREVIEW',
+          chapterId,
+          lessonId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.course) {
+        setSelectedCourseForCurriculum(data.course);
+        setCourses((prev) => prev.map((c) => (c.id === data.course.id ? data.course : c)));
+        triggerToast(isRtl ? 'تم تحديث حالة المعاينة المجانية للدرس' : 'Lesson preview status updated');
       }
     } catch (err) {
       console.error(err);
@@ -2731,16 +2765,37 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         </select>
                       </div>
 
-                      <div>
+                      <div className="space-y-2">
                         <label className="font-bold text-navy-700 block mb-1">
                           {isRtl ? 'سعر الدورة (USD $)' : 'Price ($ USD)'}
                         </label>
-                        <input
-                          type="number"
-                          value={courseFormData.price}
-                          onChange={(e) => setCourseFormData({ ...courseFormData, price: Number(e.target.value) })}
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border"
-                        />
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="number"
+                            disabled={courseFormData.isFree}
+                            value={courseFormData.isFree ? 0 : courseFormData.price}
+                            onChange={(e) => setCourseFormData({ ...courseFormData, price: Number(e.target.value) })}
+                            className={`w-full px-3 py-2 rounded-xl border border-surface-border font-bold ${courseFormData.isFree ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
+                          />
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer shrink-0 p-2 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={courseFormData.isFree}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setCourseFormData({
+                                  ...courseFormData,
+                                  isFree: checked,
+                                  price: checked ? 0 : (courseFormData.price || 89),
+                                });
+                              }}
+                              className="rounded text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span className="text-[11px] font-extrabold text-emerald-900">
+                              {isRtl ? 'دورة مجانية بالكامل' : '100% Free'}
+                            </span>
+                          </label>
+                        </div>
                       </div>
 
                       <div>
@@ -2756,27 +2811,26 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                       </div>
 
                       <div className="sm:col-span-2">
-                        <label className="font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'رابط الفيديو الترويجي (YouTube / Vimeo / MP4)' : 'Promo Video URL'}
-                        </label>
-                        <input
-                          type="text"
+                        <MediaInputWithChoice
+                          label={isRtl ? 'الفيديو الترويجي للدورة (Promo Video)' : 'Course Promo Video'}
                           value={courseFormData.promoVideoUrl}
-                          onChange={(e) => setCourseFormData({ ...courseFormData, promoVideoUrl: e.target.value })}
-                          placeholder="https://www.youtube.com/embed/..."
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-[11px]"
+                          onChange={(url) => setCourseFormData({ ...courseFormData, promoVideoUrl: url })}
+                          category="videos"
+                          accept="video/*"
+                          placeholder="https://www.youtube.com/embed/... أو رفع فيديو من الجهاز"
+                          isRtl={isRtl}
                         />
                       </div>
 
                       <div className="sm:col-span-2">
-                        <label className="font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'رابط الصورة المصغرة (Thumbnail URL)' : 'Thumbnail Image URL'}
-                        </label>
-                        <input
-                          type="text"
+                        <MediaInputWithChoice
+                          label={isRtl ? 'صورة غلاف الدورة (Thumbnail)' : 'Course Thumbnail Image'}
                           value={courseFormData.thumbnail}
-                          onChange={(e) => setCourseFormData({ ...courseFormData, thumbnail: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-[11px]"
+                          onChange={(url) => setCourseFormData({ ...courseFormData, thumbnail: url })}
+                          category="thumbnails"
+                          accept="image/*"
+                          placeholder="https://images.unsplash.com/... أو رفع صورة من الجهاز"
+                          isRtl={isRtl}
                         />
                       </div>
 
@@ -3077,11 +3131,19 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                   <span className="font-bold text-navy-900">
                                     {lIdx + 1}. {isRtl && les.titleAr ? les.titleAr : les.title}
                                   </span>
-                                  {les.isFree && (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 font-bold">
-                                      {isRtl ? 'معاينة مجانية' : 'Free Preview'}
-                                    </span>
-                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleLessonPreview(chapter.id, les.id)}
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-1 ${
+                                      les.isFree
+                                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 shadow-sm'
+                                        : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-emerald-50 hover:text-emerald-800'
+                                    }`}
+                                    title={isRtl ? 'انقر للتبديل بين المعاينة المجانية والمدفوع' : 'Click to toggle preview'}
+                                  >
+                                    <span>{les.isFree ? '✓' : '🔒'}</span>
+                                    <span>{les.isFree ? (isRtl ? 'معاينة مجانية للطلاب' : 'Free Preview') : (isRtl ? 'مدفوع (انقر لجعله مجانياً)' : 'Paid (Make Preview)')}</span>
+                                  </button>
                                 </div>
 
                                 <div className="flex items-center gap-3">
@@ -3092,7 +3154,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                     rel="noreferrer"
                                     className="text-brand-700 hover:underline font-mono text-[10px]"
                                   >
-                                    {isRtl ? 'تشغيل' : 'Play'}
+                                    {isRtl ? 'معاينة' : 'Play'}
                                   </a>
                                   <button
                                     type="button"
@@ -3156,17 +3218,15 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         />
                       </div>
 
-                      <div>
-                        <label className="font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'رابط الفيديو (YouTube Embed, Vimeo, أو MP4)' : 'Video URL'}
-                        </label>
-                        <input
-                          type="text"
-                          required
+                      <div className="sm:col-span-2">
+                        <MediaInputWithChoice
+                          label={isRtl ? 'فيديو الدرس (YouTube, Vimeo, أو رفع MP4 على السيرفر)' : 'Lesson Video URL / Upload'}
                           value={newLessonVideoUrl}
-                          onChange={(e) => setNewLessonVideoUrl(e.target.value)}
-                          placeholder="https://www.youtube.com/embed/..."
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-[11px]"
+                          onChange={(url) => setNewLessonVideoUrl(url)}
+                          category="videos"
+                          accept="video/*"
+                          placeholder="https://www.youtube.com/embed/... أو رفع ملف فيديو من جهازك"
+                          isRtl={isRtl}
                         />
                       </div>
 
@@ -3244,197 +3304,370 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
           {/* ============================================================== */}
           {/* TAB: 1-ON-1 SLOTS */}
           {/* ============================================================== */}
-          {activeNav === 'SLOTS' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-surface-border shadow-card-subtle">
-                <div>
-                  <h3 className="text-sm font-bold text-navy-950">
-                    {isRtl ? 'جدول مواعيد الدروس الفردية المباشرة (1-on-1 Sessions)' : 'Private Lesson Slots Scheduler'}
-                  </h3>
-                  <p className="text-xs text-navy-500">
-                    {isRtl ? 'فتح مواعيد جديدة ليراها الطلاب في صفحة الحجز، أو تعديل الجلسات' : 'Add available slots or manage booked sessions'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowSlotModal(true);
-                    setTimeout(() => {
-                      document.getElementById('slot-inline-editor')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 50);
-                  }}
-                  className="px-3 py-2 rounded-xl bg-brand-700 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-brand-800 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>{isRtl ? 'إضافة موعد جديد' : 'Add Slot'}</span>
-                </button>
-              </div>
+          {activeNav === 'SLOTS' && (() => {
+            const adminYear = adminCalendarMonth.getFullYear();
+            const adminMonth = adminCalendarMonth.getMonth();
+            const adminDaysInMonth = new Date(adminYear, adminMonth + 1, 0).getDate();
+            const adminFirstDayIndex = new Date(adminYear, adminMonth, 1).getDay();
+            const monthNamesAr = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+            const monthNamesEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const daysOfWeekAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+            const daysOfWeekEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-              {/* INLINE SLOT CREATION FORM (No Popups!) */}
-              {showSlotModal && (
-                <div id="slot-inline-editor" className="bg-white rounded-3xl border-2 border-brand-300 p-6 space-y-4 shadow-card-hover animate-in fade-in slide-in-from-top-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-surface-border">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-brand-700" />
-                      <div>
-                        <h3 className="font-extrabold text-navy-950 text-sm">
-                          {isRtl ? 'إضافة موعد متاح لدرس فردي مباشر (1-on-1)' : 'Add Private 1-on-1 Lesson Slot'}
-                        </h3>
-                        <p className="text-[11px] text-navy-500">
-                          {isRtl ? 'نموذج مباشر على نفس الصفحة — سيظهر الموعد فوراً للطلاب في صفحة الحجز' : 'Direct inline form — updates available calendar immediately'}
-                        </p>
-                      </div>
-                    </div>
+            const displayedSlots = adminSelectedFilterDate
+              ? slots.filter((s) => s.date === adminSelectedFilterDate)
+              : slots;
+
+            return (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-surface-border shadow-card-subtle">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-navy-950 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-brand-700" />
+                      <span>{isRtl ? 'تقويم مواعيد الدروس الفردية المباشرة (1-on-1 Sessions)' : 'Private Lesson Slots & Calendar'}</span>
+                    </h3>
+                    <p className="text-xs text-navy-500">
+                      {isRtl ? 'حدد الأيام الشاغرة في التقويم، أضف مواعيد جديدة، أو تابع بيانات المتدربين المسجلين' : 'Manage available calendar dates, add time slots, and view booked students'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {adminSelectedFilterDate && (
+                      <button
+                        type="button"
+                        onClick={() => setAdminSelectedFilterDate(null)}
+                        className="px-3 py-1.5 rounded-xl border border-surface-border bg-white text-navy-700 text-xs font-bold hover:bg-surface-muted"
+                      >
+                        {isRtl ? 'إلغاء فلتر اليوم' : 'Show All Days'}
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => setShowSlotModal(false)}
-                      className="px-2.5 py-1 rounded-xl border border-surface-border bg-surface-muted hover:bg-surface-elevated text-navy-600 text-xs font-bold flex items-center gap-1 transition-colors"
+                      onClick={() => {
+                        setShowSlotModal(true);
+                        setTimeout(() => {
+                          document.getElementById('slot-inline-editor')?.scrollIntoView({ behavior: 'smooth' });
+                        }, 50);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-brand-700 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-brand-800 transition-colors shadow-sm"
                     >
-                      <X className="w-4 h-4" />
-                      <span>{isRtl ? 'إغلاق' : 'Close'}</span>
+                      <Plus className="w-4 h-4" />
+                      <span>{isRtl ? 'إضافة موعد جديد' : 'Add Slot'}</span>
                     </button>
                   </div>
+                </div>
 
-                  <form onSubmit={handleSaveSlot} className="space-y-3 text-xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'التاريخ' : 'Date'} *</label>
-                        <input
-                          type="date"
-                          required
-                          value={slotFormData.date}
-                          onChange={(e) => setSlotFormData({ ...slotFormData, date: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'الوقت' : 'Time'} *</label>
-                        <input
-                          type="text"
-                          required
-                          value={slotFormData.time}
-                          onChange={(e) => setSlotFormData({ ...slotFormData, time: e.target.value })}
-                          placeholder="e.g. 10:00 AM UTC"
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'المعلمة' : 'Instructor'}</label>
-                        <input
-                          type="text"
-                          value={slotFormData.instructor}
-                          onChange={(e) => setSlotFormData({ ...slotFormData, instructor: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'السعر ($ USD)' : 'Price ($ USD)'}</label>
-                        <input
-                          type="number"
-                          value={slotFormData.price}
-                          onChange={(e) => setSlotFormData({ ...slotFormData, price: Number(e.target.value) })}
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border"
-                        />
-                      </div>
-                    </div>
-
+                {/* ========================================================== */}
+                {/* INTERACTIVE ADMIN MONTH CALENDAR */}
+                {/* ========================================================== */}
+                <div className="bg-white rounded-3xl border border-surface-border p-6 shadow-card-subtle space-y-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'رابط الجلسة (Google Meet / Zoom)' : 'Meeting Link'}</label>
-                      <input
-                        type="text"
-                        value={slotFormData.meetingUrl}
-                        onChange={(e) => setSlotFormData({ ...slotFormData, meetingUrl: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-[11px]"
-                      />
+                      <span className="badge-light text-[10px] mb-1 inline-flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-brand-700" />
+                        <span>{isRtl ? 'تقويم إدارة الأيام الشاغرة' : 'Slots Availability Calendar'}</span>
+                      </span>
+                      <h4 className="font-extrabold text-base text-navy-950">
+                        {isRtl ? monthNamesAr[adminMonth] : monthNamesEn[adminMonth]} {adminYear}
+                      </h4>
                     </div>
 
-                    <div className="pt-3 border-t border-surface-borderSubtle flex justify-end gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setAdminCalendarMonth(new Date(adminYear, adminMonth - 1, 1))}
+                        className="w-8 h-8 rounded-xl border border-surface-border hover:bg-surface-muted flex items-center justify-center text-navy-700"
+                        title={isRtl ? 'الشهر السابق' : 'Prev Month'}
+                      >
+                        <ChevronRight className="w-4 h-4 ltr:rotate-180" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAdminCalendarMonth(new Date(adminYear, adminMonth + 1, 1))}
+                        className="w-8 h-8 rounded-xl border border-surface-border hover:bg-surface-muted flex items-center justify-center text-navy-700"
+                        title={isRtl ? 'الشهر التالي' : 'Next Month'}
+                      >
+                        <ChevronLeft className="w-4 h-4 ltr:rotate-180" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Days of Week */}
+                  <div className="grid grid-cols-7 gap-1 text-center">
+                    {(isRtl ? daysOfWeekAr : daysOfWeekEn).map((d) => (
+                      <div key={d} className="py-1 text-[11px] font-extrabold text-navy-400 uppercase">
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {Array.from({ length: adminFirstDayIndex }).map((_, i) => (
+                      <div key={`admin-empty-${i}`} className="aspect-square rounded-2xl bg-gray-50/40" />
+                    ))}
+
+                    {Array.from({ length: adminDaysInMonth }).map((_, i) => {
+                      const dayNum = i + 1;
+                      const dateStr = `${adminYear}-${(adminMonth + 1).toString().padStart(2, '0')}-${dayNum.toString().padStart(2, '0')}`;
+                      const daySlots = slots.filter((s) => s.date === dateStr);
+                      const availCount = daySlots.filter((s) => s.status === 'AVAILABLE').length;
+                      const bookedCount = daySlots.filter((s) => s.status === 'BOOKED').length;
+                      const isSelected = adminSelectedFilterDate === dateStr;
+
+                      return (
+                        <button
+                          key={dateStr}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setAdminSelectedFilterDate(null);
+                            } else {
+                              setAdminSelectedFilterDate(dateStr);
+                              setSlotFormData((prev) => ({ ...prev, date: dateStr }));
+                            }
+                          }}
+                          className={`aspect-square p-2 rounded-2xl border text-center transition-all flex flex-col justify-between items-center relative ${
+                            isSelected
+                              ? 'border-brand-700 bg-brand-50 ring-2 ring-brand-600/30'
+                              : daySlots.length > 0
+                              ? 'border-surface-border bg-white hover:border-brand-300'
+                              : 'border-surface-borderSubtle bg-surface-muted/30 hover:bg-surface-muted text-gray-400'
+                          }`}
+                        >
+                          <span className={`text-xs font-extrabold ${isSelected ? 'text-brand-900 font-black' : 'text-navy-900'}`}>
+                            {dayNum}
+                          </span>
+
+                          <div className="flex flex-col gap-0.5 w-full items-center">
+                            {availCount > 0 && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full font-extrabold bg-emerald-100 text-emerald-800 w-full truncate">
+                                {availCount} {isRtl ? 'شاغر' : 'avail'}
+                              </span>
+                            )}
+                            {bookedCount > 0 && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full font-extrabold bg-amber-100 text-amber-800 w-full truncate">
+                                {bookedCount} {isRtl ? 'محجوز' : 'booked'}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {adminSelectedFilterDate && (
+                    <div className="p-3 rounded-2xl bg-brand-50 border border-brand-200 flex items-center justify-between text-xs">
+                      <span className="font-bold text-brand-900">
+                        {isRtl ? `تصفية المواعيد ليوم:` : 'Filtering slots for:'} <strong className="font-mono">{adminSelectedFilterDate}</strong> ({displayedSlots.length} {isRtl ? 'مواعيد' : 'slots'})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSlotFormData((prev) => ({ ...prev, date: adminSelectedFilterDate }));
+                          setShowSlotModal(true);
+                          setTimeout(() => {
+                            document.getElementById('slot-inline-editor')?.scrollIntoView({ behavior: 'smooth' });
+                          }, 50);
+                        }}
+                        className="px-2.5 py-1 rounded-xl bg-brand-700 text-white font-bold hover:bg-brand-800"
+                      >
+                        + {isRtl ? 'إضافة موعد لهذا اليوم' : 'Add Slot for this day'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* INLINE SLOT CREATION FORM (No Popups!) */}
+                {showSlotModal && (
+                  <div id="slot-inline-editor" className="bg-white rounded-3xl border-2 border-brand-300 p-6 space-y-4 shadow-card-hover animate-in fade-in slide-in-from-top-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-brand-700" />
+                        <div>
+                          <h3 className="font-extrabold text-navy-950 text-sm">
+                            {isRtl ? 'إضافة موعد شاغر لدرس فردي مباشر (1-on-1)' : 'Add Private 1-on-1 Lesson Slot'}
+                          </h3>
+                          <p className="text-[11px] text-navy-500">
+                            {isRtl ? 'نموذج مباشر على نفس الصفحة — سيظهر الموعد فوراً للطلاب في التقويم' : 'Direct inline form — updates available calendar immediately'}
+                          </p>
+                        </div>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setShowSlotModal(false)}
-                        className="px-3 py-1.5 rounded-xl border border-surface-border bg-white text-navy-700 font-bold hover:bg-surface-muted"
+                        className="px-2.5 py-1 rounded-xl border border-surface-border bg-surface-muted hover:bg-surface-elevated text-navy-600 text-xs font-bold flex items-center gap-1 transition-colors"
                       >
-                        {isRtl ? 'إلغاء' : 'Cancel'}
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-4 py-1.5 rounded-xl bg-brand-700 text-white font-bold hover:bg-brand-800 shadow-sm"
-                      >
-                        {isRtl ? 'حفظ ونشر الموعد' : 'Save Slot'}
+                        <X className="w-4 h-4" />
+                        <span>{isRtl ? 'إغلاق' : 'Close'}</span>
                       </button>
                     </div>
-                  </form>
-                </div>
-              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {slots.map((slot) => (
-                  <div
-                    key={slot.id}
-                    className="academy-card p-5 bg-white border border-surface-border rounded-2xl space-y-3 shadow-card-subtle"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-navy-700">{slot.date}</span>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                          slot.status === 'AVAILABLE'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            : 'bg-amber-100 text-amber-800 border border-amber-200'
-                        }`}
-                      >
-                        {slot.status === 'AVAILABLE' ? (isRtl ? 'متاح للحجز' : 'Available') : (isRtl ? 'محجوز' : 'Booked')}
-                      </span>
-                    </div>
+                    <form onSubmit={handleSaveSlot} className="space-y-4 text-xs">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'التاريخ' : 'Date'} *</label>
+                          <input
+                            type="date"
+                            required
+                            value={slotFormData.date}
+                            onChange={(e) => setSlotFormData({ ...slotFormData, date: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border"
+                          />
+                        </div>
 
-                    <div className="text-sm font-black text-navy-950 flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-brand-600" />
-                      <span>{slot.time}</span>
-                    </div>
-
-                    <div className="text-xs text-navy-600">
-                      <span className="text-navy-400 block">{isRtl ? 'المعلمة:' : 'Instructor:'}</span>
-                      <span className="font-semibold">{slot.instructor}</span>
-                    </div>
-
-                    {slot.studentName && (
-                      <div className="p-2.5 rounded-xl bg-surface-muted text-xs text-navy-700 border border-surface-border">
-                        <span className="text-navy-400 block text-[10px] font-bold uppercase">{isRtl ? 'الطالب المسجل:' : 'Student:'}</span>
-                        <span className="font-bold text-navy-900">{slot.studentName}</span>
-                        {slot.studentEmail && <span className="block text-[11px] text-navy-500">{slot.studentEmail}</span>}
+                        <div>
+                          <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'الوقت والتوقيت' : 'Time'} *</label>
+                          <input
+                            type="text"
+                            required
+                            value={slotFormData.time}
+                            onChange={(e) => setSlotFormData({ ...slotFormData, time: e.target.value })}
+                            placeholder="e.g. 10:00 AM UTC"
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono"
+                          />
+                          {/* Quick Time Preset Chips */}
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {['09:00 AM UTC', '11:00 AM UTC', '02:00 PM UTC', '04:00 PM UTC', '06:00 PM UTC', '08:00 PM UTC'].map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => setSlotFormData({ ...slotFormData, time: preset })}
+                                className="px-1.5 py-0.5 rounded text-[10px] bg-surface-muted hover:bg-brand-50 hover:text-brand-800 border border-surface-borderSubtle font-mono"
+                              >
+                                {preset.slice(0, 5)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    )}
 
-                    <div className="pt-2 border-t border-surface-border flex items-center justify-between">
-                      <span className="font-black text-brand-700 text-sm">
-                        {formatCurrency(slot.price)}
-                      </span>
-                      <div className="flex items-center gap-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'المعلمة' : 'Instructor'}</label>
+                          <input
+                            type="text"
+                            value={slotFormData.instructor}
+                            onChange={(e) => setSlotFormData({ ...slotFormData, instructor: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'السعر ($ USD)' : 'Price ($ USD)'}</label>
+                          <input
+                            type="number"
+                            value={slotFormData.price}
+                            onChange={(e) => setSlotFormData({ ...slotFormData, price: Number(e.target.value) })}
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'رابط الجلسة المباشر (Google Meet / Zoom)' : 'Meeting Link'}</label>
+                        <input
+                          type="text"
+                          value={slotFormData.meetingUrl}
+                          onChange={(e) => setSlotFormData({ ...slotFormData, meetingUrl: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-[11px]"
+                        />
+                      </div>
+
+                      <div className="pt-3 border-t border-surface-borderSubtle flex justify-end gap-2">
                         <button
                           type="button"
-                          onClick={() => handleToggleSlot(slot.id)}
-                          className="px-2 py-1 rounded-lg text-xs font-semibold bg-surface-muted hover:bg-surface-elevated text-navy-700 transition-colors"
+                          onClick={() => setShowSlotModal(false)}
+                          className="px-3 py-1.5 rounded-xl border border-surface-border bg-white text-navy-700 font-bold hover:bg-surface-muted"
                         >
-                          {slot.status === 'AVAILABLE' ? (isRtl ? 'حجز يدوي' : 'Book') : (isRtl ? 'إتاحة' : 'Free up')}
+                          {isRtl ? 'إلغاء' : 'Cancel'}
                         </button>
                         <button
-                          type="button"
-                          onClick={() => handleDeleteSlot(slot.id)}
-                          className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                          type="submit"
+                          className="px-4 py-1.5 rounded-xl bg-brand-700 text-white font-bold hover:bg-brand-800 shadow-sm"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          {isRtl ? 'حفظ ونشر الموعد' : 'Save Slot'}
                         </button>
                       </div>
-                    </div>
+                    </form>
                   </div>
-                ))}
+                )}
+
+                {/* Slots Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {displayedSlots.map((slot) => (
+                    <div
+                      key={slot.id}
+                      className="academy-card p-5 bg-white border border-surface-border rounded-2xl space-y-3 shadow-card-subtle hover:border-brand-300 transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-navy-700 font-mono">{slot.date}</span>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                            slot.status === 'AVAILABLE'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-amber-100 text-amber-800 border border-amber-200'
+                          }`}
+                        >
+                          {slot.status === 'AVAILABLE' ? (isRtl ? 'متاح للحجز' : 'Available') : (isRtl ? 'محجوز' : 'Booked')}
+                        </span>
+                      </div>
+
+                      <div className="text-sm font-black text-navy-950 flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-brand-600" />
+                        <span className="font-mono">{slot.time}</span>
+                      </div>
+
+                      <div className="text-xs text-navy-600">
+                        <span className="text-navy-400 block">{isRtl ? 'المعلمة:' : 'Instructor:'}</span>
+                        <span className="font-semibold">{slot.instructor}</span>
+                      </div>
+
+                      {/* Booked Student Info including Phone */}
+                      {slot.studentName && (
+                        <div className="p-2.5 rounded-xl bg-surface-muted text-xs text-navy-700 border border-surface-border space-y-1">
+                          <span className="text-navy-400 block text-[10px] font-bold uppercase">{isRtl ? 'المتدرب المسجل:' : 'Enrolled Trainee:'}</span>
+                          <span className="font-bold text-navy-900 block">{slot.studentName}</span>
+                          {slot.studentEmail && <span className="block text-[11px] font-mono text-navy-600 truncate">{slot.studentEmail}</span>}
+                          {slot.studentPhone && (
+                            <span className="block text-[11px] font-mono text-emerald-700 font-bold">
+                              📞 {slot.studentPhone}
+                            </span>
+                          )}
+                          {slot.notes && (
+                            <span className="block text-[10px] text-navy-500 italic line-clamp-2">
+                              {slot.notes}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="pt-2 border-t border-surface-border flex items-center justify-between">
+                        <span className="font-black text-brand-700 text-sm">
+                          {formatCurrency(slot.price)}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSlot(slot.id)}
+                            className="px-2 py-1 rounded-lg text-xs font-semibold bg-surface-muted hover:bg-surface-elevated text-navy-700 transition-colors"
+                          >
+                            {slot.status === 'AVAILABLE' ? (isRtl ? 'حجز يدوي' : 'Book') : (isRtl ? 'إتاحة' : 'Free up')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSlot(slot.id)}
+                            className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ============================================================== */}
           {/* TAB: DIGITAL LIBRARY */}
@@ -3538,17 +3771,22 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         </select>
                       </div>
 
-                      <div>
-                        <label className="font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'رابط الملف للتحميل' : 'Download File URL'} *
-                        </label>
-                        <input
-                          type="text"
-                          required
+                      <div className="sm:col-span-2">
+                        <MediaInputWithChoice
+                          label={isRtl ? 'ملف المادة العلمية (رفع من الجهاز للسيرفر أو وضع رابط)' : 'Resource File (Upload or External Link)'}
                           value={resourceFormData.fileUrl}
-                          onChange={(e) => setResourceFormData({ ...resourceFormData, fileUrl: e.target.value })}
-                          placeholder="/downloads/tajweed-guide.pdf"
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-[11px]"
+                          onChange={(url, meta) =>
+                            setResourceFormData({
+                              ...resourceFormData,
+                              fileUrl: url,
+                              fileSizeMb: meta?.sizeMb || resourceFormData.fileSizeMb,
+                              fileType: meta?.fileType || resourceFormData.fileType,
+                            })
+                          }
+                          category="resources"
+                          accept=".pdf,.doc,.docx,.zip,.mp3"
+                          placeholder="/downloads/tajweed-guide.pdf أو رابط خارجي"
+                          isRtl={isRtl}
                         />
                       </div>
                     </div>

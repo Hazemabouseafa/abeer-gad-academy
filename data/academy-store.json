@@ -360,9 +360,13 @@
       "instructor": "Ustadha Abeer Gad",
       "price": 45,
       "currency": "USD",
-      "status": "AVAILABLE",
+      "status": "BOOKED",
       "meetingUrl": "https://meet.google.com/demo-session-1",
-      "createdAt": "2026-10-20T10:00:00.000Z"
+      "createdAt": "2026-10-20T10:00:00.000Z",
+      "studentName": "Khaled Ahmed",
+      "studentEmail": "khaled@example.com",
+      "studentPhone": "+201099887766",
+      "notes": "Quran Tajweed session"
     },
     {
       "id": "slot-2",
@@ -486,6 +490,15 @@
       "enrolledCoursesCount": 3,
       "completedLessonsCount": 32,
       "progressPercentage": 92
+    },
+    {
+      "id": "std-1792940160289",
+      "name": "Khaled Ahmed",
+      "email": "khaled@example.com",
+      "joinedDate": "2026-10-25",
+      "enrolledCoursesCount": 0,
+      "completedLessonsCount": 1,
+      "progressPercentage": 100
     }
   ],
   "settings": {
