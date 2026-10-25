@@ -7,6 +7,7 @@ import { locales, isRtlLocale, type Locale } from '@/i18n/routing';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { FloatingWhatsAppWidget } from '@/components/common/FloatingWhatsAppWidget';
+import { GoogleTranslateBar } from '@/components/common/GoogleTranslateBar';
 import { getSiteSettings } from '@/lib/data-store';
 import '../globals.css';
 
@@ -80,6 +81,7 @@ export default async function RootLayout({
       <body className="min-h-screen bg-[#FDFBF7] text-navy-900 antialiased selection:bg-brand-100 selection:text-brand-900">
         <NextIntlClientProvider messages={messages} locale={lang}>
           <div className="flex min-h-screen flex-col bg-[#FDFBF7]">
+            <GoogleTranslateBar currentLocale={lang} />
             <Navbar currentLocale={lang} initialSettings={getSiteSettings()} />
             <div className="flex-1">
               {children}

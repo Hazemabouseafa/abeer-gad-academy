@@ -20,7 +20,7 @@ export default async function middleware(request: NextRequest) {
 
   // Admin route protection: check for admin session cookie in production (excluding the login page)
   const isAdminRoute =
-    /\/(en|ar|fr|de|zh)\/admin(\/.*)?$/.test(pathname) &&
+    /\/(ar|en)\/admin(\/.*)?$/.test(pathname) &&
     !pathname.includes('/admin/login');
   if (isAdminRoute) {
     const adminSession = request.cookies.get('abeer_admin_session')?.value;

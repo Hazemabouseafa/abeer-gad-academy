@@ -103,3 +103,24 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #B0A998;
 }
+
+/* Google Translate Widget & Frame Styling Clean-up */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
