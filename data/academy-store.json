@@ -525,6 +525,7 @@
     "heroCtaSecondaryTextAr": "احجز درساً فردياً خاصاً",
     "heroCtaSecondaryTextEn": "Book a 1-on-1 Lesson",
     "heroCtaSecondaryLink": "/private-lessons",
+    "heroStatsEnabled": true,
     "heroStudentsCount": "1,250+",
     "heroCountriesCount": "34+",
     "heroSatisfactionRate": "5.0",
@@ -842,6 +843,7 @@
     ],
     "footerAboutAr": "أكاديمية عبير جاد متخصصة في تعليم اللغة العربية وعلوم القرآن الكريم وتجويده، وتجمع بين أصالة السند النبوي الشريف وأحدث أساليب التعليم الرقمي التفاعلي.",
     "footerAboutEn": "Abeer Gad Academy specializes in Classical Arabic, Quran Recitation, and Memorization with authentic continuous Sanad and modern interactive technology.",
-    "updatedAt": "2026-10-25T11:14:08.957Z"
+    "updatedAt": "2026-10-25T15:11:55.600Z",
+    "autoTranslate": false
   }
 }

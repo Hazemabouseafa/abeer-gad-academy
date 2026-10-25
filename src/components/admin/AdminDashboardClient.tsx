@@ -116,6 +116,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     heroCtaSecondaryTextAr: 'احجز درساً فردياً خاصاً',
     heroCtaSecondaryTextEn: 'Book a 1-on-1 Lesson',
     heroCtaSecondaryLink: '/private-lessons',
+    heroStatsEnabled: true,
     heroStudentsCount: '1,250+',
     heroCountriesCount: '34+',
     heroSatisfactionRate: '5.0',
@@ -1826,14 +1827,61 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
                   {/* 4 Hero Counters Form */}
                   <div className="academy-card p-6 bg-white border border-surface-border rounded-2xl space-y-4 shadow-card-subtle">
-                    <div className="flex items-center gap-2 pb-3 border-b border-surface-border">
-                      <Sparkles className="w-5 h-5 text-gold-600" />
-                      <h3 className="font-extrabold text-navy-950 text-sm">
-                        {isRtl ? 'الأرقام والإحصائيات الحية في الصفحة الرئيسية' : 'Hero Live Metric Counters'}
-                      </h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-surface-border">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-gold-600" />
+                        <div>
+                          <h3 className="font-extrabold text-navy-950 text-sm">
+                            {isRtl ? 'الأرقام والإحصائيات الحية في الصفحة الرئيسية' : 'Hero Live Metric Counters'}
+                          </h3>
+                          <p className="text-xs text-navy-500">
+                            {isRtl
+                              ? 'التحكم في إظهار أو إخفاء بطاقات الإحصائيات الأربعة في الواجهة الرئيسية'
+                              : 'Control display of the 4 live statistics cards in the hero section'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Visibility Toggle Button */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSettings({
+                            ...settings,
+                            heroStatsEnabled: settings.heroStatsEnabled === false ? true : false,
+                          })
+                        }
+                        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-bold text-xs transition-all shadow-sm ${
+                          settings.heroStatsEnabled !== false
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200'
+                            : 'bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200'
+                        }`}
+                      >
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${
+                            settings.heroStatsEnabled !== false ? 'bg-emerald-600 animate-pulse' : 'bg-rose-600'
+                          }`}
+                        />
+                        <span>
+                          {settings.heroStatsEnabled !== false
+                            ? isRtl
+                              ? 'ظاهر في الواجهة (مُفعّل)'
+                              : 'Visible on site (Enabled)'
+                            : isRtl
+                            ? 'مخفي من الواجهة (مُعطّل)'
+                            : 'Hidden on site (Disabled)'}
+                        </span>
+                        <span className="text-[10px] underline ml-1">
+                          {isRtl ? '(اضغط للتغيير)' : '(Click to toggle)'}
+                        </span>
+                      </button>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                    <div
+                      className={`grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs transition-opacity ${
+                        settings.heroStatsEnabled === false ? 'opacity-40 pointer-events-none' : 'opacity-100'
+                      }`}
+                    >
                       <div>
                         <label className="font-bold text-navy-700 block mb-1">
                           {isRtl ? 'عدد الطلاب' : 'Students Count'}

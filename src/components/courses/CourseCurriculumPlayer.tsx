@@ -131,7 +131,10 @@ export function CourseCurriculumPlayer({
         {/* ============================================================== */}
         <div id="main-course-player" className="academy-card overflow-hidden bg-white shadow-card-hover rounded-3xl border border-surface-border">
           <div className="aspect-video w-full bg-navy-950 relative flex items-center justify-center">
-            {currentVideoUrl.startsWith('/uploads/') ? (
+            {currentVideoUrl.startsWith('/uploads/') ||
+            currentVideoUrl.endsWith('.mp4') ||
+            currentVideoUrl.endsWith('.webm') ||
+            currentVideoUrl.includes('.mp4?') ? (
               <video
                 src={currentVideoUrl}
                 controls

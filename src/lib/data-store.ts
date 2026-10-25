@@ -176,6 +176,7 @@ export interface SiteSettingsData {
   heroCtaSecondaryLink: string;
 
   // Hero Live Statistics
+  heroStatsEnabled?: boolean;
   heroStudentsCount: string;
   heroCountriesCount: string;
   heroSatisfactionRate: string;
@@ -991,6 +992,7 @@ const INITIAL_SETTINGS: SiteSettingsData = {
   heroCtaSecondaryLink: '/private-lessons',
 
   // Hero Live Statistics
+  heroStatsEnabled: true,
   heroStudentsCount: '1,250+',
   heroCountriesCount: '34+',
   heroSatisfactionRate: '5.0',

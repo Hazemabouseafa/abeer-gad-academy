@@ -142,55 +142,57 @@ export function HeroSection({ currentLocale, initialSettings }: HeroSectionProps
         </div>
 
         {/* 4 Statistics Cards Grid (Directly Controlled via Admin CMS) */}
-        <div className="mt-14 max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-          <div className="academy-card p-5 text-center flex flex-col items-center justify-center">
-            <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center mb-2.5">
-              <Users className="w-5 h-5 text-brand-700" />
+        {settings.heroStatsEnabled !== false && (
+          <div className="mt-14 max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 animate-fade-in">
+            <div className="academy-card p-5 text-center flex flex-col items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center mb-2.5">
+                <Users className="w-5 h-5 text-brand-700" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
+                {statStudents}
+              </div>
+              <div className="text-xs text-navy-500 font-medium mt-1">
+                {tHero('statStudents')}
+              </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
-              {statStudents}
-            </div>
-            <div className="text-xs text-navy-500 font-medium mt-1">
-              {tHero('statStudents')}
-            </div>
-          </div>
 
-          <div className="academy-card p-5 text-center flex flex-col items-center justify-center">
-            <div className="w-10 h-10 rounded-xl bg-gold-50 text-gold-700 flex items-center justify-center mb-2.5">
-              <Globe2 className="w-5 h-5 text-gold-700" />
+            <div className="academy-card p-5 text-center flex flex-col items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gold-50 text-gold-700 flex items-center justify-center mb-2.5">
+                <Globe2 className="w-5 h-5 text-gold-700" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
+                {statCountries}
+              </div>
+              <div className="text-xs text-navy-500 font-medium mt-1">
+                {tHero('statCountries')}
+              </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
-              {statCountries}
-            </div>
-            <div className="text-xs text-navy-500 font-medium mt-1">
-              {tHero('statCountries')}
-            </div>
-          </div>
 
-          <div className="academy-card p-5 text-center flex flex-col items-center justify-center">
-            <div className="w-10 h-10 rounded-xl bg-quran-50 text-quran-700 flex items-center justify-center mb-2.5">
-              <CheckCircle2 className="w-5 h-5 text-quran-700" />
+            <div className="academy-card p-5 text-center flex flex-col items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-quran-50 text-quran-700 flex items-center justify-center mb-2.5">
+                <CheckCircle2 className="w-5 h-5 text-quran-700" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
+                {statMilestones}
+              </div>
+              <div className="text-xs text-navy-500 font-medium mt-1">
+                {tHero('statCompletion')}
+              </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
-              {statMilestones}
-            </div>
-            <div className="text-xs text-navy-500 font-medium mt-1">
-              {tHero('statCompletion')}
-            </div>
-          </div>
 
-          <div className="academy-card p-5 text-center flex flex-col items-center justify-center">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2.5">
-              <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
-            </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
-              {statRating}
-            </div>
-            <div className="text-xs text-navy-500 font-medium mt-1">
-              {tHero('statRating')}
+            <div className="academy-card p-5 text-center flex flex-col items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2.5">
+                <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
+                {statRating}
+              </div>
+              <div className="text-xs text-navy-500 font-medium mt-1">
+                {tHero('statRating')}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
