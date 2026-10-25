@@ -10,7 +10,6 @@ import {
   Menu,
   X,
   Sparkles,
-  ShieldCheck,
   GraduationCap,
   ScrollText,
   Bookmark,
@@ -328,16 +327,8 @@ export function Navbar({ currentLocale, initialSettings }: NavbarProps) {
           })}
         </nav>
 
-        {/* Right Side Actions: Admin, Language Switcher, CTA */}
+        {/* Right Side Actions: Language Switcher, CTA */}
         <div className="flex items-center gap-2.5 sm:gap-3">
-          <Link
-            href="/admin"
-            className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg text-navy-600 hover:text-brand-800 hover:bg-surface-muted transition-colors border border-transparent hover:border-surface-border"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-            <span>{tNav('admin')}</span>
-          </Link>
-
           <LanguageSwitcher currentLocale={currentLocale} />
 
           <Link
@@ -448,14 +439,6 @@ export function Navbar({ currentLocale, initialSettings }: NavbarProps) {
             })}
 
             <div className="pt-3 border-t border-surface-borderSubtle flex flex-col gap-2">
-              <Link
-                href="/admin"
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-navy-600 bg-background-warm"
-              >
-                <ShieldCheck className="w-4 h-4 text-brand-600" />
-                <span>{tNav('admin')}</span>
-              </Link>
-
               <Link
                 href="/private-lessons"
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold bg-brand-700 text-white shadow-card-subtle"

@@ -191,14 +191,6 @@ export function Footer({ currentLocale }: FooterProps) {
                   {tNav('privateLessons')}
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/admin"
-                  className="text-navy-600 hover:text-brand-700 hover:underline transition-colors font-medium text-brand-700"
-                >
-                  {tNav('admin')}
-                </Link>
-              </li>
             </ul>
           </div>
 
