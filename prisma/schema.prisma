@@ -1,0 +1,355 @@
+// Prisma Schema for ABEER GAD Academy (أكاديمية عبير جاد)
+// Optimized for PostgreSQL (Neon / Supabase / Vercel Postgres)
+// Strict typing, proper relational cascades, and indexing
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum CourseCategory {
+  LEARN_ARABIC
+  QURAN_READING
+  QURAN_MEMORIZATION
+  TAJWEED
+  ARABIC_SPECIALIZED
+  GENERAL_COURSE
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ALL_LEVELS
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum QuranProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  REVISED
+  MEMORIZED
+}
+
+enum QuranTrackType {
+  READING
+  MEMORIZATION
+  TAJWEED_PRACTICE
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  BLOCKED
+  COMPLETED
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  RESCHEDULED
+}
+
+enum ResourceCategory {
+  TAJWEED_CHART
+  ARABIC_GRAMMAR
+  VOCABULARY_SHEET
+  AUDIO_PRACTICE
+  WORKBOOK
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  PAYPAL
+}
+
+enum PaymentItemType {
+  COURSE
+  PRIVATE_LESSON
+}
+
+model User {
+  id              String      @id @default(cuid())
+  name            String
+  email           String      @unique
+  passwordHash    String?
+  role            Role        @default(STUDENT)
+  avatarUrl       String?
+  phone           String?
+  bio             String?
+  preferredLocale String      @default("en")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  enrollments     Enrollment[]
+  quranProgress   QuranTracker[]
+  studentBookings Booking[]           @relation("StudentBookings")
+  taughtSlots     PrivateLessonSlot[] @relation("InstructorSlots")
+  payments        Payment[]
+  reviews         Review[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Course {
+  id                   String         @id @default(cuid())
+  slug                 String         @unique
+  title                String
+  titleAr              String?
+  subtitle             String?
+  subtitleAr           String?
+  description          String         @db.Text
+  descriptionAr        String?        @db.Text
+  category             CourseCategory
+  level                CourseLevel    @default(BEGINNER)
+  price                Decimal        @db.Decimal(10, 2)
+  currency             String         @default("USD")
+  thumbnail            String?
+  promoVideoUrl        String?
+  instructorName       String         @default("Ustadha Abeer Gad")
+  instructorTitle      String         @default("Lead Quran & Arabic Scholar")
+  isPublished          Boolean        @default(false)
+  featured             Boolean        @default(false)
+  totalDurationMinutes Int            @default(0)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  chapters             Chapter[]
+  enrollments          Enrollment[]
+  resources            Resource[]
+  payments             Payment[]
+  reviews              Review[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([isPublished])
+  @@index([featured])
+}
+
+model Chapter {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  titleAr     String?
+  description String?  @db.Text
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+
+  @@index([courseId, order])
+}
+
+model Lesson {
+  id              String           @id @default(cuid())
+  chapterId       String
+  title           String
+  titleAr         String?
+  description     String?          @db.Text
+  order           Int              @default(0)
+  videoUrl        String?
+  audioUrl        String?
+  durationMinutes Int              @default(0)
+  isFreePreview   Boolean          @default(false)
+  transcript      String?          @db.Text
+  notes           String?          @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  chapter         Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  progress        LessonProgress[]
+
+  @@index([chapterId, order])
+}
+
+model Enrollment {
+  id                 String           @id @default(cuid())
+  userId             String
+  courseId           String
+  status             EnrollmentStatus @default(ACTIVE)
+  progressPercentage Float            @default(0.0)
+  completedAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course             Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonProgress     LessonProgress[]
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+}
+
+model LessonProgress {
+  id                 String     @id @default(cuid())
+  enrollmentId       String
+  lessonId           String
+  isCompleted        Boolean    @default(false)
+  lastWatchedSeconds Int        @default(0)
+  completedAt        DateTime?
+  updatedAt          DateTime   @updatedAt
+
+  enrollment         Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson             Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+  @@index([enrollmentId])
+  @@index([lessonId])
+}
+
+model QuranTracker {
+  id               String              @id @default(cuid())
+  userId           String
+  surahNumber      Int
+  surahName        String
+  surahNameAr      String
+  verseStart       Int
+  verseEnd         Int
+  type             QuranTrackType      @default(MEMORIZATION)
+  status           QuranProgressStatus @default(NOT_STARTED)
+  rating           Int?                @default(0)
+  instructorNotes  String?             @db.Text
+  lastRevisionDate DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, surahNumber])
+  @@index([userId, status])
+  @@index([userId, type])
+}
+
+model PrivateLessonSlot {
+  id           String     @id @default(cuid())
+  instructorId String
+  startTime    DateTime
+  endTime      DateTime
+  status       SlotStatus @default(AVAILABLE)
+  price        Decimal    @db.Decimal(10, 2)
+  currency     String     @default("USD")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  instructor   User       @relation("InstructorSlots", fields: [instructorId], references: [id], onDelete: Cascade)
+  booking      Booking?
+
+  @@index([instructorId, startTime])
+  @@index([status])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  slotId          String        @unique
+  studentId       String
+  studentName     String?
+  studentEmail    String?
+  status          BookingStatus @default(PENDING_PAYMENT)
+  meetingUrl      String?
+  studentNotes    String?       @db.Text
+  instructorNotes String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  slot            PrivateLessonSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  student         User              @relation("StudentBookings", fields: [studentId], references: [id], onDelete: Cascade)
+  payment         Payment?
+
+  @@index([studentId])
+  @@index([status])
+}
+
+model Resource {
+  id            String           @id @default(cuid())
+  title         String
+  titleAr       String?
+  description   String?          @db.Text
+  category      ResourceCategory @default(OTHER)
+  fileUrl       String
+  fileType      String           @default("PDF")
+  fileSizeMb    Float            @default(0.0)
+  isPremium     Boolean          @default(false)
+  courseId      String?
+  downloadCount Int              @default(0)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  course        Course?          @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([isPremium])
+  @@index([courseId])
+}
+
+model Payment {
+  id               String          @id @default(cuid())
+  userId           String
+  amount           Decimal         @db.Decimal(10, 2)
+  currency         String          @default("USD")
+  status           PaymentStatus   @default(PENDING)
+  provider         PaymentProvider @default(PAYPAL)
+  paypalOrderId    String          @unique
+  paypalCaptureId  String?         @unique
+  paypalPayerEmail String?
+  itemType         PaymentItemType
+  courseId         String?
+  bookingId        String?         @unique
+  metadata         Json?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course           Course?         @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  booking          Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([paypalOrderId])
+  @@index([status])
+  @@index([itemType])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  rating    Int      @default(5)
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+}

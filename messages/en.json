@@ -1,0 +1,161 @@
+{
+  "brand": {
+    "name": "ABEER GAD Academy",
+    "nameNative": "أكاديمية عبير جاد",
+    "tagline": "Master Arabic Language, Quran Reading & Memorization with Authentic Mastery",
+    "leadScholar": "Ustadha Abeer Gad",
+    "leadScholarTitle": "Senior Quran & Classical Arabic Scholar"
+  },
+  "nav": {
+    "home": "Home",
+    "quranMenu": "Holy Quran",
+    "arabicMenu": "Arabic Language",
+    "coursesMenu": "Courses & Library",
+    "learnArabic": "Learn Arabic",
+    "quranReading": "Quran Reading",
+    "quranMemorization": "Quran Memorization",
+    "tajweed": "Tajweed Rules",
+    "specializedArabic": "Specialized Arabic",
+    "courses": "Courses",
+    "resources": "Resources",
+    "privateLessons": "Private Lessons",
+    "admin": "Admin Portal",
+    "getStarted": "Enroll Now",
+    "bookLesson": "Book 1-on-1 Lesson"
+  },
+  "hero": {
+    "badge": "Authentic Sanad & Contemporary Pedagogy",
+    "title": "Empowering Your Spiritual Journey in",
+    "titleHighlight": "Arabic & The Holy Quran",
+    "subtitle": "Immersive, one-on-one and structured interactive pathways guided by Ustadha Abeer Gad. From foundational phonetics to advanced Hifz with verified Ijazah standards.",
+    "ctaExplore": "Explore All Programs",
+    "ctaBook": "Book Private Consultation",
+    "statStudents": "Active Global Students",
+    "statCountries": "Countries Represented",
+    "statCompletion": "Hifz Milestones Met",
+    "statRating": "5.0 Student Satisfaction"
+  },
+  "pillars": {
+    "badge": "Academic Disciplines",
+    "title": "Comprehensive Pillars of Excellence",
+    "subtitle": "Engineered with modern pedagogical clarity, structured milestones, and direct scholar feedback.",
+    "arabic": {
+      "title": "Learn Arabic",
+      "desc": "Modern Standard Arabic & Classical Grammar from foundational vocabulary to fluent eloquence.",
+      "tag": "Foundations to Fluency"
+    },
+    "reading": {
+      "title": "Quran Reading",
+      "desc": "Step-by-step phonetic articulation, Noorani Qaida methodologies, and fluent recitation from Mus'haf.",
+      "tag": "Accurate Recitation"
+    },
+    "memorization": {
+      "title": "Quran Memorization",
+      "desc": "Systematic Hifz programs with individualized tracking cards, spaced repetition, and revision check-ins.",
+      "tag": "Hifz Mastery"
+    },
+    "tajweed": {
+      "title": "Tajweed Mastery",
+      "desc": "Theoretical foundations paired with audio-visual articulation drills and Makhaarij correction.",
+      "tag": "Precision Rules"
+    },
+    "specialized": {
+      "title": "Arabic for Specific Purposes",
+      "desc": "Tailored curricula for Islamic jurisprudence, diplomatic communication, academic research, and business.",
+      "tag": "Custom Focus"
+    },
+    "lessons": {
+      "title": "Private Tutoring",
+      "desc": "Direct interactive video sessions with real-time feedback, personalized pacing, and flexible scheduling.",
+      "tag": "1-on-1 Mentorship"
+    }
+  },
+  "tracker": {
+    "title": "Interactive Quran Memorization Tracker",
+    "subtitle": "Track your memorization progress, schedule spaced revisions, and receive direct instructor ratings.",
+    "surah": "Surah",
+    "ayahRange": "Verses",
+    "status": "Current Status",
+    "notStarted": "Not Started",
+    "inProgress": "In Progress",
+    "revised": "Revised",
+    "memorized": "Fully Memorized",
+    "actionUpdate": "Update Milestone",
+    "instructorNote": "Instructor Assessment",
+    "nextRevision": "Next Revision Date"
+  },
+  "courses": {
+    "badge": "Curated Programs",
+    "title": "Structured Video Courses",
+    "subtitle": "Stream high-definition interactive modules with lesson transcripts, downloadable notes, and progress trackers.",
+    "allCategories": "All Categories",
+    "level": "Level",
+    "duration": "Duration",
+    "lessonsCount": "Lessons",
+    "enrollNow": "Enroll in Course",
+    "preview": "Watch Preview",
+    "curriculum": "Course Curriculum",
+    "instructor": "Lead Instructor",
+    "freeBadge": "Free Preview Available"
+  },
+  "resources": {
+    "badge": "Digital Library",
+    "title": "Learning Resources & Digital Guides",
+    "subtitle": "Download authoritative Tajweed charts, Arabic grammar cheatsheets, and audio practice guides.",
+    "downloadPdf": "Download PDF",
+    "fileSize": "File Size",
+    "premium": "Premium Resource",
+    "free": "Free Download"
+  },
+  "privateLessons": {
+    "badge": "Individualized Mentorship",
+    "title": "Book a Private 1-on-1 Lesson",
+    "subtitle": "Select an available time slot with Ustadha Abeer Gad for targeted recitation correction, Arabic dialogue, or Hifz exam.",
+    "selectDate": "Select Available Date & Slot",
+    "duration": "45 Minutes",
+    "pricePerSession": "Session Fee",
+    "studentName": "Your Full Name",
+    "studentEmail": "Email Address",
+    "studentPhone": "Phone / WhatsApp Number",
+    "notes": "Goals or Specific Topics for this Lesson",
+    "confirmAndPay": "Proceed to PayPal Checkout",
+    "statusAvailable": "Available",
+    "statusBooked": "Booked"
+  },
+  "checkout": {
+    "title": "Secure PayPal Checkout",
+    "summary": "Order Summary",
+    "item": "Item Selected",
+    "total": "Total Amount",
+    "secureNotice": "Encrypted 256-Bit SSL Payment via PayPal REST Gateway",
+    "success": "Payment Successful! Your enrollment is confirmed.",
+    "pending": "Transaction Processing...",
+    "studentName": "Student Full Name",
+    "studentEmail": "Email Address for Confirmation",
+    "studentPhone": "Phone / WhatsApp Number (Required)",
+    "phonePlaceholder": "e.g. +20 100 000 0000",
+    "phoneRequiredError": "Please enter your phone or WhatsApp number to proceed",
+    "nameRequiredError": "Please enter student full name",
+    "emailRequiredError": "Please enter a valid email address"
+  },
+  "admin": {
+    "title": "Academy Administrative Portal",
+    "subtitle": "Manage courses, private booking slots, digital resources, and live PayPal revenue records.",
+    "totalRevenue": "Total Revenue (USD)",
+    "activeStudents": "Enrolled Students",
+    "confirmedBookings": "Confirmed Bookings",
+    "publishedCourses": "Active Courses",
+    "tabCourses": "Courses Management",
+    "tabSlots": "Private Lesson Slots",
+    "tabResources": "Resources Library",
+    "tabPayments": "Financial Transactions",
+    "createNew": "Create New Entry"
+  },
+  "footer": {
+    "about": "ABEER GAD Academy is dedicated to providing world-class Arabic language and Quranic instruction, combining scholarly authenticity with modern digital education.",
+    "quickLinks": "Quick Navigation",
+    "programs": "Academic Programs",
+    "contact": "Contact & Support",
+    "rights": "All Rights Reserved. ABEER GAD Academy (أكاديمية عبير جاد)."
+  }
+}

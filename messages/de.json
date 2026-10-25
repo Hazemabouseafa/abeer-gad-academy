@@ -1,0 +1,161 @@
+{
+  "brand": {
+    "name": "ABEER GAD Akademie",
+    "nameNative": "أكاديمية عبير جاد",
+    "tagline": "Arabische Sprache, Koran-Lesung & Hifz mit authentischer Gelehrsamkeit meistern",
+    "leadScholar": "Ustadha Abeer Gad",
+    "leadScholarTitle": "Dozentin für Koranwissenschaften & klassisches Arabisch"
+  },
+  "nav": {
+    "home": "Startseite",
+    "quranMenu": "Heiliger Koran",
+    "arabicMenu": "Arabische Sprache",
+    "coursesMenu": "Kurse & Materialien",
+    "learnArabic": "Arabisch lernen",
+    "quranReading": "Koran-Lesung",
+    "quranMemorization": "Koran-Auswendiglernen",
+    "tajweed": "Tajweed-Regeln",
+    "specializedArabic": "Fachspezifisches Arabisch",
+    "courses": "Kurse",
+    "resources": "Materialien",
+    "privateLessons": "Einzelunterricht",
+    "admin": "Admin-Portal",
+    "getStarted": "Jetzt Einschreiben",
+    "bookLesson": "Einzelstunde Buchen"
+  },
+  "hero": {
+    "badge": "Authentischer Sanad & Moderne Pädagogik",
+    "title": "Ihre spirituelle Bildungsreise in",
+    "titleHighlight": "Arabisch & Heiligem Koran",
+    "subtitle": "Geführte Einzel- und interaktive Gruppenpfade unter Leitung von Ustadha Abeer Gad. Von phonetischen Grundlagen bis zur Ijazah-Zertifizierung.",
+    "ctaExplore": "Alle Programme Entdecken",
+    "ctaBook": "Beratungsgespräch Buchen",
+    "statStudents": "Aktive Studenten Weltweit",
+    "statCountries": "Vertretene Länder",
+    "statCompletion": "Erreichte Hifz-Meilensteine",
+    "statRating": "5.0 Zufriedenheitsquote"
+  },
+  "pillars": {
+    "badge": "Akademische Disziplinen",
+    "title": "Unsere Pfeiler der Exzellenz",
+    "subtitle": "Konzipiert mit moderner didaktischer Klarheit, klaren Meilensteinen und persönlicher Begleitung.",
+    "arabic": {
+      "title": "Arabisch lernen",
+      "desc": "Modernes Hocharabisch und klassische Grammatik von den Grundlagen bis zur Eloquenz.",
+      "tag": "Vom Fundament zur Geläufigkeit"
+    },
+    "reading": {
+      "title": "Koran-Lesung",
+      "desc": "Phonetische Lautbildung, Noorani-Qaida-Methodik und flüssige Rezitation direkt aus dem Mus'haf.",
+      "tag": "Präzise Rezitation"
+    },
+    "memorization": {
+      "title": "Koran-Auswendiglernen",
+      "desc": "Strukturierte Hifz-Programme mit digitalem Lernfortschritt, Wiederholungszyklen und Überprüfung.",
+      "tag": "Hifz-Meisterschaft"
+    },
+    "tajweed": {
+      "title": "Tajweed-Wissenschaft",
+      "desc": "Fundierte Theorie, Lautbildung (Makhaarij) und praktische Korrektur mit Audio- und Videomaterial.",
+      "tag": "Präzisionsregeln"
+    },
+    "specialized": {
+      "title": "Arabisch für Fachbereiche",
+      "desc": "Maßgeschneiderte Curricula für Islamwissenschaft, Diplomatie, akademische Forschung und Wirtschaft.",
+      "tag": "Fachspezifischer Fokus"
+    },
+    "lessons": {
+      "title": "Privatunterricht",
+      "desc": "Direkte 1-zu-1-Sitzungen mit unmittelbarem Feedback, individuellem Tempo und flexibler Zeiteinteilung.",
+      "tag": "1-zu-1 Betreuung"
+    }
+  },
+  "tracker": {
+    "title": "Interaktiver Koran-Hifz Tracker",
+    "subtitle": "Verfolgen Sie Ihren Auswendiglern-Fortschritt, planen Sie Wiederholungen und erhalten Sie Dozentennotizen.",
+    "surah": "Sure",
+    "ayahRange": "Verse",
+    "status": "Aktueller Status",
+    "notStarted": "Nicht begonnen",
+    "inProgress": "In Bearbeitung",
+    "revised": "Wiederholt",
+    "memorized": "Vollständig gelernt",
+    "actionUpdate": "Fortschritt aktualisieren",
+    "instructorNote": "Dozenten-Bewertung",
+    "nextRevision": "Nächste Wiederholung"
+  },
+  "courses": {
+    "badge": "Strukturierte Kurse",
+    "title": "Videokurse & Module",
+    "subtitle": "HD-Lehrvideos mit Skripten, Transkripten und automatisierter Fortschrittserfassung.",
+    "allCategories": "Alle Kategorien",
+    "level": "Niveau",
+    "duration": "Dauer",
+    "lessonsCount": "Lektionen",
+    "enrollNow": "Kurs Buchen",
+    "preview": "Vorschau ansehen",
+    "curriculum": "Lehrplan",
+    "instructor": "Hauptdozentin",
+    "freeBadge": "Kostenlose Vorschau"
+  },
+  "resources": {
+    "badge": "Digitale Bibliothek",
+    "title": "Lernmaterialien & PDF-Leitfäden",
+    "subtitle": "Laden Sie Tajweed-Übersichten, Grammatik-Cheatsheets und Audio-Übungen herunter.",
+    "downloadPdf": "PDF Herunterladen",
+    "fileSize": "Dateigröße",
+    "premium": "Premium Material",
+    "free": "Kostenloser Download"
+  },
+  "privateLessons": {
+    "badge": "Individuelle Förderung",
+    "title": "1-zu-1 Privatstunde Buchen",
+    "subtitle": "Wählen Sie einen freien Termin mit Ustadha Abeer Gad für Rezitationskorrektur oder Hifz-Prüfung.",
+    "selectDate": "Freien Termin wählen",
+    "duration": "45 Minuten",
+    "pricePerSession": "Sitzungsgebühr",
+    "studentName": "Vollständiger Name",
+    "studentEmail": "E-Mail-Adresse",
+    "studentPhone": "Telefon- / WhatsApp-Nummer",
+    "notes": "Ziele oder gewünschte Themenschwerpunkte",
+    "confirmAndPay": "Weiter zur sicheren PayPal-Zahlung",
+    "statusAvailable": "Verfügbar",
+    "statusBooked": "Gebucht"
+  },
+  "checkout": {
+    "title": "Sichere PayPal-Zahlung",
+    "summary": "Bestellübersicht",
+    "item": "Ausgewählter Kurs",
+    "total": "Gesamtbetrag",
+    "secureNotice": "256-Bit SSL-verschlüsselte Bezahlung über das offizielle PayPal Gateway",
+    "success": "Zahlung erfolgreich! Ihre Einschreibung ist bestätigt.",
+    "pending": "Transaktion wird verarbeitet...",
+    "studentName": "Vollständiger Name des Schülers",
+    "studentEmail": "E-Mail-Adresse zur Bestätigung",
+    "studentPhone": "Telefon- / WhatsApp-Nummer (Erforderlich)",
+    "phonePlaceholder": "z.B. +20 100 000 0000",
+    "phoneRequiredError": "Bitte geben Sie Ihre Telefon- oder WhatsApp-Nummer ein, um fortzufahren",
+    "nameRequiredError": "Bitte geben Sie den vollständigen Namen des Schülers ein",
+    "emailRequiredError": "Bitte geben Sie eine gültige E-Mail-Adresse ein"
+  },
+  "admin": {
+    "title": "Akademie-Verwaltungsportal",
+    "subtitle": "Verwalten Sie Kurse, Termine, digitale Dokumente und PayPal-Umsätze.",
+    "totalRevenue": "Gesamtumsatz (USD)",
+    "activeStudents": "Eingeschriebene Studenten",
+    "confirmedBookings": "Bestätigte Termine",
+    "publishedCourses": "Aktive Kurse",
+    "tabCourses": "Kursverwaltung",
+    "tabSlots": "Terminslots",
+    "tabResources": "Materialienbibliothek",
+    "tabPayments": "Zahlungsverlauf",
+    "createNew": "Neuen Eintrag erstellen"
+  },
+  "footer": {
+    "about": "Die ABEER GAD Akademie widmet sich der authentischen Lehre der arabischen Sprache und der Koranwissenschaften in Verbindung mit moderner Didaktik.",
+    "quickLinks": "Schnellzugriff",
+    "programs": "Lehrprogramme",
+    "contact": "Kontakt & Support",
+    "rights": "Alle Rechte vorbehalten. ABEER GAD Akademie (أكاديمية عبير جاد)."
+  }
+}

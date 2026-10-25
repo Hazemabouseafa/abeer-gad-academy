@@ -1,0 +1,505 @@
+{
+  "courses": [
+    {
+      "id": "course-1792694431701",
+      "slug": "advanced-arabic-balaghah-mastery",
+      "title": "Advanced Arabic Rhetoric & Balaghah",
+      "titleAr": "البلاغة القرآنية المتقدمة ودقائق الإعجاز",
+      "subtitle": "Unlocking the profound linguistic miracles and rhetorical eloquence of the Quranic text.",
+      "subtitleAr": "سبر أغوار البيان والبديع والمعاني في النظم القرآني المعجز.",
+      "description": "An advanced scholarly journey through classical Balaghah texts.",
+      "descriptionAr": "دورة رفيعة المستوى لطلبة العلم والباحثين في دقائق النظم البياني القرآني.",
+      "category": "Specialized Arabic",
+      "categoryAr": "العربية التخصصية",
+      "level": "Advanced",
+      "levelAr": "متقدم",
+      "price": 135,
+      "currency": "USD",
+      "thumbnail": "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80",
+      "promoVideoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "instructorName": "Ustadha Abeer Gad",
+      "isPublished": true,
+      "featured": true,
+      "durationHours": 18,
+      "studentsCount": 0,
+      "rating": 5,
+      "reviewsCount": 0,
+      "chapters": [
+        {
+          "id": "ch-test-1",
+          "title": "Module 1: Ilm al-Bayan",
+          "titleAr": "الوحدة الأولى: علم البيان والتشبيه والتمثيل",
+          "lessons": [
+            {
+              "id": "les-test-1",
+              "title": "Lesson 1: Introduction to Quranic Metaphor",
+              "titleAr": "الدرس الأول: أسرار الاستعارة التمثيلية في التنزيل",
+              "duration": "40m",
+              "durationMinutes": 40,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": true
+            }
+          ]
+        }
+      ],
+      "createdAt": "2026-10-22T18:40:31.701Z",
+      "updatedAt": "2026-10-22T18:40:31.701Z"
+    },
+    {
+      "id": "course-1",
+      "slug": "foundational-arabic-alphabet-grammar",
+      "title": "Foundational Arabic: Phonetics to Sentence Mastery",
+      "titleAr": "تأسيس اللغة العربية: من مخارج الحروف إلى إعراب الجمل",
+      "subtitle": "Comprehensive program from letter articulation to fluent conversation and syntax.",
+      "subtitleAr": "برنامج متكامل من مخارج الحروف والتشكيل وحتى الفصاحة وإعراب الجمل المركبة.",
+      "description": "Engineered specifically for non-native and heritage learners under the direct scholarship of Ustadha Abeer Gad. This course demystifies classical Arabic morphology (Sarf) and syntax (Nahw) through interactive exercises, high-definition phonetic breakdowns, and conversational immersion.",
+      "descriptionAr": "صُمم هذا البرنامج خصيصاً لغير الناطقين بالعربية والراغبين في التأسيس المتين بإشراف الأستاذة عبير جاد. يغطي البرنامج قواعد الصرف والنحو عبر تدريبات تفاعلية وتفكيك صوتي مرئي لجميع مخارج الحروف.",
+      "category": "Learn Arabic",
+      "categoryAr": "تعلم العربية",
+      "level": "Beginner",
+      "levelAr": "مبتدئ",
+      "price": 89,
+      "currency": "USD",
+      "thumbnail": "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80",
+      "promoVideoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "instructorName": "Ustadha Abeer Gad",
+      "isPublished": true,
+      "featured": true,
+      "durationHours": 12,
+      "studentsCount": 420,
+      "rating": 5,
+      "reviewsCount": 142,
+      "createdAt": "2026-10-01T10:00:00.000Z",
+      "updatedAt": "2026-10-22T12:00:00.000Z",
+      "chapters": [
+        {
+          "id": "ch-1-1",
+          "title": "Module 1: The Arabic Phonetic System & Articulation Points",
+          "titleAr": "الوحدة الأولى: النظام الصوتي العربي ومخارج الحروف",
+          "lessons": [
+            {
+              "id": "les-1-1-1",
+              "title": "Anatomy of the Vocal Tract & Arabic Letters",
+              "titleAr": "تشريح جهاز النطق والحروف العربية",
+              "duration": "28m",
+              "durationMinutes": 28,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": true,
+              "notes": "Detailed diagrams of the throat, tongue, and lips articulation points."
+            },
+            {
+              "id": "les-1-1-2",
+              "title": "Short & Long Vowels (Harakat and Madd Letters)",
+              "titleAr": "الحركات القصيرة وحروف المد الطويلة",
+              "duration": "34m",
+              "durationMinutes": 34,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": true
+            },
+            {
+              "id": "les-1-1-3",
+              "title": "The Subtle Rules of Sukoon & Tanween",
+              "titleAr": "أحكام السكون والتنوين في النطق",
+              "duration": "40m",
+              "durationMinutes": 40,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": false
+            }
+          ]
+        },
+        {
+          "id": "ch-1-2",
+          "title": "Module 2: Morphology (Sarf) - Root Systems & Word Derivation",
+          "titleAr": "الوحدة الثانية: علم الصرف - نظام الجذور واشتقاق الكلمات",
+          "lessons": [
+            {
+              "id": "les-1-2-1",
+              "title": "The Tri-literal Root Principle (Fa-Ai-La)",
+              "titleAr": "مبدأ الجذر الثلاثي والميزان الصرفي",
+              "duration": "45m",
+              "durationMinutes": 45,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": false
+            },
+            {
+              "id": "les-1-2-2",
+              "title": "Deriving Nouns, Adjectives, and Active Participles",
+              "titleAr": "اشتقاق الأسماء والصفات واسم الفاعل",
+              "duration": "50m",
+              "durationMinutes": 50,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": false
+            }
+          ]
+        },
+        {
+          "id": "ch-1-3",
+          "title": "Module 3: Syntax (Nahw) & Practical Conversational Fluency",
+          "titleAr": "الوحدة الثالثة: النحو والتطبيق العملي للمحادثة",
+          "lessons": [
+            {
+              "id": "les-1-3-1",
+              "title": "Nominal Sentence (Jumla Ismiyyah) & Parsing",
+              "titleAr": "الجملة الاسمية وأركانها وإعرابها",
+              "duration": "55m",
+              "durationMinutes": 55,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": false
+            },
+            {
+              "id": "les-1-3-2",
+              "title": "Verbal Sentence (Jumla Fi'liyyah) & Conjugation",
+              "titleAr": "الجملة الفعلية وتصريف الأفعال",
+              "duration": "58m",
+              "durationMinutes": 58,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "course-2",
+      "slug": "tajweed-and-makharij-masterclass",
+      "title": "Tajweed Rules & Accurate Articulation (Makhaarij)",
+      "titleAr": "أحكام التجويد وضبط مخارج الحروف والصفات",
+      "subtitle": "Master the rules of Noon Sakinah, Meem, Madd, and phonetic characteristics.",
+      "subtitleAr": "دراسة تطبيقية لأحكام النون والميم والمدود وصفات الحروف مع توجيهات السند المتصل.",
+      "description": "An in-depth theoretical and audio-visual course on the science of Tajweed. Study the classic poem Tuhfat al-Atfal and Al-Jazariyyah with modern high-definition acoustic diagrams and personal corrections.",
+      "descriptionAr": "دورة تخصصية تجمع بين دراسة منظومتي تحفة الأطفال والجزرية مع الشرح الصوتي العملي وتدريبات تصحيح الأخطاء الشائعة في التلاوة تحت إشراف الإجازة النبوية.",
+      "category": "Tajweed",
+      "categoryAr": "علم التجويد",
+      "level": "Intermediate",
+      "levelAr": "متوسط",
+      "price": 110,
+      "currency": "USD",
+      "thumbnail": "https://images.unsplash.com/photo-1584281729288-89826ac70b0a?auto=format&fit=crop&w=1200&q=80",
+      "promoVideoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "instructorName": "Ustadha Abeer Gad",
+      "isPublished": true,
+      "featured": true,
+      "durationHours": 16,
+      "studentsCount": 580,
+      "rating": 5,
+      "reviewsCount": 210,
+      "createdAt": "2026-10-02T10:00:00.000Z",
+      "updatedAt": "2026-10-22T12:00:00.000Z",
+      "chapters": [
+        {
+          "id": "ch-2-1",
+          "title": "Module 1: Principles of Noon Sakinah and Tanween",
+          "titleAr": "الوحدة الأولى: أحكام النون الساكنة والتنوين",
+          "lessons": [
+            {
+              "id": "les-2-1-1",
+              "title": "Izhar Halqi (Clear Pronunciation) & Throat Letters",
+              "titleAr": "الإظهار الحلقي وحروف الحلق الستة",
+              "duration": "32m",
+              "durationMinutes": 32,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": true
+            },
+            {
+              "id": "les-2-1-2",
+              "title": "Idghaam with & without Ghunnah",
+              "titleAr": "الإدغام بغنة وبغير غنة مع الأمثلة التطبيقية",
+              "duration": "42m",
+              "durationMinutes": 42,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": true
+            },
+            {
+              "id": "les-2-1-3",
+              "title": "Iqlab & Ikhfa Haqiqi Precision",
+              "titleAr": "الإقلاب والإخفاء الحقيقي مع أزمنة الغنن",
+              "duration": "48m",
+              "durationMinutes": 48,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": false
+            }
+          ]
+        },
+        {
+          "id": "ch-2-2",
+          "title": "Module 2: The Rules of Madd (Prolongation)",
+          "titleAr": "الوحدة الثانية: أحكام المدود وأنواعها وأزمنتها",
+          "lessons": [
+            {
+              "id": "les-2-2-1",
+              "title": "Natural Madd (Asli) vs Secondary Madd (Far'i)",
+              "titleAr": "المد الأصلي والمد الفرعي بسبب الهمز أو السكون",
+              "duration": "50m",
+              "durationMinutes": 50,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": false
+            },
+            {
+              "id": "les-2-2-2",
+              "title": "Madd Lazim: Word & Letter Based Formats",
+              "titleAr": "المد اللازم الكلمي والحرفي المثقل والمخفف",
+              "duration": "55m",
+              "durationMinutes": 55,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "course-3",
+      "slug": "quran-memorization-hifz-methodology",
+      "title": "Hifz Acceleration: Structured Memorization System",
+      "titleAr": "منهجية الحفظ المتقن للقرآن الكريم وتثبيت المتشابهات",
+      "subtitle": "Proven techniques for permanent retention, spaced repetition, and Mutashabihat mastery.",
+      "subtitleAr": "تقنيات التثبيت الراسخ، التكرار المتباعد، وضبط الآيات المتشابهة في الحفظ.",
+      "description": "Gain lifelong discipline and flawless retention with this specialized methodology created from classical Hifz traditions and contemporary cognitive science. Includes individual revision calendars and ayah linkage algorithms.",
+      "descriptionAr": "اكتسب مهارة الحفظ الراسخ عبر نظام التكرار المتباعد وضبط المتشابهات اللفظية، مع جداول يومية مرنة بإشراف مباشر لمتابعة الأجزاء والسور.",
+      "category": "Quran Memorization",
+      "categoryAr": "حفظ القرآن",
+      "level": "All Levels",
+      "levelAr": "جميع المستويات",
+      "price": 125,
+      "currency": "USD",
+      "thumbnail": "https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&w=1200&q=80",
+      "promoVideoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "instructorName": "Ustadha Abeer Gad",
+      "isPublished": true,
+      "featured": true,
+      "durationHours": 14,
+      "studentsCount": 250,
+      "rating": 5,
+      "reviewsCount": 98,
+      "createdAt": "2026-10-03T10:00:00.000Z",
+      "updatedAt": "2026-10-22T12:00:00.000Z",
+      "chapters": [
+        {
+          "id": "ch-3-1",
+          "title": "Module 1: Cognitive Foundations of Quran Retention",
+          "titleAr": "الوحدة الأولى: الأسس الذهنية للحفظ المتين",
+          "lessons": [
+            {
+              "id": "les-3-1-1",
+              "title": "Visual Page Mapping & Mus-haf Consistency",
+              "titleAr": "الرسم البصري للصفحة واختيار طبعة المصحف الثابتة",
+              "duration": "35m",
+              "durationMinutes": 35,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": true
+            },
+            {
+              "id": "les-3-1-2",
+              "title": "The Spaced Repetition Cycle for Daily Werd",
+              "titleAr": "دورة التكرار المتباعد للورد اليومي الجديد والماضي",
+              "duration": "45m",
+              "durationMinutes": 45,
+              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "isFree": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "id": "res-1",
+      "title": "Comprehensive Tajweed Rules & Articulation Chart",
+      "titleAr": "مخطط مخارج وصفات الحروف العربية وأحكام التجويد الشامل",
+      "category": "Tajweed Chart",
+      "fileType": "PDF",
+      "fileUrl": "/downloads/tajweed-chart.pdf",
+      "fileSizeMb": 4.8,
+      "isPremium": false,
+      "downloads": 3820,
+      "createdAt": "2026-10-05T10:00:00.000Z"
+    },
+    {
+      "id": "res-2",
+      "title": "Classical Arabic Grammar (Nahw) Quick Reference Table",
+      "titleAr": "جدول إعراب الجمل وقواعد النحو الأساسية للمبتدئين",
+      "category": "Arabic Grammar",
+      "fileType": "PDF",
+      "fileUrl": "/downloads/nahw-quick-reference.pdf",
+      "fileSizeMb": 3.2,
+      "isPremium": false,
+      "downloads": 2490,
+      "createdAt": "2026-10-06T10:00:00.000Z"
+    },
+    {
+      "id": "res-3",
+      "title": "1,000 Essential Quranic Words & Root Meanings",
+      "titleAr": "معجم أكثر 1000 كلمة تكراراً في القرآن الكريم وجذورها",
+      "category": "Vocabulary Sheet",
+      "fileType": "PDF",
+      "fileUrl": "/downloads/quran-vocabulary-1000.pdf",
+      "fileSizeMb": 6.5,
+      "isPremium": false,
+      "downloads": 4100,
+      "createdAt": "2026-10-07T10:00:00.000Z"
+    },
+    {
+      "id": "res-4",
+      "title": "Letter Articulation Audio Drills (High-Definition MP3)",
+      "titleAr": "الملفات الصوتية لتدريب النطق ومخارج الحروف بدقة استوديو",
+      "category": "Audio Practice",
+      "fileType": "ZIP / MP3",
+      "fileUrl": "/downloads/articulation-drills.zip",
+      "fileSizeMb": 42,
+      "isPremium": true,
+      "downloads": 1850,
+      "createdAt": "2026-10-08T10:00:00.000Z"
+    }
+  ],
+  "slots": [
+    {
+      "id": "slot-1",
+      "date": "2026-10-24",
+      "time": "10:00 AM UTC",
+      "instructor": "Ustadha Abeer Gad",
+      "price": 45,
+      "currency": "USD",
+      "status": "AVAILABLE",
+      "meetingUrl": "https://meet.google.com/demo-session-1",
+      "createdAt": "2026-10-20T10:00:00.000Z"
+    },
+    {
+      "id": "slot-2",
+      "date": "2026-10-24",
+      "time": "02:00 PM UTC",
+      "instructor": "Ustadha Abeer Gad",
+      "price": 45,
+      "currency": "USD",
+      "status": "BOOKED",
+      "studentName": "Omar Farooq",
+      "studentEmail": "omar.farooq@example.com",
+      "meetingUrl": "https://meet.google.com/demo-session-2",
+      "notes": "Surah Al-Baqarah recitation check and Tajweed correction.",
+      "createdAt": "2026-10-20T11:00:00.000Z"
+    },
+    {
+      "id": "slot-3",
+      "date": "2026-10-25",
+      "time": "09:00 AM UTC",
+      "instructor": "Ustadha Abeer Gad",
+      "price": 45,
+      "currency": "USD",
+      "status": "AVAILABLE",
+      "meetingUrl": "https://meet.google.com/demo-session-3",
+      "createdAt": "2026-10-20T12:00:00.000Z"
+    },
+    {
+      "id": "slot-4",
+      "date": "2026-10-25",
+      "time": "05:00 PM UTC",
+      "instructor": "Ustadha Abeer Gad",
+      "price": 45,
+      "currency": "USD",
+      "status": "BOOKED",
+      "studentName": "Fatima Zahra",
+      "studentEmail": "fatima.zahra@example.fr",
+      "meetingUrl": "https://meet.google.com/demo-session-4",
+      "notes": "Arabic conversation practice and verb conjugation drill.",
+      "createdAt": "2026-10-20T14:00:00.000Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx-1",
+      "paypalOrderId": "PAYID-M45892147K",
+      "payerEmail": "tariq.mansoor@example.co.uk",
+      "itemTitle": "Tajweed Rules & Accurate Articulation",
+      "itemType": "COURSE",
+      "amount": 110,
+      "currency": "USD",
+      "status": "COMPLETED",
+      "date": "2026-10-22 14:15"
+    },
+    {
+      "id": "tx-2",
+      "paypalOrderId": "PAYID-M99301124L",
+      "payerEmail": "fatima.zahra@example.fr",
+      "itemTitle": "Private Lesson (Oct 24 02:00 PM)",
+      "itemType": "PRIVATE_LESSON",
+      "amount": 45,
+      "currency": "USD",
+      "status": "COMPLETED",
+      "date": "2026-10-22 11:30"
+    },
+    {
+      "id": "tx-3",
+      "paypalOrderId": "PAYID-M11029482X",
+      "payerEmail": "marcus.bilal@example.de",
+      "itemTitle": "Foundational Arabic Masterclass",
+      "itemType": "COURSE",
+      "amount": 89,
+      "currency": "USD",
+      "status": "COMPLETED",
+      "date": "2026-10-21 18:45"
+    },
+    {
+      "id": "tx-4",
+      "paypalOrderId": "PAYID-M55019238Z",
+      "payerEmail": "ahmed.khalil@example.com",
+      "itemTitle": "Hifz Acceleration Program",
+      "itemType": "COURSE",
+      "amount": 125,
+      "currency": "USD",
+      "status": "COMPLETED",
+      "date": "2026-10-21 09:20"
+    }
+  ],
+  "students": [
+    {
+      "id": "stu-1",
+      "name": "Tariq Mansoor",
+      "email": "tariq.mansoor@example.co.uk",
+      "joinedDate": "2026-09-15",
+      "enrolledCoursesCount": 2,
+      "completedLessonsCount": 18,
+      "progressPercentage": 75
+    },
+    {
+      "id": "stu-2",
+      "name": "Fatima Zahra",
+      "email": "fatima.zahra@example.fr",
+      "joinedDate": "2026-09-22",
+      "enrolledCoursesCount": 1,
+      "completedLessonsCount": 8,
+      "progressPercentage": 40
+    },
+    {
+      "id": "stu-3",
+      "name": "Marcus Bilal",
+      "email": "marcus.bilal@example.de",
+      "joinedDate": "2026-10-02",
+      "enrolledCoursesCount": 1,
+      "completedLessonsCount": 14,
+      "progressPercentage": 60
+    },
+    {
+      "id": "stu-4",
+      "name": "Aisha Al-Hashimi",
+      "email": "aisha.hashimi@example.com",
+      "joinedDate": "2026-10-10",
+      "enrolledCoursesCount": 3,
+      "completedLessonsCount": 32,
+      "progressPercentage": 92
+    }
+  ],
+  "settings": {
+    "announcementEnabled": true,
+    "announcementTextEn": "✨ Special Intake Open: Book your 1-on-1 recitation correction session with Ustadha Abeer Gad.",
+    "announcementTextAr": "✨ فُتح باب التسجيل للجلسات الفردية وتصحيح التلاوة مع الأستاذة عبير جاد - الأماكن محدودة.",
+    "announcementLink": "/private-lessons",
+    "contactEmail": "contact@abeergadacademy.com",
+    "contactPhone": "+20 100 000 0000",
+    "whatsappNumber": "+201000000000",
+    "heroStudentsCount": "1,250+",
+    "heroCountriesCount": "34+",
+    "heroSatisfactionRate": "5.0",
+    "heroLessonsCompleted": "850+",
+    "updatedAt": "2026-10-22T18:39:32.411Z"
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "brand": {
+    "name": "阿比尔·贾德学院",
+    "nameNative": "أكاديمية عبير جاد",
+    "tagline": "以正统传授与现代教学精研阿拉伯语、古兰经诵读与背诵",
+    "leadScholar": "阿比尔·贾德导师",
+    "leadScholarTitle": "古兰经与标准阿拉伯语学者"
+  },
+  "nav": {
+    "home": "首页",
+    "quranMenu": "古兰经研习",
+    "arabicMenu": "阿拉伯语",
+    "coursesMenu": "课程与资源",
+    "learnArabic": "阿拉伯语学习",
+    "quranReading": "古兰经诵读",
+    "quranMemorization": "古兰经背诵 (Hifz)",
+    "tajweed": "音律法则 (Tajweed)",
+    "specializedArabic": "专业阿拉伯语",
+    "courses": "专业课程",
+    "resources": "学习资源",
+    "privateLessons": "一对一辅导",
+    "admin": "管理后台",
+    "getStarted": "立即加入",
+    "bookLesson": "预约私教课"
+  },
+  "hero": {
+    "badge": "正统传承 (Sanad) 与现代教育法",
+    "title": "开启通往卓越的学术旅程",
+    "titleHighlight": "阿拉伯语与古兰经圣典",
+    "subtitle": "由阿比尔·贾德导师亲自指导的沉浸式一对一与互动系统路径。涵盖从字母发音到全经背诵及正统传承证书认证。",
+    "ctaExplore": "探索所有课程",
+    "ctaBook": "预约专家咨询",
+    "statStudents": "全球注册学员",
+    "statCountries": "覆盖国家",
+    "statCompletion": "完成背诵里程碑",
+    "statRating": "5.0 学员极佳好评"
+  },
+  "pillars": {
+    "badge": "学术领域",
+    "title": "学院卓越核心支柱",
+    "subtitle": "融合现代教学法设计，清晰的里程碑规划与一对一精准指导反馈。",
+    "arabic": {
+      "title": "阿拉伯语学习",
+      "desc": "现代标准阿拉伯语与古典文法，从零基础发音到流利纯正的表达。",
+      "tag": "从基础到精通"
+    },
+    "reading": {
+      "title": "古兰经诵读",
+      "desc": "发音部位纠正、努拉尼方法教学，直接诵读原经并纠正音律。",
+      "tag": "标准流利诵读"
+    },
+    "memorization": {
+      "title": "古兰经背诵",
+      "desc": "系统化背诵机制，配合进度跟踪卡、间隔重复复习与定期考核。",
+      "tag": "背诵精通体系"
+    },
+    "tajweed": {
+      "title": "音律法则精研",
+      "desc": "发音器官与部位理论结合音视频实操纠正，确保每个音节精准无误。",
+      "tag": "精准音律"
+    },
+    "specialized": {
+      "title": "专业阿拉伯语",
+      "desc": "面向伊斯兰法学、外交经贸、学术研究与商务交流的定制课程。",
+      "tag": "特定领域定制"
+    },
+    "lessons": {
+      "title": "一对一私教课",
+      "desc": "在线视频一对一互动指导，实时纠音，节奏灵活量身定制。",
+      "tag": "专属导师指导"
+    }
+  },
+  "tracker": {
+    "title": "古兰经背诵互动跟踪器",
+    "subtitle": "实时记录章节背诵进度，规划间隔复习，查阅导师专业评价。",
+    "surah": "苏勒 (章节)",
+    "ayahRange": "节数",
+    "status": "当前状态",
+    "notStarted": "未开始",
+    "inProgress": "背诵中",
+    "revised": "已复习",
+    "memorized": "已精通背诵",
+    "actionUpdate": "更新里程碑",
+    "instructorNote": "导师评估评语",
+    "nextRevision": "下次复习时间"
+  },
+  "courses": {
+    "badge": "精品课程",
+    "title": "系统化视频课程",
+    "subtitle": "高清在线点播，附带教学讲义、课文逐字稿及全流程进度管理。",
+    "allCategories": "所有分类",
+    "level": "级别",
+    "duration": "课时时长",
+    "lessonsCount": "节课",
+    "enrollNow": "立即选课",
+    "preview": "试听预览",
+    "curriculum": "教学大纲",
+    "instructor": "授课导师",
+    "freeBadge": "支持免费试听"
+  },
+  "resources": {
+    "badge": "数字资源库",
+    "title": "教材资料与数字指南",
+    "subtitle": "下载高清音律图表、语法速查手册以及标准跟读音频资源。",
+    "downloadPdf": "下载 PDF",
+    "fileSize": "文件大小",
+    "premium": "高级资源",
+    "free": "免费下载"
+  },
+  "privateLessons": {
+    "badge": "定制化辅导",
+    "title": "预约一对一专属私教课程",
+    "subtitle": "选择导师空闲时段，进行精准诵读纠音、阿拉伯语对话练习或背诵验收考核。",
+    "selectDate": "选择可用日期与时段",
+    "duration": "45 分钟",
+    "pricePerSession": "课时费用",
+    "studentName": "学员姓名",
+    "studentEmail": "电子邮箱",
+    "studentPhone": "电话 / WhatsApp 号码",
+    "notes": "学习目标或本节课期望重点",
+    "confirmAndPay": "前往 PayPal 安全支付",
+    "statusAvailable": "可预约",
+    "statusBooked": "已被预订"
+  },
+  "checkout": {
+    "title": "PayPal 安全结算",
+    "summary": "订单摘要",
+    "item": "所选项目",
+    "total": "实付总额",
+    "secureNotice": "通过 PayPal 官方网关提供 256 位 SSL 加密安全结算",
+    "success": "支付成功！您的课程已确认开通。",
+    "pending": "正在处理交易...",
+    "studentName": "学员全名",
+    "studentEmail": "确认通知接收邮箱",
+    "studentPhone": "电话 / WhatsApp 号码（必填）",
+    "phonePlaceholder": "例如：+20 100 000 0000",
+    "phoneRequiredError": "请输入您的电话或 WhatsApp 号码以继续",
+    "nameRequiredError": "请输入学员姓名",
+    "emailRequiredError": "请输入有效的电子邮箱地址"
+  },
+  "admin": {
+    "title": "学院综合管理平台",
+    "subtitle": "高效管理课程目录、私教预约排期、数字教材资料及 PayPal 资金记录。",
+    "totalRevenue": "总营业额 (USD)",
+    "activeStudents": "在读学员人数",
+    "confirmedBookings": "已确认预约",
+    "publishedCourses": "已发布课程",
+    "tabCourses": "课程管理",
+    "tabSlots": "私教时段管理",
+    "tabResources": "学习资源管理",
+    "tabPayments": "财务交易记录",
+    "createNew": "创建新条目"
+  },
+  "footer": {
+    "about": "阿比尔·贾德学院致力于提供高水平的阿拉伯语与古兰经教育，将正统学术传承与现代数字化教学完美融合。",
+    "quickLinks": "快捷链接",
+    "programs": "专业体系",
+    "contact": "联系与咨询",
+    "rights": "版权所有。阿比尔·贾德学院 (ABEER GAD Academy)。"
+  }
+}
