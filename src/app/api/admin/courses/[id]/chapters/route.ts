@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { addChapterToCourse, deleteChapterFromCourse, addLessonToChapter, deleteLessonFromChapter } from '@/lib/data-store';
+import { translateSingle } from '@/lib/translate';
 
 interface Params {
   params: {
@@ -13,6 +14,9 @@ export async function POST(request: Request, { params }: Params) {
     const { action, chapter, lesson, chapterId, lessonId } = body;
 
     if (action === 'ADD_CHAPTER') {
+      if (chapter && !chapter.title && chapter.titleAr) {
+        chapter.title = await translateSingle(chapter.titleAr, 'ar', 'en');
+      }
       const updatedCourse = addChapterToCourse(params.id, chapter);
       if (!updatedCourse) {
         return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
@@ -29,6 +33,9 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     if (action === 'ADD_LESSON') {
+      if (lesson && !lesson.title && lesson.titleAr) {
+        lesson.title = await translateSingle(lesson.titleAr, 'ar', 'en');
+      }
       const updatedCourse = addLessonToChapter(params.id, chapterId, lesson);
       if (!updatedCourse) {
         return NextResponse.json({ success: false, error: 'Course or chapter not found' }, { status: 404 });

@@ -237,6 +237,23 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     }
   };
 
+  const handleAutoTranslateArabicField = async (
+    fieldNameAr: string,
+    val: string,
+    targetFieldEn: string,
+    updater: (enVal: string) => void
+  ) => {
+    if (!autoTranslateEnabled || !val || !val.trim()) return;
+    try {
+      const res = await translateBatch({ [fieldNameAr]: val }, 'en');
+      if (res[targetFieldEn] && typeof res[targetFieldEn] === 'string') {
+        updater(res[targetFieldEn] as string);
+      }
+    } catch (e) {
+      // silent fallback
+    }
+  };
+
   const handleTranslateHero = async () => {
     setTranslatingId('hero');
     try {
@@ -546,17 +563,48 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
   const handleSaveCourse = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!courseFormData.title || !courseFormData.slug) {
-      alert(isRtl ? 'يرجى كتابة عنوان الدورة والرابط الدائم (Slug)' : 'Title and Slug are required');
-      return;
+
+    let englishTitle = courseFormData.title;
+    let englishSubtitle = courseFormData.subtitle;
+    let englishDesc = courseFormData.description;
+    let englishCategory = courseFormData.category;
+    let englishLevel = courseFormData.level;
+
+    if (autoTranslateEnabled) {
+      const fieldsToTranslate: Record<string, string> = {};
+      if (courseFormData.titleAr && !englishTitle) fieldsToTranslate.titleAr = courseFormData.titleAr;
+      if (courseFormData.subtitleAr && !englishSubtitle) fieldsToTranslate.subtitleAr = courseFormData.subtitleAr;
+      if (courseFormData.descriptionAr && !englishDesc) fieldsToTranslate.descriptionAr = courseFormData.descriptionAr;
+
+      if (Object.keys(fieldsToTranslate).length > 0) {
+        const trans = await translateBatch(fieldsToTranslate, 'en');
+        if (trans.titleEn) englishTitle = trans.titleEn as string;
+        if (trans.subtitleEn) englishSubtitle = trans.subtitleEn as string;
+        if (trans.descriptionEn) englishDesc = trans.descriptionEn as string;
+      }
+    }
+
+    let finalSlug = courseFormData.slug;
+    if (!finalSlug && englishTitle) {
+      finalSlug = englishTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
+
+    if (!englishTitle && courseFormData.titleAr) {
+      englishTitle = courseFormData.titleAr;
+    }
+    if (!finalSlug) {
+      finalSlug = `course-${Date.now()}`;
     }
 
     const payload: Partial<CourseData> & { title: string; slug: string } = {
       ...(editingCourse ? { id: editingCourse.id } : {}),
-      title: courseFormData.title,
-      titleAr: courseFormData.titleAr || courseFormData.title,
-      slug: courseFormData.slug.toLowerCase().replace(/\s+/g, '-'),
-      subtitle: courseFormData.subtitle,
+      title: englishTitle,
+      titleAr: courseFormData.titleAr || englishTitle,
+      slug: finalSlug.toLowerCase().replace(/\s+/g, '-'),
+      subtitle: englishSubtitle,
       subtitleAr: courseFormData.subtitleAr,
       description: courseFormData.description,
       descriptionAr: courseFormData.descriptionAr,
@@ -661,7 +709,19 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
   const handleAddChapter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCourseForCurriculum || !newChapterTitle) return;
+    if (!selectedCourseForCurriculum || (!newChapterTitle && !newChapterTitleAr)) return;
+
+    let engTitle = newChapterTitle;
+    const arTitle = newChapterTitleAr || newChapterTitle;
+
+    if (!engTitle && arTitle) {
+      if (autoTranslateEnabled) {
+        const trans = await translateBatch({ titleAr: arTitle }, 'en');
+        engTitle = (trans.titleEn as string) || arTitle;
+      } else {
+        engTitle = arTitle;
+      }
+    }
 
     try {
       const res = await fetch(`/api/admin/courses/${selectedCourseForCurriculum.id}/chapters`, {
@@ -670,8 +730,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
         body: JSON.stringify({
           action: 'ADD_CHAPTER',
           chapter: {
-            title: newChapterTitle,
-            titleAr: newChapterTitleAr || newChapterTitle,
+            title: engTitle,
+            titleAr: arTitle,
             lessons: [],
           },
         }),
@@ -682,7 +742,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
         setCourses((prev) => prev.map((c) => (c.id === data.course.id ? data.course : c)));
         setNewChapterTitle('');
         setNewChapterTitleAr('');
-        triggerToast(isRtl ? 'تمت إضافة الفصل الجديد بنجاح' : 'New chapter added');
+        triggerToast(isRtl ? 'تمت إضافة الفصل الجديد وترجمته بنجاح' : 'New chapter added');
       }
     } catch (err) {
       console.error(err);
@@ -715,7 +775,19 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
   const handleAddLesson = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCourseForCurriculum || !targetChapterId || !newLessonTitle) return;
+    if (!selectedCourseForCurriculum || !targetChapterId || (!newLessonTitle && !newLessonTitleAr)) return;
+
+    let engLessonTitle = newLessonTitle;
+    const arLessonTitle = newLessonTitleAr || newLessonTitle;
+
+    if (!engLessonTitle && arLessonTitle) {
+      if (autoTranslateEnabled) {
+        const trans = await translateBatch({ titleAr: arLessonTitle }, 'en');
+        engLessonTitle = (trans.titleEn as string) || arLessonTitle;
+      } else {
+        engLessonTitle = arLessonTitle;
+      }
+    }
 
     try {
       const res = await fetch(`/api/admin/courses/${selectedCourseForCurriculum.id}/chapters`, {
@@ -725,8 +797,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
           action: 'ADD_LESSON',
           chapterId: targetChapterId,
           lesson: {
-            title: newLessonTitle,
-            titleAr: newLessonTitleAr || newLessonTitle,
+            title: engLessonTitle,
+            titleAr: arLessonTitle,
             videoUrl: newLessonVideoUrl,
             duration: newLessonDuration,
             durationMinutes: parseInt(newLessonDuration) || 30,
@@ -863,30 +935,14 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       if (autoTranslateEnabled) {
         // 1. Check Hero fields needing auto-translation
         const heroFields: Record<string, string> = {};
-        if (finalSettings.heroBadgeAr && (!finalSettings.heroBadgeEn || finalSettings.heroBadgeEn.trim() === '')) {
-          heroFields.heroBadgeAr = finalSettings.heroBadgeAr;
-        }
-        if (finalSettings.heroTitleAr && (!finalSettings.heroTitleEn || finalSettings.heroTitleEn.trim() === '')) {
-          heroFields.heroTitleAr = finalSettings.heroTitleAr;
-        }
-        if (finalSettings.heroTitleHighlightAr && (!finalSettings.heroTitleHighlightEn || finalSettings.heroTitleHighlightEn.trim() === '')) {
-          heroFields.heroTitleHighlightAr = finalSettings.heroTitleHighlightAr;
-        }
-        if (finalSettings.heroSubtitleAr && (!finalSettings.heroSubtitleEn || finalSettings.heroSubtitleEn.trim() === '')) {
-          heroFields.heroSubtitleAr = finalSettings.heroSubtitleAr;
-        }
-        if (finalSettings.heroCtaPrimaryTextAr && (!finalSettings.heroCtaPrimaryTextEn || finalSettings.heroCtaPrimaryTextEn.trim() === '')) {
-          heroFields.heroCtaPrimaryTextAr = finalSettings.heroCtaPrimaryTextAr;
-        }
-        if (finalSettings.heroCtaSecondaryTextAr && (!finalSettings.heroCtaSecondaryTextEn || finalSettings.heroCtaSecondaryTextEn.trim() === '')) {
-          heroFields.heroCtaSecondaryTextAr = finalSettings.heroCtaSecondaryTextAr;
-        }
-        if (finalSettings.announcementTextAr && (!finalSettings.announcementTextEn || finalSettings.announcementTextEn.trim() === '')) {
-          heroFields.announcementTextAr = finalSettings.announcementTextAr;
-        }
-        if (finalSettings.footerAboutAr && (!finalSettings.footerAboutEn || finalSettings.footerAboutEn.trim() === '')) {
-          heroFields.footerAboutAr = finalSettings.footerAboutAr;
-        }
+        if (finalSettings.heroBadgeAr) heroFields.heroBadgeAr = finalSettings.heroBadgeAr;
+        if (finalSettings.heroTitleAr) heroFields.heroTitleAr = finalSettings.heroTitleAr;
+        if (finalSettings.heroTitleHighlightAr) heroFields.heroTitleHighlightAr = finalSettings.heroTitleHighlightAr;
+        if (finalSettings.heroSubtitleAr) heroFields.heroSubtitleAr = finalSettings.heroSubtitleAr;
+        if (finalSettings.heroCtaPrimaryTextAr) heroFields.heroCtaPrimaryTextAr = finalSettings.heroCtaPrimaryTextAr;
+        if (finalSettings.heroCtaSecondaryTextAr) heroFields.heroCtaSecondaryTextAr = finalSettings.heroCtaSecondaryTextAr;
+        if (finalSettings.announcementTextAr) heroFields.announcementTextAr = finalSettings.announcementTextAr;
+        if (finalSettings.footerAboutAr) heroFields.footerAboutAr = finalSettings.footerAboutAr;
 
         if (Object.keys(heroFields).length > 0) {
           const trans = await translateBatch(heroFields, 'en');
@@ -908,16 +964,14 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
           finalSettings.services = await Promise.all(
             finalSettings.services.map(async (svc) => {
               const svcFields: Record<string, string | string[]> = {};
-              if (svc.titleAr && (!svc.titleEn || svc.titleEn.trim() === '')) svcFields.titleAr = svc.titleAr;
-              if (svc.badgeAr && (!svc.badgeEn || svc.badgeEn.trim() === '')) svcFields.badgeAr = svc.badgeAr;
-              if (svc.subtitleAr && (!svc.subtitleEn || svc.subtitleEn.trim() === '')) svcFields.subtitleAr = svc.subtitleAr;
-              if (svc.levelAr && (!svc.levelEn || svc.levelEn.trim() === '')) svcFields.levelAr = svc.levelAr;
-              if (svc.formatAr && (!svc.formatEn || svc.formatEn.trim() === '')) svcFields.formatAr = svc.formatAr;
-              if (
-                Array.isArray(svc.featuresAr) &&
-                svc.featuresAr.length > 0 &&
-                (!Array.isArray(svc.featuresEn) || svc.featuresEn.length === 0)
-              ) {
+              if (svc.titleAr) svcFields.titleAr = svc.titleAr;
+              if (svc.badgeAr) svcFields.badgeAr = svc.badgeAr;
+              if (svc.subtitleAr) svcFields.subtitleAr = svc.subtitleAr;
+              if (svc.levelAr) svcFields.levelAr = svc.levelAr;
+              if (svc.formatAr) svcFields.formatAr = svc.formatAr;
+              if (svc.durationAr) svcFields.durationAr = svc.durationAr;
+              if (svc.sanadAr) svcFields.sanadAr = svc.sanadAr;
+              if (Array.isArray(svc.featuresAr) && svc.featuresAr.length > 0) {
                 svcFields.featuresAr = svc.featuresAr;
               }
 
@@ -930,6 +984,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                   subtitleEn: (trans.subtitleEn as string) || svc.subtitleEn,
                   levelEn: (trans.levelEn as string) || svc.levelEn,
                   formatEn: (trans.formatEn as string) || svc.formatEn,
+                  durationEn: (trans.durationEn as string) || svc.durationEn,
+                  sanadEn: (trans.sanadEn as string) || svc.sanadEn,
                   featuresEn: Array.isArray(trans.featuresEn) ? (trans.featuresEn as string[]) : svc.featuresEn,
                 };
               }
@@ -1591,6 +1647,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           type="text"
                           value={settings.heroBadgeAr || ''}
                           onChange={(e) => setSettings({ ...settings, heroBadgeAr: e.target.value })}
+                          onBlur={() => handleAutoTranslateArabicField('heroBadgeAr', settings.heroBadgeAr, 'heroBadgeEn', (v) => setSettings((p) => ({ ...p, heroBadgeEn: v })))}
                           className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic"
                         />
                       </div>
@@ -1615,6 +1672,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           type="text"
                           value={settings.heroTitleAr || ''}
                           onChange={(e) => setSettings({ ...settings, heroTitleAr: e.target.value })}
+                          onBlur={() => handleAutoTranslateArabicField('heroTitleAr', settings.heroTitleAr, 'heroTitleEn', (v) => setSettings((p) => ({ ...p, heroTitleEn: v })))}
                           className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-sm"
                         />
                       </div>
@@ -1627,6 +1685,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           type="text"
                           value={settings.heroTitleHighlightAr || ''}
                           onChange={(e) => setSettings({ ...settings, heroTitleHighlightAr: e.target.value })}
+                          onBlur={() => handleAutoTranslateArabicField('heroTitleHighlightAr', settings.heroTitleHighlightAr, 'heroTitleHighlightEn', (v) => setSettings((p) => ({ ...p, heroTitleHighlightEn: v })))}
                           className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-brand-700 font-bold"
                         />
                       </div>
@@ -1663,6 +1722,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           rows={2}
                           value={settings.heroSubtitleAr || ''}
                           onChange={(e) => setSettings({ ...settings, heroSubtitleAr: e.target.value })}
+                          onBlur={() => handleAutoTranslateArabicField('heroSubtitleAr', settings.heroSubtitleAr, 'heroSubtitleEn', (v) => setSettings((p) => ({ ...p, heroSubtitleEn: v })))}
                           className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic"
                         />
                       </div>
@@ -1687,6 +1747,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           type="text"
                           value={settings.heroCtaPrimaryTextAr || ''}
                           onChange={(e) => setSettings({ ...settings, heroCtaPrimaryTextAr: e.target.value })}
+                          onBlur={() => handleAutoTranslateArabicField('heroCtaPrimaryTextAr', settings.heroCtaPrimaryTextAr, 'heroCtaPrimaryTextEn', (v) => setSettings((p) => ({ ...p, heroCtaPrimaryTextEn: v })))}
                           className="w-full px-3 py-2 rounded-xl border border-surface-border"
                         />
                       </div>
@@ -2344,6 +2405,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           type="text"
                           value={settings.announcementTextAr}
                           onChange={(e) => setSettings({ ...settings, announcementTextAr: e.target.value })}
+                          onBlur={() => handleAutoTranslateArabicField('announcementTextAr', settings.announcementTextAr, 'announcementTextEn', (v) => setSettings((p) => ({ ...p, announcementTextEn: v })))}
                           className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic"
                         />
                       </div>
@@ -2465,6 +2527,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           rows={3}
                           value={settings.footerAboutAr || ''}
                           onChange={(e) => setSettings({ ...settings, footerAboutAr: e.target.value })}
+                          onBlur={() => handleAutoTranslateArabicField('footerAboutAr', settings.footerAboutAr, 'footerAboutEn', (v) => setSettings((p) => ({ ...p, footerAboutEn: v })))}
                           className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
                         />
                       </div>
@@ -2581,11 +2644,10 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'عنوان الدورة (English)' : 'Course Title (English)'} *
+                          {isRtl ? 'عنوان الدورة (English)' : 'Course Title (English)'}
                         </label>
                         <input
                           type="text"
-                          required
                           value={courseFormData.title}
                           onChange={(e) => {
                             const t = e.target.value;
@@ -2609,6 +2671,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           required
                           value={courseFormData.titleAr}
                           onChange={(e) => setCourseFormData({ ...courseFormData, titleAr: e.target.value })}
+                          onBlur={() => handleAutoTranslateArabicField('titleAr', courseFormData.titleAr, 'titleEn', (v) => setCourseFormData((p) => ({ ...p, title: v, slug: p.slug ? p.slug : v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') })))}
                           placeholder="مثال: دورة التأسيس المتقن في علوم التجويد"
                           className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic"
                         />
@@ -2616,11 +2679,10 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
                       <div className="sm:col-span-2">
                         <label className="font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'الرابط الدائم (Slug)' : 'URL Slug'} *
+                          {isRtl ? 'الرابط الدائم (Slug)' : 'URL Slug'}
                         </label>
                         <input
                           type="text"
-                          required
                           value={courseFormData.slug}
                           onChange={(e) => setCourseFormData({ ...courseFormData, slug: e.target.value })}
                           placeholder="e.g. masterclass-arabic-phonetics"
@@ -2726,6 +2788,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           type="text"
                           value={courseFormData.subtitleAr}
                           onChange={(e) => setCourseFormData({ ...courseFormData, subtitleAr: e.target.value })}
+                          onBlur={() => handleAutoTranslateArabicField('subtitleAr', courseFormData.subtitleAr, 'subtitleEn', (v) => setCourseFormData((p) => ({ ...p, subtitle: v })))}
                           placeholder="وصف مختصر وجذاب يظهر أسفل العنوان"
                           className="w-full px-3 py-2 rounded-xl border border-surface-border"
                         />
@@ -2739,6 +2802,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           rows={3}
                           value={courseFormData.descriptionAr}
                           onChange={(e) => setCourseFormData({ ...courseFormData, descriptionAr: e.target.value })}
+                          onBlur={() => handleAutoTranslateArabicField('descriptionAr', courseFormData.descriptionAr, 'descriptionEn', (v) => setCourseFormData((p) => ({ ...p, description: v })))}
                           placeholder="اكتب هنا أهداف الدورة وما سيتعلمه الطالب بالتفصيل..."
                           className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic"
                         />
@@ -3085,8 +3149,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           value={newLessonTitleAr}
                           onChange={(e) => {
                             setNewLessonTitleAr(e.target.value);
-                            setNewLessonTitle(e.target.value);
                           }}
+                          onBlur={() => handleAutoTranslateArabicField('titleAr', newLessonTitleAr, 'titleEn', (v) => setNewLessonTitle(v))}
                           placeholder={isRtl ? 'مثال: الدرس الثاني: مخارج اللسان' : 'Arabic title...'}
                           className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic"
                         />
@@ -3157,8 +3221,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         value={newChapterTitleAr}
                         onChange={(e) => {
                           setNewChapterTitleAr(e.target.value);
-                          setNewChapterTitle(e.target.value);
                         }}
+                        onBlur={() => handleAutoTranslateArabicField('titleAr', newChapterTitleAr, 'titleEn', (v) => setNewChapterTitle(v))}
                         placeholder={isRtl ? 'عنوان الفصل الجديد...' : 'New chapter title...'}
                         className="flex-1 px-3 py-2 text-xs rounded-xl border border-surface-border bg-white"
                       />
