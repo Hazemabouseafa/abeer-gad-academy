@@ -43,6 +43,9 @@ import {
   ArrowLeft,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
+  FolderPlus,
   Save,
   Sun,
   Moon,
@@ -63,6 +66,7 @@ import type {
   TestimonialItem,
   PillarCardItem,
   ServiceCardItem,
+  TrackItem,
 } from '@/lib/data-store';
 import { MediaInputWithChoice } from './MediaInputWithChoice';
 
@@ -225,6 +229,49 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     quoteAr: '',
     rating: 5,
   });
+
+  // Track & Curriculum Items Management States
+  const [showAddTrackModal, setShowAddTrackModal] = useState(false);
+  const [trackFormData, setTrackFormData] = useState({
+    id: '',
+    titleAr: '',
+    titleEn: '',
+    badgeAr: 'المسار الأكاديمي المعتمد',
+    badgeEn: 'Certified Academic Track',
+    subtitleAr: '',
+    subtitleEn: '',
+    categoryKey: 'general',
+    href: '',
+    levelAr: 'كافة المستويات',
+    levelEn: 'All Levels',
+    formatAr: 'جلسات تفاعلية أونلاين',
+    formatEn: 'Live Interactive Online Sessions',
+    durationAr: '3 أشهر',
+    durationEn: '3 Months',
+    sanadAr: 'شهادة إتمام معتمدة من الأكاديمية',
+    sanadEn: 'Certified Completion Certificate',
+  });
+  const [savingTrack, setSavingTrack] = useState(false);
+
+  // Track Items / Modules inside Track State
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [targetTrackIdForItem, setTargetTrackIdForItem] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [itemFormData, setItemFormData] = useState({
+    titleAr: '',
+    title: '',
+    levelAr: '',
+    level: '',
+    descAr: '',
+    desc: '',
+    durationAr: '',
+    duration: '',
+    lessonsCount: 12,
+    pointsTextAr: '',
+    pointsTextEn: '',
+  });
+  const [savingItem, setSavingItem] = useState(false);
+  const [expandedTracks, setExpandedTracks] = useState<Record<string, boolean>>({});
 
   // Admin Slots Calendar State
   const [adminCalendarMonth, setAdminCalendarMonth] = useState<Date>(new Date(2026, 9, 1));
@@ -1055,6 +1102,212 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       ...prev,
       services: (prev.services || []).map((s) => (s.id === serviceId ? { ...s, isActive: !s.isActive } : s)),
     }));
+  };
+
+  const toggleTrackExpanded = (trackId: string) => {
+    setExpandedTracks((prev) => ({
+      ...prev,
+      [trackId]: prev[trackId] === undefined ? true : !prev[trackId],
+    }));
+  };
+
+  const handleOpenAddTrack = () => {
+    setTrackFormData({
+      id: '',
+      titleAr: '',
+      titleEn: '',
+      badgeAr: 'المسار الأكاديمي المعتمد',
+      badgeEn: 'Certified Academic Track',
+      subtitleAr: '',
+      subtitleEn: '',
+      categoryKey: 'general',
+      href: '',
+      levelAr: 'كافة المستويات',
+      levelEn: 'All Levels',
+      formatAr: 'جلسات تفاعلية أونلاين',
+      formatEn: 'Live Interactive Online Sessions',
+      durationAr: '3 أشهر',
+      durationEn: '3 Months',
+      sanadAr: 'شهادة إتمام معتمدة من الأكاديمية',
+      sanadEn: 'Certified Completion Certificate',
+    });
+    setShowAddTrackModal(true);
+  };
+
+  const handleSaveTrackModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trackFormData.titleAr) {
+      alert(isRtl ? 'يرجى كتابة عنوان المسار بالعربية' : 'Please provide track title in Arabic');
+      return;
+    }
+    setSavingTrack(true);
+    try {
+      const res = await fetch('/api/admin/tracks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save-track',
+          trackData: trackFormData,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.tracks) {
+        setSettings((prev) => ({ ...prev, services: data.tracks }));
+        setShowAddTrackModal(false);
+        triggerToast(isRtl ? 'تم حفظ المسار التعليمي بنجاح' : 'Academic track saved successfully');
+      } else {
+        alert(data.error || 'Failed to save track');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error saving track');
+    } finally {
+      setSavingTrack(false);
+    }
+  };
+
+  const handleDeleteTrackAction = async (trackId: string) => {
+    if (!confirm(isRtl ? 'هل أنت متأكد من حذف هذا المسار التعليمي نهائياً؟' : 'Are you sure you want to delete this track permanently?')) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/tracks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete-track',
+          trackId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.tracks) {
+        setSettings((prev) => ({ ...prev, services: data.tracks }));
+        triggerToast(isRtl ? 'تم حذف المسار التعليمي بنجاح' : 'Track deleted successfully');
+      } else {
+        alert(data.error || 'Failed to delete track');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting track');
+    }
+  };
+
+  const handleOpenAddItemToTrack = (trackId: string) => {
+    setTargetTrackIdForItem(trackId);
+    setEditingItemId(null);
+    const targetTrack = (settings.services || []).find((s) => s.id === trackId);
+    const itemsCount = targetTrack?.items?.length || 0;
+    setItemFormData({
+      titleAr: '',
+      title: '',
+      levelAr: `المرحلة ${itemsCount + 1}`,
+      level: `Stage ${itemsCount + 1}`,
+      descAr: '',
+      desc: '',
+      durationAr: '4 أسابيع',
+      duration: '4 Weeks',
+      lessonsCount: 12,
+      pointsTextAr: '',
+      pointsTextEn: '',
+    });
+    setShowAddItemModal(true);
+  };
+
+  const handleOpenEditItemInTrack = (trackId: string, item: TrackItem) => {
+    setTargetTrackIdForItem(trackId);
+    setEditingItemId(item.id);
+    setItemFormData({
+      titleAr: item.titleAr || '',
+      title: item.title || '',
+      levelAr: item.levelAr || '',
+      level: item.level || '',
+      descAr: item.descAr || '',
+      desc: item.desc || '',
+      durationAr: item.durationAr || '',
+      duration: item.duration || '',
+      lessonsCount: item.lessonsCount || 12,
+      pointsTextAr: Array.isArray(item.pointsAr) ? item.pointsAr.join('\n') : '',
+      pointsTextEn: Array.isArray(item.points) ? item.points.join('\n') : '',
+    });
+    setShowAddItemModal(true);
+  };
+
+  const handleSaveTrackItemModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!targetTrackIdForItem || !itemFormData.titleAr) {
+      alert(isRtl ? 'يرجى كتابة عنوان المرحلة بالعربية' : 'Please provide item title in Arabic');
+      return;
+    }
+    setSavingItem(true);
+    try {
+      const pointsAr = itemFormData.pointsTextAr.split('\n').map((s) => s.trim()).filter((s) => s.length > 0);
+      const pointsEn = itemFormData.pointsTextEn.split('\n').map((s) => s.trim()).filter((s) => s.length > 0);
+
+      const itemPayload: Partial<TrackItem> = {
+        id: editingItemId || undefined,
+        titleAr: itemFormData.titleAr,
+        title: itemFormData.title,
+        levelAr: itemFormData.levelAr,
+        level: itemFormData.level,
+        descAr: itemFormData.descAr,
+        desc: itemFormData.desc,
+        durationAr: itemFormData.durationAr,
+        duration: itemFormData.duration,
+        lessonsCount: Number(itemFormData.lessonsCount) || 12,
+        pointsAr,
+        points: pointsEn.length > 0 ? pointsEn : undefined,
+      };
+
+      const res = await fetch('/api/admin/tracks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save-item',
+          trackId: targetTrackIdForItem,
+          itemData: itemPayload,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.tracks) {
+        setSettings((prev) => ({ ...prev, services: data.tracks }));
+        setShowAddItemModal(false);
+        triggerToast(isRtl ? 'تم حفظ المرحلة / الوحدة بنجاح' : 'Module / Stage saved successfully');
+      } else {
+        alert(data.error || 'Failed to save item');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error saving item');
+    } finally {
+      setSavingItem(false);
+    }
+  };
+
+  const handleDeleteTrackItemAction = async (trackId: string, itemId: string) => {
+    if (!confirm(isRtl ? 'هل أنت متأكد من حذف هذه المرحلة من داخل المسار؟' : 'Are you sure you want to delete this stage?')) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/tracks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete-item',
+          trackId,
+          itemId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.tracks) {
+        setSettings((prev) => ({ ...prev, services: data.tracks }));
+        triggerToast(isRtl ? 'تم حذف المرحلة بنجاح' : 'Stage deleted successfully');
+      } else {
+        alert(data.error || 'Failed to delete item');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting item');
+    }
   };
 
   const handleAddTestimonial = async (e: React.FormEvent) => {
@@ -1931,40 +2184,383 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                 </div>
               )}
 
-              {/* Sub-tab: SERVICES CARDS */}
+              {/* Sub-tab: SERVICES / TRACKS */}
               {cmsSubTab === 'SERVICES' && (
                 <div className="space-y-6">
+                  {/* Top Header Toolbar */}
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-surface-border shadow-card-subtle">
                     <div>
                       <h3 className="font-extrabold text-navy-950 text-sm">
-                        {isRtl ? 'إدارة وتخصيص كروت الخدمات المعروضة في الواجهة' : 'Homepage Services Cards Management'}
+                        {isRtl ? 'إدارة وتخصيص المسارات التعليمية ومحتوياتها' : 'Academic Tracks & Curriculum Management'}
                       </h3>
                       <p className="text-xs text-navy-500">
                         {isRtl
-                          ? 'يمكنك تفعيل أو إخفاء أي خدمة بنقرة زر، وتعديل العناوين والشارات والمحاور فوراً.'
-                          : 'Toggle card visibility on the homepage, or customize titles, badges, and features.'}
+                          ? 'إضافة وتعديل المسارات الأكاديمية والتحكم في المراحل والوحدات والدروس التفصيلية داخل كل مسار.'
+                          : 'Add, edit, or customize academic pathways and the detailed stages/modules inside each track.'}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="px-3 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-800 border border-brand-200">
                         {isRtl
-                          ? `${(settings.services || []).filter((s) => s.isActive !== false).length} خدمات مفعّلة في الواجهة`
-                          : `${(settings.services || []).filter((s) => s.isActive !== false).length} Active Services`}
+                          ? `${(settings.services || []).filter((s) => s.isActive !== false).length} مسارات مفعّلة في الواجهة`
+                          : `${(settings.services || []).filter((s) => s.isActive !== false).length} Active Tracks`}
                       </span>
+                      <button
+                        type="button"
+                        onClick={handleOpenAddTrack}
+                        className="px-4 py-2 rounded-xl bg-brand-700 text-white font-bold text-xs flex items-center gap-1.5 hover:bg-brand-800 transition-colors shadow-sm"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>{isRtl ? 'إضافة مسار تعليمي جديد' : 'Add New Track'}</span>
+                      </button>
                     </div>
                   </div>
 
-                  {/* Services Cards List */}
-                  <div className="grid grid-cols-1 gap-5">
+                  {/* INLINE ADD TRACK MODAL */}
+                  {showAddTrackModal && (
+                    <div id="add-track-modal-box" className="bg-white rounded-3xl border-2 border-brand-300 p-6 space-y-4 shadow-card-hover animate-in fade-in slide-in-from-top-4">
+                      <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="w-5 h-5 text-brand-700" />
+                          <div>
+                            <h3 className="font-extrabold text-navy-950 text-sm">
+                              {isRtl ? 'إضافة مسار تعليمي جديد للأكاديمية' : 'Create New Academic Track'}
+                            </h3>
+                            <p className="text-[11px] text-navy-500">
+                              {isRtl ? 'يظهر هذا المسار في الواجهة العامة ويمكن إضافة مراحل ووحدات مخصصة بداخله' : 'This track appears on the public site with custom modules & lessons'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddTrackModal(false)}
+                          className="px-2.5 py-1 rounded-xl border border-surface-border bg-surface-muted hover:bg-surface-elevated text-navy-600 text-xs font-bold flex items-center gap-1 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                          <span>{isRtl ? 'إلغاء' : 'Close'}</span>
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleSaveTrackModal} className="space-y-4 text-xs">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'عنوان المسار (بالعربية)' : 'Track Title (Arabic)'} *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={trackFormData.titleAr}
+                              onChange={(e) => setTrackFormData({ ...trackFormData, titleAr: e.target.value })}
+                              placeholder="مثال: مسار دبلوم القراءات والتجويد المتخصص"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'عنوان المسار (English)' : 'Track Title (English)'}
+                            </label>
+                            <input
+                              type="text"
+                              value={trackFormData.titleEn}
+                              onChange={(e) => setTrackFormData({ ...trackFormData, titleEn: e.target.value })}
+                              placeholder="Specialized Qira'at & Advanced Tajweed Diploma"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'الشارة الترويجية (بالعربية)' : 'Badge (Arabic)'}
+                            </label>
+                            <input
+                              type="text"
+                              value={trackFormData.badgeAr}
+                              onChange={(e) => setTrackFormData({ ...trackFormData, badgeAr: e.target.value })}
+                              placeholder="المسار الأكاديمي المعتمد"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'تصنيف المسار' : 'Category'}
+                            </label>
+                            <select
+                              value={trackFormData.categoryKey}
+                              onChange={(e) => setTrackFormData({ ...trackFormData, categoryKey: e.target.value })}
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs"
+                            >
+                              <option value="quran">{isRtl ? 'علوم القرآن الكريم والحفظ' : 'Quran & Hifz'}</option>
+                              <option value="arabic">{isRtl ? 'اللغة العربية وفنونها' : 'Arabic Language'}</option>
+                              <option value="specialized">{isRtl ? 'العربية لأغراض خاصة' : 'Specialized Arabic'}</option>
+                              <option value="general">{isRtl ? 'عام / مسار أكاديمي' : 'General Academic Track'}</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'رابط المسار (Route / URL)' : 'Route / URL Slug'}
+                            </label>
+                            <input
+                              type="text"
+                              value={trackFormData.href}
+                              onChange={(e) => setTrackFormData({ ...trackFormData, href: e.target.value })}
+                              placeholder="/tracks/qiraat-diploma"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs font-mono"
+                            />
+                            <span className="text-[10px] text-navy-400 mt-0.5 block">
+                              {isRtl ? 'مثال: /tracks/your-slug أو اتركه فارغاً وسيتم إنشاؤه تلقائياً' : 'e.g. /tracks/your-slug (auto-generated if empty)'}
+                            </span>
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'المدة التقديرية (بالعربية)' : 'Estimated Duration (Arabic)'}
+                            </label>
+                            <input
+                              type="text"
+                              value={trackFormData.durationAr}
+                              onChange={(e) => setTrackFormData({ ...trackFormData, durationAr: e.target.value })}
+                              placeholder="3 أشهر (مرن)"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'نمط الدراسة (بالعربية)' : 'Study Format (Arabic)'}
+                            </label>
+                            <input
+                              type="text"
+                              value={trackFormData.formatAr}
+                              onChange={(e) => setTrackFormData({ ...trackFormData, formatAr: e.target.value })}
+                              placeholder="جلسات فردية مباشرة أونلاين"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'الإجازة والسند (بالعربية)' : 'Sanad / Certification (Arabic)'}
+                            </label>
+                            <input
+                              type="text"
+                              value={trackFormData.sanadAr}
+                              onChange={(e) => setTrackFormData({ ...trackFormData, sanadAr: e.target.value })}
+                              placeholder="مؤهل لنيل الإجازة بالسند المتصل"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'نبذة ومقدمة المسار (بالعربية)' : 'Track Description / Subtitle (Arabic)'}
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={trackFormData.subtitleAr}
+                              onChange={(e) => setTrackFormData({ ...trackFormData, subtitleAr: e.target.value })}
+                              placeholder="منهج تعليمي مكثف يهدف إلى تأهيل الدارسين..."
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-surface-borderSubtle flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowAddTrackModal(false)}
+                            className="px-4 py-2 rounded-xl border border-surface-border bg-white text-navy-700 font-bold hover:bg-surface-muted"
+                          >
+                            {isRtl ? 'إلغاء' : 'Cancel'}
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={savingTrack}
+                            className="px-5 py-2 rounded-xl bg-brand-700 text-white font-bold hover:bg-brand-800 shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            <Check className="w-4 h-4 text-gold-300" />
+                            <span>{savingTrack ? (isRtl ? 'جاري الحفظ...' : 'Saving...') : (isRtl ? 'حفظ ونشر المسار' : 'Save Track')}</span>
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* INLINE ADD/EDIT TRACK ITEM (STAGE/MODULE) MODAL */}
+                  {showAddItemModal && (
+                    <div id="add-track-item-modal-box" className="bg-white rounded-3xl border-2 border-emerald-400 p-6 space-y-4 shadow-card-hover animate-in fade-in slide-in-from-top-4">
+                      <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+                        <div className="flex items-center gap-2">
+                          <Layers className="w-5 h-5 text-emerald-700" />
+                          <div>
+                            <h3 className="font-extrabold text-navy-950 text-sm">
+                              {editingItemId
+                                ? (isRtl ? 'تعديل المرحلة / الوحدة داخل المسار' : 'Edit Stage / Module inside Track')
+                                : (isRtl ? 'إضافة مرحلة / وحدة جديدة داخل المسار' : 'Add New Stage / Module inside Track')}
+                            </h3>
+                            <p className="text-[11px] text-navy-500">
+                              {isRtl
+                                ? 'المراحل والوحدات والدروس المنهجية التي يدرسها الطالب داخل هذا المسار التعليمي'
+                                : 'Define the curriculum steps, lessons count, duration, and learning objectives.'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddItemModal(false)}
+                          className="px-2.5 py-1 rounded-xl border border-surface-border bg-surface-muted hover:bg-surface-elevated text-navy-600 text-xs font-bold flex items-center gap-1 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                          <span>{isRtl ? 'إلغاء' : 'Close'}</span>
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleSaveTrackItemModal} className="space-y-4 text-xs">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'عنوان المرحلة / الوحدة (بالعربية)' : 'Stage Title (Arabic)'} *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={itemFormData.titleAr}
+                              onChange={(e) => setItemFormData({ ...itemFormData, titleAr: e.target.value })}
+                              placeholder="مثال: تأسيس مخارج الحروف وأحكام النون"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'عنوان المرحلة (English)' : 'Stage Title (English)'}
+                            </label>
+                            <input
+                              type="text"
+                              value={itemFormData.title}
+                              onChange={(e) => setItemFormData({ ...itemFormData, title: e.target.value })}
+                              placeholder="Phonetic Foundations & Nun Rules"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'اسم المرحلة / الترتيب (بالعربية)' : 'Level / Stage Badge (Arabic)'}
+                            </label>
+                            <input
+                              type="text"
+                              value={itemFormData.levelAr}
+                              onChange={(e) => setItemFormData({ ...itemFormData, levelAr: e.target.value })}
+                              placeholder="المرحلة الأولى"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'اسم المرحلة (English)' : 'Level / Stage Badge (English)'}
+                            </label>
+                            <input
+                              type="text"
+                              value={itemFormData.level}
+                              onChange={(e) => setItemFormData({ ...itemFormData, level: e.target.value })}
+                              placeholder="Stage 1"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'المدة التقديرية للمرحلة (بالعربية)' : 'Stage Duration (Arabic)'}
+                            </label>
+                            <input
+                              type="text"
+                              value={itemFormData.durationAr}
+                              onChange={(e) => setItemFormData({ ...itemFormData, durationAr: e.target.value })}
+                              placeholder="4 أسابيع"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'عدد الدروس في هذه المرحلة' : 'Lessons Count'}
+                            </label>
+                            <input
+                              type="number"
+                              min={1}
+                              value={itemFormData.lessonsCount}
+                              onChange={(e) => setItemFormData({ ...itemFormData, lessonsCount: Number(e.target.value) })}
+                              placeholder="12"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'شرح ووصف أهداف هذه المرحلة (بالعربية)' : 'Stage Description (Arabic)'}
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={itemFormData.descAr}
+                              onChange={(e) => setItemFormData({ ...itemFormData, descAr: e.target.value })}
+                              placeholder="تركز هذه المرحلة على الضبط العملي للمخارج والصفات الصوتية والتطبيق المباشر..."
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'المحاور والنقاط التعليمية المستهدفة (سطر لكل نقطة بالعربية)' : 'Key Topics & Learning Objectives (One per line)'}
+                            </label>
+                            <textarea
+                              rows={3}
+                              value={itemFormData.pointsTextAr}
+                              onChange={(e) => setItemFormData({ ...itemFormData, pointsTextAr: e.target.value })}
+                              placeholder="المخرج الصوتي لكل حرف&#10;أحكام النون الساكنة والتنوين&#10;تدريبات تلاوة عملية"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-surface-borderSubtle flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowAddItemModal(false)}
+                            className="px-4 py-2 rounded-xl border border-surface-border bg-white text-navy-700 font-bold hover:bg-surface-muted"
+                          >
+                            {isRtl ? 'إلغاء' : 'Cancel'}
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={savingItem}
+                            className="px-5 py-2 rounded-xl bg-emerald-700 text-white font-bold hover:bg-emerald-800 shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            <Check className="w-4 h-4 text-emerald-200" />
+                            <span>{savingItem ? (isRtl ? 'جاري الحفظ...' : 'Saving...') : (isRtl ? 'حفظ المرحلة في المسار' : 'Save Stage')}</span>
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* Services / Tracks Cards List */}
+                  <div className="grid grid-cols-1 gap-6">
                     {(settings.services || []).map((service) => {
                       const isEditing = editingServiceId === service.id;
                       const isActive = service.isActive !== false;
+                      const isExpanded = expandedTracks[service.id] !== false; // Default is open
+                      const items = service.items || [];
 
                       return (
                         <div
                           key={service.id}
                           className={`academy-card p-5 sm:p-6 bg-white border-2 rounded-3xl transition-all shadow-card-subtle ${
-                            isActive ? 'border-surface-border hover:border-brand-300' : 'border-gray-200 opacity-60 bg-gray-50/60'
+                            isActive ? 'border-surface-border hover:border-brand-300' : 'border-gray-200 opacity-70 bg-gray-50/60'
                           }`}
                         >
                           {/* Card Header Toolbar */}
@@ -1985,6 +2581,9 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                   <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-amber-100 text-amber-900 border border-amber-200">
                                     {isRtl ? service.badgeAr : service.badgeEn}
                                   </span>
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-brand-50 text-brand-700 border border-brand-200">
+                                    {items.length} {isRtl ? 'مراحل مضافة' : 'Stages'}
+                                  </span>
                                 </div>
                                 <span className="text-[11px] text-navy-500 font-medium">
                                   {isRtl
@@ -1994,8 +2593,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                               </div>
                             </div>
 
-                            {/* Actions: Toggle Active + Edit */}
-                            <div className="flex items-center gap-2">
+                            {/* Actions: Toggle Active + Edit + Delete */}
+                            <div className="flex flex-wrap items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => handleToggleServiceActive(service.id)}
@@ -2006,8 +2605,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                 }`}
                                 title={
                                   isActive
-                                    ? isRtl ? 'إخفاء الخدمة من الواجهة' : 'Hide from homepage'
-                                    : isRtl ? 'إظهار الخدمة في الواجهة' : 'Show on homepage'
+                                    ? isRtl ? 'إخفاء المسار من الواجهة' : 'Hide track from homepage'
+                                    : isRtl ? 'إظهار المسار في الواجهة' : 'Show track on homepage'
                                 }
                               >
                                 {isActive ? (
@@ -2015,7 +2614,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                 ) : (
                                   <EyeOff className="w-3.5 h-3.5 text-gray-400" />
                                 )}
-                                <span>{isActive ? (isRtl ? 'ظاهر في الواجهة' : 'Visible') : isRtl ? 'مخفي' : 'Hidden'}</span>
+                                <span>{isActive ? (isRtl ? 'ظاهر' : 'Visible') : isRtl ? 'مخفي' : 'Hidden'}</span>
                               </button>
 
                               <button
@@ -2026,19 +2625,28 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                 <Edit3 className="w-3.5 h-3.5 text-navy-600" />
                                 <span>
                                   {isEditing
-                                    ? isRtl ? 'إغلاق المحرر' : 'Close Editor'
-                                    : isRtl ? 'تعديل التفاصيل' : 'Edit Details'}
+                                    ? isRtl ? 'إغلاق المحرر' : 'Close'
+                                    : isRtl ? 'تعديل المسار' : 'Edit Track'}
                                 </span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTrackAction(service.id)}
+                                className="p-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                                title={isRtl ? 'حذف هذا المسار التعليمي نهائياً' : 'Delete track permanently'}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
 
-                          {/* Inline Editor Form (shown when editing) */}
+                          {/* Inline Editor Form for Track Details (shown when editing) */}
                           {isEditing ? (
                             <div className="mt-5 pt-4 border-t border-surface-borderSubtle space-y-4 animate-in fade-in duration-200">
                               <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-surface-borderSubtle">
                                 <span className="text-xs font-bold text-navy-800">
-                                  {isRtl ? 'تعديل وتخصيص بيانات الخدمة' : 'Service Customization'}
+                                  {isRtl ? 'تعديل وتخصيص بيانات المسار التعليمي' : 'Track Details Customization'}
                                 </span>
 
                                 <button
@@ -2046,13 +2654,13 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                   onClick={() => handleTranslateService(service.id)}
                                   disabled={translatingId === `service-${service.id}`}
                                   className="px-3.5 py-1.5 rounded-xl bg-gold-50 border border-gold-300 hover:bg-gold-100 text-navy-900 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-60"
-                                  title={isRtl ? 'ترجمة بيانات هذه الخدمة للإنجليزية بضغطة زر' : 'Translate this service to English'}
+                                  title={isRtl ? 'ترجمة بيانات هذا المسار للإنجليزية بضغطة زر' : 'Translate this track to English'}
                                 >
                                   <Sparkles className={`w-3.5 h-3.5 text-gold-600 ${translatingId === `service-${service.id}` ? 'animate-spin' : ''}`} />
                                   <span>
                                     {translatingId === `service-${service.id}`
                                       ? (isRtl ? 'جاري الترجمة...' : 'Translating...')
-                                      : (isRtl ? 'ترجمة بيانات الخدمة للإنجليزية ✨' : 'Translate Service ✨')}
+                                      : (isRtl ? 'ترجمة المسار للإنجليزية ✨' : 'Translate Track ✨')}
                                   </span>
                                 </button>
                               </div>
@@ -2060,7 +2668,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                 <div>
                                   <label className="font-bold text-navy-700 block mb-1">
-                                    {isRtl ? 'عنوان الخدمة (بالعربية)' : 'Service Title (Arabic)'} *
+                                    {isRtl ? 'عنوان المسار (بالعربية)' : 'Track Title (Arabic)'} *
                                   </label>
                                   <input
                                     type="text"
@@ -2072,7 +2680,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
                                 <div>
                                   <label className="font-bold text-navy-700 block mb-1">
-                                    {isRtl ? 'عنوان الخدمة (English)' : 'Service Title (English)'} *
+                                    {isRtl ? 'عنوان المسار (English)' : 'Track Title (English)'} *
                                   </label>
                                   <input
                                     type="text"
@@ -2106,9 +2714,57 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                   />
                                 </div>
 
+                                <div>
+                                  <label className="font-bold text-navy-700 block mb-1">
+                                    {isRtl ? 'رابط المسار في الموقع (Route URL)' : 'Route URL (Href)'}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={service.href || ''}
+                                    onChange={(e) => handleUpdateServiceField(service.id, 'href', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs font-mono"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="font-bold text-navy-700 block mb-1">
+                                    {isRtl ? 'المدة التقديرية (بالعربية)' : 'Duration (Arabic)'}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={service.durationAr || ''}
+                                    onChange={(e) => handleUpdateServiceField(service.id, 'durationAr', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="font-bold text-navy-700 block mb-1">
+                                    {isRtl ? 'نمط الدراسة (بالعربية)' : 'Format (Arabic)'}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={service.formatAr || ''}
+                                    onChange={(e) => handleUpdateServiceField(service.id, 'formatAr', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="font-bold text-navy-700 block mb-1">
+                                    {isRtl ? 'معلومات الإجازة والسند (بالعربية)' : 'Sanad Info (Arabic)'}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={service.sanadAr || ''}
+                                    onChange={(e) => handleUpdateServiceField(service.id, 'sanadAr', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
+                                  />
+                                </div>
+
                                 <div className="md:col-span-2">
                                   <label className="font-bold text-navy-700 block mb-1">
-                                    {isRtl ? 'الوصف التوضيحي للخدمة (بالعربية)' : 'Subtitle / Description (Arabic)'}
+                                    {isRtl ? 'الوصف التوضيحي للمسار (بالعربية)' : 'Subtitle / Description (Arabic)'}
                                   </label>
                                   <textarea
                                     rows={2}
@@ -2120,7 +2776,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
                                 <div className="md:col-span-2">
                                   <label className="font-bold text-navy-700 block mb-1">
-                                    {isRtl ? 'الوصف التوضيحي للخدمة (English)' : 'Subtitle / Description (English)'}
+                                    {isRtl ? 'الوصف التوضيحي للمسار (English)' : 'Subtitle / Description (English)'}
                                   </label>
                                   <textarea
                                     rows={2}
@@ -2130,38 +2786,14 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                   />
                                 </div>
 
-                                <div>
-                                  <label className="font-bold text-navy-700 block mb-1">
-                                    {isRtl ? 'المستوى المستهدف (بالعربية)' : 'Target Level (Arabic)'}
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={service.levelAr || ''}
-                                    onChange={(e) => handleUpdateServiceField(service.id, 'levelAr', e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
-                                  />
-                                </div>
-
-                                <div>
-                                  <label className="font-bold text-navy-700 block mb-1">
-                                    {isRtl ? 'نمط الدراسة (بالعربية)' : 'Study Format (Arabic)'}
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={service.formatAr || ''}
-                                    onChange={(e) => handleUpdateServiceField(service.id, 'formatAr', e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
-                                  />
-                                </div>
-
                                 <div className="md:col-span-2">
                                   <label className="font-bold text-navy-700 block mb-1">
                                     {isRtl
-                                      ? 'محاور وخطة المنهج في الكارد (سطر لكل نقطة)'
-                                      : 'Features & Curriculum Points (One per line)'}
+                                      ? 'محاور وخطة المنهج السريعة في الكارد (سطر لكل نقطة)'
+                                      : 'Quick Highlights in Card (One per line)'}
                                   </label>
                                   <textarea
-                                    rows={4}
+                                    rows={3}
                                     value={(service.featuresAr || []).join('\n')}
                                     onChange={(e) =>
                                       handleUpdateServiceField(
@@ -2182,7 +2814,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                   onClick={() => setEditingServiceId(null)}
                                   className="px-4 py-1.5 rounded-xl border border-surface-border bg-white text-navy-700 text-xs font-bold hover:bg-surface-muted"
                                 >
-                                  {isRtl ? 'تم' : 'Done'}
+                                  {isRtl ? 'إغلاق' : 'Close'}
                                 </button>
                                 <button
                                   type="button"
@@ -2193,7 +2825,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                   className="px-5 py-1.5 rounded-xl bg-brand-700 text-white text-xs font-bold hover:bg-brand-800 flex items-center gap-1.5 shadow-sm"
                                 >
                                   <Check className="w-3.5 h-3.5 text-gold-300" />
-                                  <span>{isRtl ? 'حفظ وتحديث الواجهة فوراً' : 'Save & Publish Live'}</span>
+                                  <span>{isRtl ? 'حفظ وتحديث المسار فوراً' : 'Save Track Changes'}</span>
                                 </button>
                               </div>
                             </div>
@@ -2202,6 +2834,140 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                               {isRtl ? service.subtitleAr : service.subtitleEn}
                             </div>
                           )}
+
+                          {/* ============================================================== */}
+                          {/* STAGES & MODULES INSIDE TRACK SECTION (الحاجات اللي داخل المسار) */}
+                          {/* ============================================================== */}
+                          <div className="mt-5 pt-4 border-t border-surface-borderSubtle space-y-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-muted/70 p-3.5 rounded-2xl border border-surface-borderSubtle">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-brand-50 text-brand-700 border border-brand-200 flex items-center justify-center">
+                                  <Layers className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <span className="font-extrabold text-xs text-navy-950 block">
+                                    {isRtl ? 'المراحل والوحدات المنهجية داخل هذا المسار' : 'Curriculum Stages & Modules Inside Track'}
+                                  </span>
+                                  <span className="text-[10px] text-navy-500">
+                                    {items.length > 0
+                                      ? (isRtl ? `يحتوي على ${items.length} مراحل دراسية تفصيلية` : `${items.length} detailed learning stages`)
+                                      : (isRtl ? 'لا توجد مراحل مضافة بعد داخل هذا المسار' : 'No stages added yet')}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenAddItemToTrack(service.id)}
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>{isRtl ? 'إضافة مرحلة / وحدة داخل المسار' : 'Add Stage / Module'}</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => toggleTrackExpanded(service.id)}
+                                  className="p-1.5 rounded-xl border border-surface-border bg-white text-navy-600 hover:bg-surface-muted transition-colors"
+                                  title={isExpanded ? (isRtl ? 'طي المراحل' : 'Collapse') : (isRtl ? 'عرض المراحل' : 'Expand')}
+                                >
+                                  {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* List of items inside this track */}
+                            {isExpanded && (
+                              <div className="space-y-2.5 pt-1 animate-in fade-in duration-150">
+                                {items.length > 0 ? (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {items.map((item, itIdx) => {
+                                      const itemPoints = isRtl ? item.pointsAr : item.points;
+                                      return (
+                                        <div
+                                          key={item.id || itIdx}
+                                          className="p-3.5 rounded-2xl bg-white border border-surface-border hover:border-brand-200 shadow-sm flex flex-col justify-between gap-3 group transition-all"
+                                        >
+                                          <div className="space-y-1.5">
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                                                {isRtl ? item.levelAr : item.level}
+                                              </span>
+                                              {(item.duration || item.lessonsCount) && (
+                                                <span className="text-[10px] text-navy-500 font-medium">
+                                                  {item.duration && (isRtl ? item.durationAr : item.duration)}
+                                                  {item.lessonsCount ? ` • ${item.lessonsCount} ${isRtl ? 'درساً' : 'Lessons'}` : ''}
+                                                </span>
+                                              )}
+                                            </div>
+
+                                            <h4 className="font-bold text-xs text-navy-900 group-hover:text-brand-800 transition-colors">
+                                              {isRtl ? item.titleAr : item.title}
+                                            </h4>
+
+                                            {(item.descAr || item.desc) && (
+                                              <p className="text-[11px] text-navy-600 line-clamp-2 leading-relaxed">
+                                                {isRtl ? item.descAr : item.desc}
+                                              </p>
+                                            )}
+
+                                            {Array.isArray(itemPoints) && itemPoints.length > 0 && (
+                                              <div className="flex flex-wrap gap-1 pt-1">
+                                                {itemPoints.map((pt, pIdx) => (
+                                                  <span
+                                                    key={pIdx}
+                                                    className="text-[9px] px-1.5 py-0.5 rounded bg-surface-muted border border-surface-borderSubtle text-navy-600 font-medium"
+                                                  >
+                                                    ✓ {pt}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {/* Item Action Buttons */}
+                                          <div className="pt-2 border-t border-surface-borderSubtle flex items-center justify-end gap-1.5">
+                                            <button
+                                              type="button"
+                                              onClick={() => handleOpenEditItemInTrack(service.id, item)}
+                                              className="px-2.5 py-1 rounded-lg border border-surface-border bg-surface-muted hover:bg-surface-elevated text-navy-700 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                                            >
+                                              <Edit3 className="w-3 h-3 text-navy-500" />
+                                              <span>{isRtl ? 'تعديل المرحلة' : 'Edit Stage'}</span>
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteTrackItemAction(service.id, item.id)}
+                                              className="p-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] transition-colors"
+                                              title={isRtl ? 'حذف هذه المرحلة' : 'Delete Stage'}
+                                            >
+                                              <Trash2 className="w-3 h-3" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div className="p-4 rounded-xl bg-surface-muted/40 border border-dashed border-surface-border text-center">
+                                    <p className="text-xs text-navy-500 mb-2">
+                                      {isRtl ? 'لا توجد مراحل مضافة بعد داخل هذا المسار' : 'No curriculum stages defined inside this track.'}
+                                    </p>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAddItemToTrack(service.id)}
+                                      className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition-colors"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                      <span>{isRtl ? 'إضافة أول مرحلة داخل المسار الآن' : 'Add First Stage'}</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}

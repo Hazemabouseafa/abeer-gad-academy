@@ -5,6 +5,7 @@ import {
   DEFAULT_SLOT_PRICING,
   calculateSlotPrice,
 } from './slot-pricing';
+import { INITIAL_SERVICES } from './initial-tracks';
 
 export interface LessonData {
   id: string;
@@ -130,9 +131,24 @@ export interface PillarCardItem {
   featuresAr: string[];
 }
 
+export interface TrackItem {
+  id: string;
+  title: string;
+  titleAr: string;
+  desc: string;
+  descAr: string;
+  level?: string;
+  levelAr?: string;
+  duration?: string;
+  durationAr?: string;
+  lessonsCount?: number;
+  points?: string[];
+  pointsAr?: string[];
+}
+
 export interface ServiceCardItem {
   id: string;
-  categoryKey: 'all' | 'quran' | 'arabic' | 'private';
+  categoryKey: 'all' | 'quran' | 'arabic' | 'private' | 'specialized' | 'tajweed' | 'general';
   href: string;
   badgeAr: string;
   badgeEn: string;
@@ -151,6 +167,7 @@ export interface ServiceCardItem {
   featuresAr: string[];
   featuresEn: string[];
   isActive: boolean;
+  items?: TrackItem[];
 }
 
 export interface SiteSettingsData {
@@ -224,200 +241,7 @@ const INITIAL_TRANSACTIONS: TransactionData[] = [];
 
 const INITIAL_STUDENTS: StudentData[] = [];
 
-const INITIAL_SERVICES: ServiceCardItem[] = [
-  {
-    id: 'arabic-mastery',
-    categoryKey: 'arabic',
-    href: '/learn-arabic',
-    badgeAr: 'تأسيس وفصاحة ونحو',
-    badgeEn: 'Phonetics to Fluency',
-    titleAr: 'تعليم وإتقان اللغة العربية الشامل',
-    titleEn: 'Comprehensive Arabic Language Mastery',
-    subtitleAr: 'منهج متكامل يبدأ من مخارج الحروف الصوتية والكتابة، ويتدرج إلى إتقان النحو والصرف والمحادثة الفصيحة.',
-    subtitleEn: 'Structured pathway covering Arabic phonetics, script, morphology (Sarf), syntax (Nahw), and fluent conversation.',
-    levelAr: 'كافة المستويات (مبتدئ إلى متقدم)',
-    levelEn: 'All Levels (Beginner to Advanced)',
-    formatAr: 'جلسات تفاعلية مباشرة أونلاين',
-    formatEn: 'Live Interactive Online Sessions',
-    durationAr: 'مستويات مرنة (40 دقيقة للجلسة)',
-    durationEn: 'Flexible Modules (40m / session)',
-    sanadAr: 'شهادة إتمام معتمدة من الأكاديمية',
-    sanadEn: 'Certified Completion Certificate',
-    featuresAr: [
-      'تأسيس مخارج الحروف والأصوات اللغوية بدقة',
-      'شرح مبسط لقواعد النحو (الجملة الاسمية والفعلية والإعراب)',
-      'علم الصرف ونظام الجذور الثلاثية واشتقاق الكلمات',
-      'تدريب عملي مكثف على المحادثة والفصاحة والتعبير',
-    ],
-    featuresEn: [
-      'Accurate phonetics and letter articulation training',
-      'Intuitive Nahw (syntax, parsing, and nominal/verbal sentences)',
-      'Sarf morphology: Tri-literal roots and derivation',
-      'Immersive conversation drills and expressive fluency',
-    ],
-    isActive: true,
-  },
-  {
-    id: 'quran-reading-tajweed',
-    categoryKey: 'quran',
-    href: '/quran-reading',
-    badgeAr: 'تصحيح التلاوة والنورانية',
-    badgeEn: 'Recitation & Makhaarij',
-    titleAr: 'قراءة القرآن الكريم وإتقان التجويد',
-    titleEn: 'Quran Reading & Tajweed Articulation',
-    subtitleAr: 'تأسيس رصين بمنهجية القاعدة النورانية، وضبط مخارج الحروف وصفاتها، وتصحيح التلاوة المباشرة من المصحف.',
-    subtitleEn: 'Solid foundational study via Noorani Qaida, phonetic articulation points (Makhaarij), and direct Mus\'haf recitation.',
-    levelAr: 'للمبتدئين ومن يرغب في تصحيح التلاوة',
-    levelEn: 'Beginners & Recitation Correction',
-    formatAr: 'تلقي صوتي ومرئي مباشر مع المعلمة',
-    formatEn: 'Direct Oral Recitation & Correction',
-    durationAr: 'جلسات تدريبية متدرجة (45 دقيقة)',
-    durationEn: 'Progressive Sessions (45m each)',
-    sanadAr: 'إشراف مسند بالأسانيد القرآنية المتصلة',
-    sanadEn: 'Supervised under Authentic Sanad Standards',
-    featuresAr: [
-      'دراسة القاعدة النورانية بالتفصيل حرفاً بحرف',
-      'ضبط مخارج الحروف الحلقية واللهوية واللسانية والشفوية',
-      'تطبيق عملي لأحكام النون والميم الساكنتين والتنوين والمدود',
-      'تصحيح التلاوة آية بآية من المصحف الشريف برواية حفص',
-    ],
-    featuresEn: [
-      'In-depth letter-by-letter Noorani Qaida instruction',
-      'Physical articulation accuracy (Throat, Palate, Tongue, Lips)',
-      'Practical ahkām: Noon & Meem Sakinah, Madd, and Ghunnah timings',
-      'Direct verse-by-verse recitation correction from the Mus\'haf',
-    ],
-    isActive: true,
-  },
-  {
-    id: 'quran-memorization-hifz',
-    categoryKey: 'quran',
-    href: '/quran-memorization',
-    badgeAr: 'حفظ راسخ وتكرار متباعد',
-    badgeEn: 'Cognitive Hifz System',
-    titleAr: 'منظومة حفظ القرآن الكريم وتثبيته',
-    titleEn: 'Quran Memorization & Retention Methodology',
-    subtitleAr: 'نظام حفظ منهجي يعتمد على خطط فردية مرنة، والتكرار المتباعد، وضبط المتشابهات اللفظية، والمتابعة الدورية المستمرة.',
-    subtitleEn: 'Individualized Hifz curricula leveraging spaced repetition algorithms, Mutashabihat mastery, and consistent revision cycles.',
-    levelAr: 'متاح للراغبين في حفظ أجزاء محددة أو المصحف كاملاً',
-    levelEn: 'Partial or Full Holy Qur\'an',
-    formatAr: 'تسميع مباشر وجداول متابعة أسبوعية دقيقة',
-    formatEn: 'Live Oral Recitation & Tracking Reports',
-    durationAr: 'خطط مخصصة (يومية أو أسبوعية)',
-    durationEn: 'Customized Daily / Weekly Pacing',
-    sanadAr: 'مسار تأهيل رسمي لختمة الإجازة بالسند',
-    sanadEn: 'Direct Pathway to Continuous Sanad Ijazah',
-    featuresAr: [
-      'خطة حفظ مرنة تراعي وقت الطالب وقدرته الذهنية واستيعابه',
-      'تقنية التكرار المتباعد لضمان عدم نسيان المحفوظ القديم',
-      'معالجة المتشابهات اللفظية وضبط الآيات المتقاربة بالروابط الذهنية',
-      'اختبارات إتقان دورية مع كشف علامات وملاحظات المعلمة',
-    ],
-    featuresEn: [
-      'Tailored memory roadmap adapted to student schedule and capacity',
-      'Spaced repetition methodology safeguarding previously memorized Juz',
-      'Systematic Mutashabihat analysis preventing common verbal mix-ups',
-      'Scheduled milestone exams with detailed instructor evaluations',
-    ],
-    isActive: true,
-  },
-  {
-    id: 'private-vip-lessons',
-    categoryKey: 'private',
-    href: '/private-lessons',
-    badgeAr: 'إشراف فردي مباشر VIP',
-    badgeEn: 'Direct 1-on-1 Mentorship',
-    titleAr: 'الدروس الفردية الخاصة المباشرة (1-on-1)',
-    titleEn: 'Private 1-on-1 Dedicated Lessons',
-    subtitleAr: 'جلسات خصوصية مباشرة (45 دقيقة) مخصصة لطالب واحد مع الأستاذة عبير جاد لتركيز كامل، ومرونة مطلقة في الأوقات.',
-    subtitleEn: 'Private 45-minute live sessions dedicated 100% to a single student with Ustadha Abeer Gad for focused mastery and custom scheduling.',
-    levelAr: 'مخصص حسب هدف الطالب واحتياجه',
-    levelEn: 'Customized to the Student\'s Exact Goal',
-    formatAr: 'جلسة فيديو مرئية فردية خاصة (Zoom / Google Meet)',
-    formatEn: 'Private 1-on-1 Live Video Room',
-    durationAr: '45 دقيقة مكثفة من التركيز الكامل',
-    durationEn: '45 Minutes of Dedicated 1-on-1 Focus',
-    sanadAr: 'إشراف مباشر وحصري من الأستاذة عبير جاد',
-    sanadEn: 'Direct Tuition by Ustadha Abeer Gad',
-    featuresAr: [
-      'تركيز فردي 100% بدون أي تشتيت من طلاب آخرين',
-      'تخصيص المحتوى بالكامل: تصحيح تلاوة، إتقان نحو، أو مراجعة حفظ',
-      'مرونة عالية في اختيار المواعيد المناسبة لجدولك وفارق التوقيت',
-      'تقرير تقييم فوري وملاحظات مخصصة تسلم للطالب عقب كل جلسة',
-    ],
-    featuresEn: [
-      '100% individual dedication without classroom distractions',
-      'Bespoke agenda: Tajweed audit, Arabic grammar, or Hifz testing',
-      'Complete timezone flexibility across UK, Europe, Americas, and Gulf',
-      'Personalized feedback report and action steps delivered after each class',
-    ],
-    isActive: true,
-  },
-  {
-    id: 'tajweed-sanad',
-    categoryKey: 'quran',
-    href: '/tajweed',
-    badgeAr: 'إجازة بالسند المتصل',
-    badgeEn: 'Scholarly Sanad Pathway',
-    titleAr: 'علم التجويد التخصصي ومسار الإجازة بالسند',
-    titleEn: 'Advanced Tajweed Science & Sanad Ijazah',
-    subtitleAr: 'دراسة متعمقة للمنظومات التجويدية (تحفة الأطفال والمقدمة الجزرية) مع الإقراء المتصل بالإسناد الشريف.',
-    subtitleEn: 'Rigorous study of classical tajweed poems (Tuhfah & Jazariyyah) with continuous chain of transmission (Sanad).',
-    levelAr: 'متوسط إلى متقدم ولمعلمي القرآن الكريم',
-    levelEn: 'Intermediate to Advanced & Teachers',
-    formatAr: 'دراسة نظرية تطبيقية مع إقراء متصل',
-    formatEn: 'Theoretical Matn Study & Sanad Audits',
-    durationAr: 'مسار تأهيلي متكامل للختمة',
-    durationEn: 'Comprehensive Recitation Cycle',
-    sanadAr: 'إسناد متصل إلى النبي ﷺ بحفص والقراءات',
-    sanadEn: 'Continuous Sanad to the Prophet ﷺ',
-    featuresAr: [
-      'حفظ وشرح متني تحفة الأطفال والجزرية بيتاً بيتاً',
-      'أزمنة الحركات والغنن والمدود بالميزان الصوتي الدقيق',
-      'دراسة باب المخارج والصفات وأحكام الوقف والابتداء والراءات',
-      'التأهيل للختمة الكاملة ونيل الإجازة بالسند المتصل',
-    ],
-    featuresEn: [
-      'Memorization & commentary on Tuhfat al-Atfal and Al-Jazariyyah',
-      'Precise acoustic measurement of vowel durations and Ghunnah',
-      'Exhaustive analysis of articulation points, attributes, and Waqf/Ibtida',
-      'Qualification for complete Mus\'haf recital towards certified Sanad',
-    ],
-    isActive: true,
-  },
-  {
-    id: 'specialized-arabic',
-    categoryKey: 'arabic',
-    href: '/specialized-arabic',
-    badgeAr: 'لغة العلوم الشرعية والأكاديمية',
-    badgeEn: 'Islamic & Academic Arabic',
-    titleAr: 'العربية لأغراض خاصة والعلوم الشرعية',
-    titleEn: 'Specialized Arabic for Islamic & Academic Fields',
-    subtitleAr: 'مسار مخصص لطلبة العلوم الشرعية والباحثين والدبلوماسيين لفهم أمهات الكتب والمصطلحات الفقهية والتراثية.',
-    subtitleEn: 'Tailored curriculum for scholars, researchers, and professionals engaging with classical Islamic jurisprudence and academic texts.',
-    levelAr: 'متوسط إلى متقدم وللباحثين',
-    levelEn: 'Intermediate to Advanced Scholars',
-    formatAr: 'دراسة نصوص وتحليل أصولي ولغوي',
-    formatEn: 'Textual Analysis & Applied Hermeneutics',
-    durationAr: 'وحدات دراسية تخصصية',
-    durationEn: 'Specialized Modular Syllabi',
-    sanadAr: 'منهجية أكاديمية أزهرية رصينة',
-    sanadEn: 'Rigorous Scholarly Academic Foundation',
-    featuresAr: [
-      'قراءة نصوص من كتب التفسير والفقه والعقيدة وأصول الفقه',
-      'تفكيك عبارات الفقهاء والمصطلحات التراثية بدقة',
-      'البلاغة القرآنية: أسرار البيان والمعاني والبديع',
-      'تطوير مهارات الكتابة الأكاديمية وصياغة البحوث باللغة العربية',
-    ],
-    featuresEn: [
-      'Analysis of primary classical Tafseer, Fiqh, and Usul texts',
-      'Decoding intricate juristic terminology and classical idioms',
-      'Quranic Balaghah: Rhetorical eloquence, semantics, and aesthetics',
-      'Academic writing and research formulation in classical Arabic',
-    ],
-    isActive: true,
-  },
-];
+// INITIAL_SERVICES is imported from ./initial-tracks with full track items
 
 const INITIAL_SETTINGS: SiteSettingsData = {
   announcementEnabled: true,
@@ -587,6 +411,17 @@ function ensureStoreExists(): AcademyStore {
     };
     if (!parsed.settings.services || parsed.settings.services.length === 0) {
       parsed.settings.services = INITIAL_SERVICES;
+    } else {
+      // Ensure all services have their items populated if missing
+      parsed.settings.services = parsed.settings.services.map((svc) => {
+        if (!Array.isArray(svc.items) || svc.items.length === 0) {
+          const match = INITIAL_SERVICES.find((init) => init.id === svc.id || init.href === svc.href);
+          if (match?.items && match.items.length > 0) {
+            return { ...svc, items: match.items };
+          }
+        }
+        return svc;
+      });
     }
     return parsed;
   } catch (err) {
@@ -1046,4 +881,170 @@ export function updateSiteSettings(settings: Partial<SiteSettingsData>): SiteSet
   };
   saveStore(store);
   return store.settings;
+}
+
+// ==============================================================================
+// Tracks & Track Items CRUD (إدارة المسارات والمراحل والوحدات التعليمية)
+// ==============================================================================
+
+export function getTracks(): ServiceCardItem[] {
+  const store = ensureStoreExists();
+  return store.settings?.services || INITIAL_SERVICES;
+}
+
+export function getTrackById(id: string): ServiceCardItem | undefined {
+  const tracks = getTracks();
+  return tracks.find((t) => t.id === id);
+}
+
+export function getTrackByHref(href: string): ServiceCardItem | undefined {
+  const tracks = getTracks();
+  const cleanHref = href.startsWith('/') ? href : `/${href}`;
+  return tracks.find((t) => t.href === cleanHref || t.href.replace(/^\//, '') === cleanHref.replace(/^\//, ''));
+}
+
+export function saveTrack(data: Partial<ServiceCardItem>): ServiceCardItem {
+  const store = ensureStoreExists();
+  const services = [...(store.settings?.services || INITIAL_SERVICES)];
+
+  if (data.id) {
+    const idx = services.findIndex((s) => s.id === data.id);
+    if (idx >= 0) {
+      services[idx] = {
+        ...services[idx],
+        ...data,
+        items: data.items !== undefined ? data.items : services[idx].items || [],
+      };
+      store.settings.services = services;
+      store.settings.updatedAt = new Date().toISOString();
+      saveStore(store);
+      return services[idx];
+    }
+  }
+
+  // Create new track
+  const newId = data.id || `track-${Date.now()}`;
+  let routePath = data.href || `/tracks/${newId}`;
+  if (!routePath.startsWith('/')) routePath = `/${routePath}`;
+
+  const newTrack: ServiceCardItem = {
+    id: newId,
+    categoryKey: data.categoryKey || 'general',
+    href: routePath,
+    titleAr: data.titleAr || 'مسار تعليمي جديد',
+    titleEn: data.titleEn || data.titleAr || 'New Academic Track',
+    badgeAr: data.badgeAr || 'مسار معتمد',
+    badgeEn: data.badgeEn || 'Certified Track',
+    subtitleAr: data.subtitleAr || '',
+    subtitleEn: data.subtitleEn || '',
+    levelAr: data.levelAr || 'كافة المستويات',
+    levelEn: data.levelEn || 'All Levels',
+    formatAr: data.formatAr || 'جلسات تفاعلية مباشرة أونلاين',
+    formatEn: data.formatEn || 'Live Interactive Online Sessions',
+    durationAr: data.durationAr || 'مرن',
+    durationEn: data.durationEn || 'Flexible',
+    sanadAr: data.sanadAr || 'شهادة إتمام معتمدة من الأكاديمية',
+    sanadEn: data.sanadEn || 'Certified Completion Certificate',
+    featuresAr: data.featuresAr || (data.items ? data.items.map((i) => i.titleAr) : []),
+    featuresEn: data.featuresEn || (data.items ? data.items.map((i) => i.title) : []),
+    isActive: data.isActive !== undefined ? data.isActive : true,
+    items: data.items || [],
+  };
+
+  services.unshift(newTrack);
+  store.settings.services = services;
+  store.settings.updatedAt = new Date().toISOString();
+  saveStore(store);
+  return newTrack;
+}
+
+export function deleteTrack(id: string): boolean {
+  const store = ensureStoreExists();
+  const services = store.settings?.services || [...INITIAL_SERVICES];
+  const initialLen = services.length;
+  store.settings.services = services.filter((s) => s.id !== id);
+  if (store.settings.services.length !== initialLen) {
+    store.settings.updatedAt = new Date().toISOString();
+    saveStore(store);
+    return true;
+  }
+  return false;
+}
+
+export function saveTrackItem(trackId: string, itemData: Partial<TrackItem>): TrackItem | null {
+  const store = ensureStoreExists();
+  const services = [...(store.settings?.services || INITIAL_SERVICES)];
+  const trackIdx = services.findIndex((s) => s.id === trackId);
+  if (trackIdx < 0) return null;
+
+  const track = { ...services[trackIdx] };
+  const items = Array.isArray(track.items) ? [...track.items] : [];
+
+  if (itemData.id) {
+    const itemIdx = items.findIndex((it) => it.id === itemData.id);
+    if (itemIdx >= 0) {
+      items[itemIdx] = {
+        ...items[itemIdx],
+        ...itemData,
+      } as TrackItem;
+      track.items = items;
+      // Sync quick features highlights
+      track.featuresAr = items.map((i) => i.titleAr).slice(0, 4);
+      track.featuresEn = items.map((i) => i.title).slice(0, 4);
+      services[trackIdx] = track;
+      store.settings.services = services;
+      store.settings.updatedAt = new Date().toISOString();
+      saveStore(store);
+      return items[itemIdx];
+    }
+  }
+
+  // Add new item to track
+  const newItem: TrackItem = {
+    id: itemData.id || `mod-${Date.now()}`,
+    title: itemData.title || itemData.titleAr || 'New Module',
+    titleAr: itemData.titleAr || 'وحدة تعليمية جديدة',
+    desc: itemData.desc || '',
+    descAr: itemData.descAr || '',
+    level: itemData.level || `Stage ${items.length + 1}`,
+    levelAr: itemData.levelAr || `المرحلة ${items.length + 1}`,
+    duration: itemData.duration || '4 Weeks',
+    durationAr: itemData.durationAr || '4 أسابيع',
+    lessonsCount: itemData.lessonsCount || 10,
+    points: itemData.points || [],
+    pointsAr: itemData.pointsAr || [],
+  };
+
+  items.push(newItem);
+  track.items = items;
+  track.featuresAr = items.map((i) => i.titleAr).slice(0, 4);
+  track.featuresEn = items.map((i) => i.title).slice(0, 4);
+  services[trackIdx] = track;
+  store.settings.services = services;
+  store.settings.updatedAt = new Date().toISOString();
+  saveStore(store);
+  return newItem;
+}
+
+export function deleteTrackItem(trackId: string, itemId: string): boolean {
+  const store = ensureStoreExists();
+  const services = [...(store.settings?.services || INITIAL_SERVICES)];
+  const trackIdx = services.findIndex((s) => s.id === trackId);
+  if (trackIdx < 0) return false;
+
+  const track = { ...services[trackIdx] };
+  if (!Array.isArray(track.items)) return false;
+
+  const initialLen = track.items.length;
+  track.items = track.items.filter((it) => it.id !== itemId);
+  if (track.items.length !== initialLen) {
+    track.featuresAr = track.items.map((i) => i.titleAr).slice(0, 4);
+    track.featuresEn = track.items.map((i) => i.title).slice(0, 4);
+    services[trackIdx] = track;
+    store.settings.services = services;
+    store.settings.updatedAt = new Date().toISOString();
+    saveStore(store);
+    return true;
+  }
+  return false;
 }

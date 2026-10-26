@@ -2,6 +2,9 @@ import { setRequestLocale } from 'next-intl/server';
 import { locales } from '@/i18n/routing';
 import { Bookmark, Sparkles, Award, ShieldCheck, CheckCircle2, ArrowRight, ArrowLeft, Calendar } from 'lucide-react';
 import { Link } from '@/i18n/routing';
+import { getTrackByHref } from '@/lib/data-store';
+
+export const dynamic = 'force-dynamic';
 
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
@@ -16,8 +19,10 @@ export default async function QuranMemorizationPage({ params: { lang } }: PagePr
   const isRtl = lang === 'ar';
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
-  const hifzPillars = [
+  const track = getTrackByHref('/quran-memorization');
+  const hifzPillars = track?.items && track.items.length > 0 ? track.items : [
     {
+      id: 'hifz-pillar-1',
       title: 'The 3-Tier Retention System',
       titleAr: 'المنظومة الثلاثية لتثبيت الحفظ',
       desc: 'Mastering the daily triad: Al-Jadeed (New Memorization), Al-Sabqi (Recent Surahs), and Al-Manzil (Continuous Long-term Revision).',
@@ -26,6 +31,7 @@ export default async function QuranMemorizationPage({ params: { lang } }: PagePr
       pointsAr: ['المحفوظ الجديد اليومي (صفحة إلى صفحتين)', 'مراجعة أسبوعية تراكمية', 'ختمة مراجعة شهرية مستمرة'],
     },
     {
+      id: 'hifz-pillar-2',
       title: 'Mutashabihat (Similar Verses) Mastery',
       titleAr: 'تثبيت الآيات المتشابهات وضبط الروابط',
       desc: 'Eliminating hesitation in similar Quranic verses across different Surahs using classical mnemonic and context analysis.',
@@ -34,6 +40,7 @@ export default async function QuranMemorizationPage({ params: { lang } }: PagePr
       pointsAr: ['جداول المقارنة بين السور', 'الروابط المعنوية والسياقية', 'اختبارات تسميع شفهية دقيقة'],
     },
     {
+      id: 'hifz-pillar-3',
       title: 'Preparation for Ijazah with Continuous Sanad',
       titleAr: 'التأهيل للإجازة بالسند المتصل إلى رسول الله ﷺ',
       desc: 'Graduating to full recitation from memory in front of Ustadha Abeer Gad according to the recitations of Hafs and Shu\'bah.',
@@ -43,21 +50,24 @@ export default async function QuranMemorizationPage({ params: { lang } }: PagePr
     },
   ];
 
+  const pageTitle = track ? (isRtl ? track.titleAr : track.titleEn) : (isRtl ? 'حفظ القرآن الكريم وتثبيت المتشابهات' : 'Holy Quran Memorization (Hifz)');
+  const pageSubtitle = track?.subtitleAr ? (isRtl ? track.subtitleAr : track.subtitleEn) : (isRtl
+    ? 'نظام حفظ منهجي يجمع بين الطرق النبوية الأصيلة ومنظومات التكرار المعرفي بإشراف الأستاذة عبير جاد.'
+    : 'A systematic Hifz methodology combining classical prophetic memorization traditions with modern cognitive retention systems.');
+
   return (
     <div className="py-12 lg:py-16 bg-[#FDFBF7] min-h-screen">
       <div className="container mx-auto px-4 sm:px-6">
         <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
           <span className="badge-gold">
             <Bookmark className="w-3.5 h-3.5" />
-            <span>{isRtl ? 'منظومة الحفظ المتقن' : 'Hifz Precision System'}</span>
+            <span>{track?.badgeAr ? (isRtl ? track.badgeAr : track.badgeEn) : (isRtl ? 'منظومة الحفظ المتقن' : 'Hifz Precision System')}</span>
           </span>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-navy-950 tracking-tight">
-            {isRtl ? 'حفظ القرآن الكريم وتثبيت المتشابهات' : 'Holy Quran Memorization (Hifz)'}
+            {pageTitle}
           </h1>
           <p className="text-base text-navy-600 leading-relaxed">
-            {isRtl
-              ? 'نظام حفظ منهجي يجمع بين الطرق النبوية الأصيلة ومنظومات التكرار المعرفي بإشراف الأستاذة عبير جاد.'
-              : 'A systematic Hifz methodology combining classical prophetic memorization traditions with modern cognitive retention systems.'}
+            {pageSubtitle}
           </p>
         </div>
 
@@ -67,13 +77,18 @@ export default async function QuranMemorizationPage({ params: { lang } }: PagePr
             const pointsList = isRtl ? item.pointsAr : item.points;
             return (
               <div
-                key={idx}
+                key={item.id || idx}
                 className="academy-card p-6 sm:p-7 flex flex-col justify-between hover:border-gold-300 group"
               >
                 <div className="space-y-4">
                   <div className="w-10 h-10 rounded-xl bg-gold-50 text-gold-700 flex items-center justify-center border border-gold-200">
                     <Bookmark className="w-5 h-5 text-gold-700" />
                   </div>
+                  {item.level && (
+                    <span className="badge-gold text-xs">
+                      {isRtl ? item.levelAr : item.level}
+                    </span>
+                  )}
                   <h3 className="text-lg font-bold text-navy-900 group-hover:text-brand-800 transition-colors">
                     {isRtl ? item.titleAr : item.title}
                   </h3>
@@ -81,25 +96,27 @@ export default async function QuranMemorizationPage({ params: { lang } }: PagePr
                     {isRtl ? item.descAr : item.desc}
                   </p>
 
-                  <div className="pt-3 border-t border-surface-borderSubtle space-y-2">
-                    {pointsList.map((pt, pIdx) => (
-                      <div
-                        key={pIdx}
-                        className="flex items-center gap-2 text-xs text-navy-700 font-medium"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                        <span>{pt}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {Array.isArray(pointsList) && pointsList.length > 0 && (
+                    <div className="pt-3 border-t border-surface-borderSubtle space-y-2">
+                      {pointsList.map((pt, pIdx) => (
+                        <div
+                          key={pIdx}
+                          className="flex items-center gap-2 text-xs text-navy-700 font-medium"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                          <span>{pt}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-6 mt-4 border-t border-surface-borderSubtle">
                   <Link
-                    href="/courses/quran-memorization-hifz-methodology"
+                    href="/courses"
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-900"
                   >
-                    <span>{isRtl ? 'عرض منهج الدورة' : 'View Course Curriculum'}</span>
+                    <span>{isRtl ? 'عرض منهج المسار' : 'View Track Details'}</span>
                     <ArrowIcon className="w-3.5 h-3.5" />
                   </Link>
                 </div>
