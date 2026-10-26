@@ -1,17 +1,17 @@
 // PayPal REST API Integration Utility for ABEER GAD Academy
 // Handles sandbox & production environments with clean verification
 
-const PAYPAL_API_BASE =
-  process.env.PAYPAL_MODE === 'live'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
+const getPayPalApiBase = () => {
+  const mode = (process.env.PAYPAL_MODE || 'live').replace(/['"]/g, '').trim().toLowerCase();
+  return mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+};
 
 /**
  * Generate PayPal OAuth2 Client Access Token
  */
 export async function getPayPalAccessToken(): Promise<string | null> {
-  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  const clientId = (process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '').replace(/['"]/g, '').trim();
+  const clientSecret = (process.env.PAYPAL_CLIENT_SECRET || '').replace(/['"]/g, '').trim();
 
   if (!clientId || !clientSecret || clientId === 'test_client_id') {
     return null; // Signals sandbox simulation mode
@@ -19,7 +19,8 @@ export async function getPayPalAccessToken(): Promise<string | null> {
 
   try {
     const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    const apiBase = getPayPalApiBase();
+    const response = await fetch(`${apiBase}/v1/oauth2/token`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${auth}`,
@@ -68,7 +69,8 @@ export async function createPayPalOrder({
     };
   }
 
-  const response = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+  const apiBase = getPayPalApiBase();
+  const response = await fetch(`${apiBase}/v2/checkout/orders`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -118,8 +120,9 @@ export async function capturePayPalOrder(orderId: string) {
     };
   }
 
+  const apiBase = getPayPalApiBase();
   const response = await fetch(
-    `${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`,
+    `${apiBase}/v2/checkout/orders/${orderId}/capture`,
     {
       method: 'POST',
       headers: {
