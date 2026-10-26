@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { getResources } from '@/lib/data-store';
 
+export const dynamic = 'force-dynamic';
+
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
 }

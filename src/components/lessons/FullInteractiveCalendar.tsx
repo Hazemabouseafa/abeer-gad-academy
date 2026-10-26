@@ -19,6 +19,7 @@ import {
 import { formatCurrency } from '@/lib/utils';
 import { calculateSlotPrice } from '@/lib/slot-pricing';
 import type { SlotData } from '@/lib/data-store';
+import { PayPalCheckoutButton } from '@/components/checkout/PayPalCheckoutButton';
 
 interface FullInteractiveCalendarProps {
   currentLocale: string;
@@ -33,12 +34,15 @@ export function FullInteractiveCalendar({
 
   // Current view date (year & month)
   const [currentMonthDate, setCurrentMonthDate] = useState(() => {
-    return new Date(2026, 9, 1); // October 2026 (matching dataset)
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
   });
 
   const [slots, setSlots] = useState<SlotData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<string>('2026-10-25');
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
   const [selectedSlot, setSelectedSlot] = useState<SlotData | null>(null);
 
   // Form states
@@ -604,6 +608,31 @@ export function FullInteractiveCalendar({
                 </>
               )}
             </button>
+
+            {selectedSlot && (
+              <div className="pt-2">
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-surface-borderSubtle"></div>
+                  <span className="flex-shrink mx-2 text-[10px] text-navy-400 font-bold uppercase">
+                    {isRtl ? 'أو الدفع والتأكيد المباشر عبر PayPal' : 'Or pay securely with PayPal'}
+                  </span>
+                  <div className="flex-grow border-t border-surface-borderSubtle"></div>
+                </div>
+                <PayPalCheckoutButton
+                  itemId={selectedSlot.id}
+                  itemType="PRIVATE_LESSON"
+                  itemTitle={`${isRtl ? 'جلسة فردية خاصة' : 'Private Lesson'} (${selectedSlot.date} - ${selectedSlot.time})`}
+                  amount={selectedSlot.price}
+                  currency={selectedSlot.currency || 'USD'}
+                  studentName={studentName}
+                  studentEmail={studentEmail}
+                  studentPhone={studentPhone}
+                  onSuccess={() => {
+                    handleBookingSubmit(new Event('submit') as any);
+                  }}
+                />
+              </div>
+            )}
           </form>
 
           <div className="pt-2 text-center border-t border-surface-borderSubtle">

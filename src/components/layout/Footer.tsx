@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/routing';
 import {
@@ -8,9 +9,14 @@ import {
   ShieldCheck,
   HeartHandshake,
   Mail,
+  Phone,
+  MessageCircle,
   GraduationCap,
   Sparkles,
+  Send,
+  Video,
 } from 'lucide-react';
+import type { SiteSettingsData } from '@/lib/data-store';
 
 interface FooterProps {
   currentLocale: string;
@@ -21,6 +27,18 @@ export function Footer({ currentLocale }: FooterProps) {
   const tBrand = useTranslations('brand');
   const tNav = useTranslations('nav');
   const pathname = usePathname();
+  const isRtl = currentLocale === 'ar';
+
+  const [settings, setSettings] = useState<Partial<SiteSettingsData>>({});
+
+  useEffect(() => {
+    fetch('/api/admin/settings')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.settings) setSettings(d.settings);
+      })
+      .catch(() => {});
+  }, []);
 
   // Hide Footer completely on Admin pages
   if (pathname && (pathname.includes('/admin') || pathname.endsWith('/admin'))) {
@@ -28,6 +46,12 @@ export function Footer({ currentLocale }: FooterProps) {
   }
 
   const currentYear = new Date().getFullYear();
+  const contactEmail = settings.contactEmail || 'contact@abeergadacademy.com';
+  const contactPhone = settings.contactPhone || '+20 100 000 0000';
+  const whatsappNum = settings.whatsappNumber ? settings.whatsappNumber.replace(/[^0-9]/g, '') : '201000000000';
+  const aboutText = isRtl
+    ? (settings.footerAboutAr || tFooter('about'))
+    : (settings.footerAboutEn || tFooter('about'));
 
   return (
     <footer className="bg-[#FAF7F0] border-t border-surface-border text-navy-800 transition-colors">
@@ -102,7 +126,7 @@ export function Footer({ currentLocale }: FooterProps) {
               </div>
             </div>
             <p className="text-xs sm:text-sm text-navy-600 leading-relaxed">
-              {tFooter('about')}
+              {aboutText}
             </p>
             <div className="pt-1">
               <span className="badge-gold text-xs">
@@ -204,11 +228,64 @@ export function Footer({ currentLocale }: FooterProps) {
                 ? 'تواصل معنا لحجز الاستشارات الخاصة بالبرامج أو تقييم مستوى الحفظ.'
                 : 'Direct inquiries for personalized recitation evaluation and custom study curricula.'}
             </p>
-            <div className="p-3 bg-white rounded-xl border border-surface-border shadow-card-subtle flex items-center gap-3">
-              <Mail className="w-4 h-4 text-brand-700 shrink-0" />
-              <span className="text-xs font-semibold text-navy-800 select-all">
-                contact@abeergadacademy.com
-              </span>
+            <div className="space-y-2">
+              <a
+                href={`mailto:${contactEmail}`}
+                className="p-3 bg-white hover:bg-surface-muted rounded-xl border border-surface-border shadow-card-subtle flex items-center gap-3 transition-colors text-xs font-semibold text-navy-800"
+              >
+                <Mail className="w-4 h-4 text-brand-700 shrink-0" />
+                <span className="truncate">{contactEmail}</span>
+              </a>
+
+              {contactPhone && (
+                <a
+                  href={`tel:${contactPhone.replace(/\s+/g, '')}`}
+                  className="p-3 bg-white hover:bg-surface-muted rounded-xl border border-surface-border shadow-card-subtle flex items-center gap-3 transition-colors text-xs font-semibold text-navy-800 font-mono"
+                >
+                  <Phone className="w-4 h-4 text-brand-700 shrink-0" />
+                  <span>{contactPhone}</span>
+                </a>
+              )}
+
+              {/* Social Channels */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <a
+                  href={`https://wa.me/${whatsappNum}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                  title="WhatsApp"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{isRtl ? 'واتساب' : 'WhatsApp'}</span>
+                </a>
+
+                {settings.telegramLink && (
+                  <a
+                    href={settings.telegramLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                    title="Telegram"
+                  >
+                    <Send className="w-3.5 h-3.5 text-sky-600" />
+                    <span>{isRtl ? 'تيليجرام' : 'Telegram'}</span>
+                  </a>
+                )}
+
+                {settings.youtubeLink && (
+                  <a
+                    href={settings.youtubeLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                    title="YouTube"
+                  >
+                    <Video className="w-3.5 h-3.5 text-red-600" />
+                    <span>{isRtl ? 'يوتيوب' : 'YouTube'}</span>
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>

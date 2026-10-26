@@ -3,6 +3,8 @@ import { locales } from '@/i18n/routing';
 import { FeaturedCourses } from '@/components/home/FeaturedCourses';
 import { Sparkles, BookOpen, Layers, Award } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
 }

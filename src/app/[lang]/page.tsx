@@ -5,6 +5,8 @@ import { ServicesCardsSection } from '@/components/home/ServicesCardsSection';
 import { TestimonialsSection } from '@/components/home/TestimonialsSection';
 import { QuickConsultationBanner } from '@/components/home/QuickConsultationBanner';
 
+export const dynamic = 'force-dynamic';
+
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
 }

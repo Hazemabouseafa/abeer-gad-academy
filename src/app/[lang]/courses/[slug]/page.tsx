@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getCourses, getCourseBySlug } from '@/lib/data-store';
 import { CourseCurriculumPlayer } from '@/components/courses/CourseCurriculumPlayer';
 
+export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 export function generateStaticParams() {

@@ -219,6 +219,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   });
 
   // Testimonial Form
+  const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
   const [testimonialFormData, setTestimonialFormData] = useState<Partial<TestimonialItem>>({
     name: '',
     location: '',
@@ -1310,6 +1311,15 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     }
   };
 
+  const handleOpenEditTestimonial = (t: TestimonialItem) => {
+    setEditingTestimonialId(t.id);
+    setTestimonialFormData(t);
+    setShowTestimonialModal(true);
+    setTimeout(() => {
+      document.getElementById('testimonial-inline-editor')?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+  };
+
   const handleAddTestimonial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testimonialFormData.name || !testimonialFormData.quoteAr) return;
@@ -1329,22 +1339,42 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       if (trans.focusEn) focusEn = trans.focusEn as string;
     }
 
-    const newTest: TestimonialItem = {
-      id: `test-${Date.now()}`,
-      name: testimonialFormData.name,
-      location: testimonialFormData.location || 'Cairo, Egypt',
-      flag: testimonialFormData.flag || '🌍',
-      focus: focusEn || 'Quran Memorization & Tajweed',
-      focusAr: testimonialFormData.focusAr || 'حفظ القرآن والتجويد',
-      quote: quoteEn || testimonialFormData.quoteAr,
-      quoteAr: testimonialFormData.quoteAr,
-      rating: testimonialFormData.rating || 5,
-    };
+    let updatedTestimonials: TestimonialItem[];
+    if (editingTestimonialId) {
+      updatedTestimonials = (settings.testimonials || []).map((t) =>
+        t.id === editingTestimonialId
+          ? {
+              ...t,
+              name: testimonialFormData.name!,
+              location: testimonialFormData.location || 'Cairo, Egypt',
+              flag: testimonialFormData.flag || '🌍',
+              focus: focusEn || t.focus || 'Quran Memorization & Tajweed',
+              focusAr: testimonialFormData.focusAr || t.focusAr || 'حفظ القرآن والتجويد',
+              quote: quoteEn || testimonialFormData.quoteAr!,
+              quoteAr: testimonialFormData.quoteAr!,
+              rating: testimonialFormData.rating || 5,
+            }
+          : t
+      );
+    } else {
+      const newTest: TestimonialItem = {
+        id: `test-${Date.now()}`,
+        name: testimonialFormData.name,
+        location: testimonialFormData.location || 'Cairo, Egypt',
+        flag: testimonialFormData.flag || '🌍',
+        focus: focusEn || 'Quran Memorization & Tajweed',
+        focusAr: testimonialFormData.focusAr || 'حفظ القرآن والتجويد',
+        quote: quoteEn || testimonialFormData.quoteAr,
+        quoteAr: testimonialFormData.quoteAr,
+        rating: testimonialFormData.rating || 5,
+      };
+      updatedTestimonials = [newTest, ...(settings.testimonials || [])];
+    }
 
-    const updatedTestimonials = [newTest, ...(settings.testimonials || [])];
     const newSettings = { ...settings, testimonials: updatedTestimonials };
     setSettings(newSettings);
     setShowTestimonialModal(false);
+    setEditingTestimonialId(null);
 
     try {
       await fetch('/api/admin/settings', {
@@ -1352,7 +1382,11 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newSettings),
       });
-      triggerToast(isRtl ? 'تمت إضافة رأي الطالب وسيظهر في الواجهة' : 'Testimonial added to homepage!');
+      triggerToast(
+        editingTestimonialId
+          ? (isRtl ? 'تم تحديث رأي الطالب بنجاح' : 'Testimonial updated successfully')
+          : (isRtl ? 'تمت إضافة رأي الطالب وسيظهر في الواجهة' : 'Testimonial added to homepage!')
+      );
     } catch (err) {
       console.error(err);
     }
@@ -3020,7 +3054,9 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           <Quote className="w-5 h-5 text-brand-700" />
                           <div>
                             <h3 className="font-extrabold text-navy-950 text-sm">
-                              {isRtl ? 'إضافة رأي طالب جديد في الصفحة الرئيسية' : 'Add Student Testimonial'}
+                              {editingTestimonialId
+                                ? (isRtl ? 'تعديل رأي الطالب في الصفحة الرئيسية' : 'Edit Student Testimonial')
+                                : (isRtl ? 'إضافة رأي طالب جديد في الصفحة الرئيسية' : 'Add Student Testimonial')}
                             </h3>
                             <p className="text-[11px] text-navy-500">
                               {isRtl ? 'نموذج مباشر على نفس الصفحة — ستظهر الشهادة فور الحفظ' : 'Direct inline form — updates homepage reviews immediately'}
@@ -3029,7 +3065,10 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         </div>
                         <button
                           type="button"
-                          onClick={() => setShowTestimonialModal(false)}
+                          onClick={() => {
+                            setShowTestimonialModal(false);
+                            setEditingTestimonialId(null);
+                          }}
                           className="px-2.5 py-1 rounded-xl border border-surface-border bg-surface-muted hover:bg-surface-elevated text-navy-600 text-xs font-bold flex items-center gap-1 transition-colors"
                         >
                           <X className="w-4 h-4" />
@@ -3124,7 +3163,10 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         <div className="pt-3 border-t border-surface-borderSubtle flex justify-end gap-2">
                           <button
                             type="button"
-                            onClick={() => setShowTestimonialModal(false)}
+                            onClick={() => {
+                              setShowTestimonialModal(false);
+                              setEditingTestimonialId(null);
+                            }}
                             className="px-3 py-1.5 rounded-xl border border-surface-border bg-white text-navy-700 font-bold hover:bg-surface-muted"
                           >
                             {isRtl ? 'إلغاء' : 'Cancel'}
@@ -3133,7 +3175,9 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                             type="submit"
                             className="px-4 py-1.5 rounded-xl bg-brand-700 text-white font-bold hover:bg-brand-800 shadow-sm"
                           >
-                            {isRtl ? 'إضافة الشهادة للواجهة' : 'Add Testimonial'}
+                            {editingTestimonialId
+                              ? (isRtl ? 'حفظ تعديلات الشهادة' : 'Save Changes')
+                              : (isRtl ? 'إضافة الشهادة للواجهة' : 'Add Testimonial')}
                           </button>
                         </div>
                       </form>
@@ -3153,14 +3197,24 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                 <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                               ))}
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteTestimonial(t.id)}
-                              className="text-red-500 hover:text-red-700 p-1"
-                              title={isRtl ? 'حذف الشهادة' : 'Delete'}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditTestimonial(t)}
+                                className="text-navy-500 hover:text-brand-700 p-1 rounded-lg hover:bg-surface-muted transition-colors"
+                                title={isRtl ? 'تعديل الشهادة' : 'Edit'}
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTestimonial(t.id)}
+                                className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                                title={isRtl ? 'حذف الشهادة' : 'Delete'}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
 
                           <p className="text-xs text-navy-700 italic leading-relaxed">

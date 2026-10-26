@@ -639,49 +639,89 @@ export function ServicesCardsSection({ currentLocale }: ServicesCardsSectionProp
           if (rawWa) setWhatsappNum(rawWa);
         }
 
-        if (Array.isArray(data.settings?.services)) {
-          const overridesMap = new Map<string, ServiceCardItem>(
-            data.settings.services.map((s: ServiceCardItem) => [s.id, s])
-          );
-          const updated = SERVICES_DATA.filter((svc) => {
-            const override = overridesMap.get(svc.id);
-            if (override && override.isActive === false) return false;
-            return true;
-          }).map((svc) => {
-            const override = overridesMap.get(svc.id);
-            if (!override) return svc;
-            return {
-              ...svc,
-              badge: {
-                ar: override.badgeAr || svc.badge.ar,
-                en: override.badgeEn || svc.badge.en,
-              },
-              title: {
-                ar: override.titleAr || svc.title.ar,
-                en: override.titleEn || svc.title.en,
-              },
-              subtitle: {
-                ar: override.subtitleAr || svc.subtitle.ar,
-                en: override.subtitleEn || svc.subtitle.en,
-              },
-              meta: {
-                ...svc.meta,
-                level: {
-                  ar: override.levelAr || svc.meta.level.ar,
-                  en: override.levelEn || svc.meta.level.en,
+        if (Array.isArray(data.settings?.services) && data.settings.services.length > 0) {
+          const defaultColorScheme = {
+            badgeBg: 'bg-brand-50 text-brand-800 border-brand-200',
+            iconBg: 'bg-brand-50 text-brand-700 border-brand-200',
+            iconColor: 'text-brand-700',
+            borderColor: 'hover:border-brand-300',
+            accentBtn: 'bg-brand-700 hover:bg-brand-800 text-white',
+          };
+
+          const mappedList: ServiceItem[] = (data.settings.services as ServiceCardItem[])
+            .filter((svc) => svc.isActive !== false)
+            .map((svc) => {
+              const matching = SERVICES_DATA.find((s) => s.id === svc.id || s.href === svc.href);
+
+              const detailedSyllabus = (svc.items && svc.items.length > 0)
+                ? {
+                    ar: svc.items.map((it) => ({
+                      title: `${it.levelAr ? it.levelAr + ': ' : ''}${it.titleAr || it.title}`,
+                      points: Array.isArray(it.pointsAr) && it.pointsAr.length > 0 ? it.pointsAr : (it.points || []),
+                    })),
+                    en: svc.items.map((it) => ({
+                      title: `${it.level ? it.level + ': ' : ''}${it.title || it.titleAr}`,
+                      points: Array.isArray(it.points) && it.points.length > 0 ? it.points : (it.pointsAr || []),
+                    })),
+                  }
+                : (matching?.detailedSyllabus || {
+                    ar: (svc.featuresAr || []).map((f) => ({ title: f, points: [] })),
+                    en: (svc.featuresEn || []).map((f) => ({ title: f, points: [] })),
+                  });
+
+              return {
+                id: svc.id,
+                categoryKey: (svc.categoryKey as any) || matching?.categoryKey || 'all',
+                href: svc.href || matching?.href || '/courses',
+                badge: {
+                  ar: svc.badgeAr || matching?.badge.ar || 'مسار معتمد',
+                  en: svc.badgeEn || matching?.badge.en || 'Certified Track',
                 },
-                format: {
-                  ar: override.formatAr || svc.meta.format.ar,
-                  en: override.formatEn || svc.meta.format.en,
+                title: {
+                  ar: svc.titleAr || matching?.title.ar || '',
+                  en: svc.titleEn || matching?.title.en || svc.titleAr || '',
                 },
-              },
-              features: {
-                ar: Array.isArray(override.featuresAr) && override.featuresAr.length > 0 ? override.featuresAr : svc.features.ar,
-                en: Array.isArray(override.featuresEn) && override.featuresEn.length > 0 ? override.featuresEn : svc.features.en,
-              },
-            };
-          });
-          setServicesList(updated);
+                subtitle: {
+                  ar: svc.subtitleAr || matching?.subtitle.ar || '',
+                  en: svc.subtitleEn || matching?.subtitle.en || '',
+                },
+                icon: matching?.icon || BookOpen,
+                colorScheme: matching?.colorScheme || defaultColorScheme,
+                meta: {
+                  level: {
+                    ar: svc.levelAr || matching?.meta.level.ar || 'كافة المستويات',
+                    en: svc.levelEn || matching?.meta.level.en || 'All Levels',
+                  },
+                  format: {
+                    ar: svc.formatAr || matching?.meta.format.ar || 'جلسات تفاعلية أونلاين',
+                    en: svc.formatEn || matching?.meta.format.en || 'Live Interactive Sessions',
+                  },
+                  duration: {
+                    ar: svc.durationAr || matching?.meta.duration.ar || 'مرن',
+                    en: svc.durationEn || matching?.meta.duration.en || 'Flexible',
+                  },
+                  sanad: {
+                    ar: svc.sanadAr || matching?.meta.sanad.ar || 'شهادة إتمام معتمدة',
+                    en: svc.sanadEn || matching?.meta.sanad.en || 'Certified Certificate',
+                  },
+                },
+                features: {
+                  ar: Array.isArray(svc.featuresAr) && svc.featuresAr.length > 0 ? svc.featuresAr : (matching?.features.ar || []),
+                  en: Array.isArray(svc.featuresEn) && svc.featuresEn.length > 0 ? svc.featuresEn : (matching?.features.en || []),
+                },
+                detailedSyllabus,
+                outcomes: matching?.outcomes || {
+                  ar: ['إتقان المحاور المحددة في المسار', 'شهادة إتمام معتمدة من الأكاديمية', 'تقييم ومتابعة دورية مباشرة'],
+                  en: ['Mastery of core track competencies', 'Certified completion certificate', 'Continuous direct evaluation'],
+                },
+                whatsappText: matching?.whatsappText || {
+                  ar: `السلام عليكم، أود الاستفسار والتسجيل في: ${svc.titleAr}`,
+                  en: `Hello, I would like to inquire about and enroll in: ${svc.titleEn}`,
+                },
+              };
+            });
+
+          setServicesList(mappedList);
         }
       } catch (e) {
         // Fallback to static SERVICES_DATA
@@ -699,6 +739,9 @@ export function ServicesCardsSection({ currentLocale }: ServicesCardsSectionProp
 
   const filteredServices = servicesList.filter((svc) => {
     if (activeCategory === 'all') return true;
+    if (activeCategory === 'arabic') return svc.categoryKey === 'arabic' || (svc.categoryKey as string) === 'specialized';
+    if (activeCategory === 'quran') return svc.categoryKey === 'quran' || (svc.categoryKey as string) === 'tajweed';
+    if (activeCategory === 'private') return svc.categoryKey === 'private';
     return svc.categoryKey === activeCategory;
   });
 

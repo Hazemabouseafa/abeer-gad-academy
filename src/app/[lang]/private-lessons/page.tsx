@@ -3,6 +3,8 @@ import { locales } from '@/i18n/routing';
 import { PrivateLessonsBookingClient } from '@/components/lessons/PrivateLessonsBookingClient';
 import { Calendar, Sparkles } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
 }
