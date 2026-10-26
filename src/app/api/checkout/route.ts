@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPayPalOrder, capturePayPalOrder } from '@/lib/paypal';
 import { prisma } from '@/lib/prisma';
-import { saveTransaction } from '@/lib/data-store';
+import { saveTransaction, recordStudent } from '@/lib/data-store';
 
 export async function POST(request: NextRequest) {
   try {
@@ -108,6 +108,15 @@ export async function POST(request: NextRequest) {
           status: captureResult.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING',
           date: new Date().toISOString().replace('T', ' ').substring(0, 16),
         });
+
+        const effectiveEmail = studentEmail || captureResult?.payer?.email_address;
+        if (effectiveEmail) {
+          recordStudent({
+            email: effectiveEmail,
+            name: studentName || captureResult?.payer?.name?.given_name || 'Student',
+            phone: studentPhone || undefined,
+          });
+        }
       } catch (storeErr) {
         console.warn('Note: Local store transaction record skipped:', storeErr);
       }

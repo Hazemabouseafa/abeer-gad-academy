@@ -1413,6 +1413,31 @@ export function getStudents(): StudentData[] {
   return store.students || [];
 }
 
+export function recordStudent(data: { name: string; email: string; phone?: string }): StudentData {
+  const store = ensureStoreExists();
+  const existing = store.students.find((s) => s.email.toLowerCase() === data.email.toLowerCase());
+  if (existing) {
+    if (data.name && (!existing.name || existing.name === 'Student')) {
+      existing.name = data.name;
+    }
+    existing.enrolledCoursesCount = (existing.enrolledCoursesCount || 0) + 1;
+    saveStore(store);
+    return existing;
+  }
+  const newStudent: StudentData = {
+    id: `stu-${Date.now()}`,
+    name: data.name || 'Student',
+    email: data.email,
+    joinedDate: new Date().toISOString().split('T')[0],
+    enrolledCoursesCount: 1,
+    completedLessonsCount: 0,
+    progressPercentage: 0,
+  };
+  store.students.unshift(newStudent);
+  saveStore(store);
+  return newStudent;
+}
+
 // Settings
 export function getSiteSettings(): SiteSettingsData {
   const store = ensureStoreExists();

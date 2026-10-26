@@ -49,10 +49,13 @@ PORT=3000
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
 NEXT_PUBLIC_DEFAULT_LOCALE=ar
 
-# مفاتيح جلسة الإدارة (غيّرها لقيم سرية عشوائية)
-ADMIN_SECRET_KEY=abeer_gad_academy_admin_secret_key_production_2026
+# مفاتيح جلسة الإدارة (رمز الدخول للوحة التحكم)
+ADMIN_SECRET_KEY=abeer2026admin
 SESSION_SECRET=abeer_gad_academy_session_secret_key_production_2026
 NEXT_PUBLIC_ADMIN_EMAIL=admin@abeergadacademy.com
+
+# اختياري: قاعدة بيانات PostgreSQL (في حال الرغبة بربط قاعدة بيانات خارجية بدلاً من المتجر التلقائي)
+# DATABASE_URL=postgresql://postgres:password@postgres:5432/abeer_gad_academy?schema=public
 
 # إعدادات PayPal (اختياري - في حال تفعيل بوابات الدفع لاحقاً)
 NEXT_PUBLIC_PAYPAL_CLIENT_ID=your_paypal_client_id_here
@@ -62,7 +65,19 @@ PAYPAL_MODE=live
 
 ---
 
-### 5. بدء النشر (Deploy)
+### 5. فحص سلامة الداتابيز بعد النشر (Health Check)
+بعد إتمام النشر، يمكنك في أي وقت التحقق من أن قاعدة البيانات ومجلدات التخزين تعمل بنسبة 100% عبر زيارة الرابط التالي في متصفحك:
+```text
+https://yourdomain.com/api/admin/db-status
+```
+سيُرجع النظام تقريراً فورياً بحالة جميع المكونات:
+- `primaryDataStore`: سلامة الملفات وعدد الدورات والمواعيد والموارد.
+- `uploadsStorage`: صلاحيات مجلد رفع الفيديوهات والملفات `public/uploads`.
+- `postgresDatabase`: حالة اتصال PostgreSQL (إن وُجد).
+
+---
+
+### 6. بدء النشر (Deploy)
 - اضغط زر **Deploy** في أعلى الصفحة.
 - سيقوم Coolify ببناء الحاوية عبر `Dockerfile` متعدد المراحل وتفعيل شهادة الحماية SSL التلقائية عبر Let's Encrypt مجاناً!
 - ستصبح منصتك جاهزة وحية للزوار في خلال دقيقتين.
