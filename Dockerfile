@@ -33,26 +33,16 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Install curl for container health checks
-RUN apk add --no-cache curl
-
-# Copy static assets, standalone server bundle, and initial data
+# Copy production assets and standalone build
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/data ./data
 
-# Setup entrypoint script for dynamic volume permissions
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
-    mkdir -p /app/data /app/public/uploads && \
+# Ensure data and uploads directories exist and have full write permissions
+RUN mkdir -p /app/data /app/public/uploads && \
     chmod -R 777 /app/data /app/public/uploads
 
 EXPOSE 3000
 
-# Lenient healthcheck that allows ample time for Next.js boot
-HEALTHCHECK --interval=20s --timeout=5s --start-period=30s --retries=5 \
-  CMD curl -f http://127.0.0.1:3000/api/admin/db-status || curl -f http://127.0.0.1:3000/ || exit 1
-
-ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]
