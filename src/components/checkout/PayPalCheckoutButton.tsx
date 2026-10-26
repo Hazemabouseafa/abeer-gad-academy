@@ -230,7 +230,7 @@ export function PayPalCheckoutButton({
                           required
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          placeholder="name@example.com"
+                          placeholder="student@email.com"
                           className="w-full ps-9 pe-3.5 py-2.5 rounded-xl border border-surface-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
                         />
                       </div>

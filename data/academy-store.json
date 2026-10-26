@@ -16,7 +16,7 @@
       "price": 135,
       "currency": "USD",
       "thumbnail": "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80",
-      "promoVideoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "promoVideoUrl": "",
       "instructorName": "Ustadha Abeer Gad",
       "isPublished": true,
       "featured": true,
@@ -26,17 +26,17 @@
       "reviewsCount": 0,
       "chapters": [
         {
-          "id": "ch-test-1",
+          "id": "ch-4-1",
           "title": "Module 1: Ilm al-Bayan",
           "titleAr": "الوحدة الأولى: علم البيان والتشبيه والتمثيل",
           "lessons": [
             {
-              "id": "les-test-1",
+              "id": "les-4-1-1",
               "title": "Lesson 1: Introduction to Quranic Metaphor",
               "titleAr": "الدرس الأول: أسرار الاستعارة التمثيلية في التنزيل",
               "duration": "40m",
               "durationMinutes": 40,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": true
             }
           ]
@@ -61,7 +61,7 @@
       "price": 89,
       "currency": "USD",
       "thumbnail": "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80",
-      "promoVideoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "promoVideoUrl": "",
       "instructorName": "Ustadha Abeer Gad",
       "isPublished": true,
       "featured": true,
@@ -83,7 +83,7 @@
               "titleAr": "تشريح جهاز النطق والحروف العربية",
               "duration": "28m",
               "durationMinutes": 28,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": true,
               "notes": "Detailed diagrams of the throat, tongue, and lips articulation points."
             },
@@ -93,7 +93,7 @@
               "titleAr": "الحركات القصيرة وحروف المد الطويلة",
               "duration": "34m",
               "durationMinutes": 34,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": true
             },
             {
@@ -102,7 +102,7 @@
               "titleAr": "أحكام السكون والتنوين في النطق",
               "duration": "40m",
               "durationMinutes": 40,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": false
             }
           ]
@@ -118,7 +118,7 @@
               "titleAr": "مبدأ الجذر الثلاثي والميزان الصرفي",
               "duration": "45m",
               "durationMinutes": 45,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": false
             },
             {
@@ -127,7 +127,7 @@
               "titleAr": "اشتقاق الأسماء والصفات واسم الفاعل",
               "duration": "50m",
               "durationMinutes": 50,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": false
             }
           ]
@@ -143,7 +143,7 @@
               "titleAr": "الجملة الاسمية وأركانها وإعرابها",
               "duration": "55m",
               "durationMinutes": 55,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": false
             },
             {
@@ -152,7 +152,7 @@
               "titleAr": "الجملة الفعلية وتصريف الأفعال",
               "duration": "58m",
               "durationMinutes": 58,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": false
             }
           ]
@@ -175,7 +175,7 @@
       "price": 110,
       "currency": "USD",
       "thumbnail": "https://images.unsplash.com/photo-1584281729288-89826ac70b0a?auto=format&fit=crop&w=1200&q=80",
-      "promoVideoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "promoVideoUrl": "",
       "instructorName": "Ustadha Abeer Gad",
       "isPublished": true,
       "featured": true,
@@ -197,7 +197,7 @@
               "titleAr": "الإظهار الحلقي وحروف الحلق الستة",
               "duration": "32m",
               "durationMinutes": 32,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": true
             },
             {
@@ -206,7 +206,7 @@
               "titleAr": "الإدغام بغنة وبغير غنة مع الأمثلة التطبيقية",
               "duration": "42m",
               "durationMinutes": 42,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": true
             },
             {
@@ -215,7 +215,7 @@
               "titleAr": "الإقلاب والإخفاء الحقيقي مع أزمنة الغنن",
               "duration": "48m",
               "durationMinutes": 48,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": false
             }
           ]
@@ -231,7 +231,7 @@
               "titleAr": "المد الأصلي والمد الفرعي بسبب الهمز أو السكون",
               "duration": "50m",
               "durationMinutes": 50,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": false
             },
             {
@@ -240,7 +240,7 @@
               "titleAr": "المد اللازم الكلمي والحرفي المثقل والمخفف",
               "duration": "55m",
               "durationMinutes": 55,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": false
             }
           ]
@@ -263,7 +263,7 @@
       "price": 125,
       "currency": "USD",
       "thumbnail": "https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&w=1200&q=80",
-      "promoVideoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "promoVideoUrl": "",
       "instructorName": "Ustadha Abeer Gad",
       "isPublished": true,
       "featured": true,
@@ -285,7 +285,7 @@
               "titleAr": "الرسم البصري للصفحة واختيار طبعة المصحف الثابتة",
               "duration": "35m",
               "durationMinutes": 35,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": true
             },
             {
@@ -294,7 +294,7 @@
               "titleAr": "دورة التكرار المتباعد للورد اليومي الجديد والماضي",
               "duration": "45m",
               "durationMinutes": 45,
-              "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "videoUrl": "",
               "isFree": false
             }
           ]
@@ -355,152 +355,95 @@
   "slots": [
     {
       "id": "slot-1",
-      "date": "2026-10-24",
+      "date": "2026-10-27",
       "time": "10:00 AM UTC",
       "instructor": "Ustadha Abeer Gad",
       "price": 45,
       "currency": "USD",
-      "status": "BOOKED",
-      "meetingUrl": "https://meet.google.com/demo-session-1",
-      "createdAt": "2026-10-20T10:00:00.000Z",
-      "studentName": "Khaled Ahmed",
-      "studentEmail": "khaled@example.com",
-      "studentPhone": "+201099887766",
-      "notes": "Quran Tajweed session"
+      "status": "AVAILABLE",
+      "meetingUrl": "https://meet.google.com/abeergad-academy",
+      "createdAt": "2026-10-26T10:00:00.000Z"
     },
     {
       "id": "slot-2",
-      "date": "2026-10-24",
-      "time": "02:00 PM UTC",
-      "instructor": "Ustadha Abeer Gad",
-      "price": 45,
-      "currency": "USD",
-      "status": "BOOKED",
-      "studentName": "Omar Farooq",
-      "studentEmail": "omar.farooq@example.com",
-      "meetingUrl": "https://meet.google.com/demo-session-2",
-      "notes": "Surah Al-Baqarah recitation check and Tajweed correction.",
-      "createdAt": "2026-10-20T11:00:00.000Z"
-    },
-    {
-      "id": "slot-3",
-      "date": "2026-10-25",
-      "time": "09:00 AM UTC",
+      "date": "2026-10-27",
+      "time": "03:00 PM UTC",
       "instructor": "Ustadha Abeer Gad",
       "price": 45,
       "currency": "USD",
       "status": "AVAILABLE",
-      "meetingUrl": "https://meet.google.com/demo-session-3",
-      "createdAt": "2026-10-20T12:00:00.000Z"
+      "meetingUrl": "https://meet.google.com/abeergad-academy",
+      "createdAt": "2026-10-26T10:00:00.000Z"
     },
     {
-      "id": "slot-4",
-      "date": "2026-10-25",
-      "time": "05:00 PM UTC",
+      "id": "slot-3",
+      "date": "2026-10-28",
+      "time": "11:00 AM UTC",
       "instructor": "Ustadha Abeer Gad",
       "price": 45,
       "currency": "USD",
-      "status": "BOOKED",
-      "studentName": "Fatima Zahra",
-      "studentEmail": "fatima.zahra@example.fr",
-      "meetingUrl": "https://meet.google.com/demo-session-4",
-      "notes": "Arabic conversation practice and verb conjugation drill.",
-      "createdAt": "2026-10-20T14:00:00.000Z"
+      "status": "AVAILABLE",
+      "meetingUrl": "https://meet.google.com/abeergad-academy",
+      "createdAt": "2026-10-26T10:00:00.000Z"
+    },
+    {
+      "id": "slot-4",
+      "date": "2026-10-28",
+      "time": "04:00 PM UTC",
+      "instructor": "Ustadha Abeer Gad",
+      "price": 45,
+      "currency": "USD",
+      "status": "AVAILABLE",
+      "meetingUrl": "https://meet.google.com/abeergad-academy",
+      "createdAt": "2026-10-26T10:00:00.000Z"
+    },
+    {
+      "id": "slot-5",
+      "date": "2026-10-29",
+      "time": "01:00 PM UTC",
+      "instructor": "Ustadha Abeer Gad",
+      "price": 45,
+      "currency": "USD",
+      "status": "AVAILABLE",
+      "meetingUrl": "https://meet.google.com/abeergad-academy",
+      "createdAt": "2026-10-26T10:00:00.000Z"
+    },
+    {
+      "id": "slot-6",
+      "date": "2026-10-30",
+      "time": "10:00 AM UTC",
+      "instructor": "Ustadha Abeer Gad",
+      "price": 45,
+      "currency": "USD",
+      "status": "AVAILABLE",
+      "meetingUrl": "https://meet.google.com/abeergad-academy",
+      "createdAt": "2026-10-26T10:00:00.000Z"
+    },
+    {
+      "id": "slot-7",
+      "date": "2026-10-31",
+      "time": "10:30 AM UTC",
+      "instructor": "Ustadha Abeer Gad",
+      "price": 45,
+      "currency": "USD",
+      "status": "AVAILABLE",
+      "meetingUrl": "https://meet.google.com/abeergad-academy",
+      "createdAt": "2026-10-26T10:00:00.000Z"
+    },
+    {
+      "id": "slot-8",
+      "date": "2026-11-01",
+      "time": "11:00 AM UTC",
+      "instructor": "Ustadha Abeer Gad",
+      "price": 45,
+      "currency": "USD",
+      "status": "AVAILABLE",
+      "meetingUrl": "https://meet.google.com/abeergad-academy",
+      "createdAt": "2026-10-26T10:00:00.000Z"
     }
   ],
-  "transactions": [
-    {
-      "id": "tx-1",
-      "paypalOrderId": "PAYID-M45892147K",
-      "payerEmail": "tariq.mansoor@example.co.uk",
-      "itemTitle": "Tajweed Rules & Accurate Articulation",
-      "itemType": "COURSE",
-      "amount": 110,
-      "currency": "USD",
-      "status": "COMPLETED",
-      "date": "2026-10-22 14:15"
-    },
-    {
-      "id": "tx-2",
-      "paypalOrderId": "PAYID-M99301124L",
-      "payerEmail": "fatima.zahra@example.fr",
-      "itemTitle": "Private Lesson (Oct 24 02:00 PM)",
-      "itemType": "PRIVATE_LESSON",
-      "amount": 45,
-      "currency": "USD",
-      "status": "COMPLETED",
-      "date": "2026-10-22 11:30"
-    },
-    {
-      "id": "tx-3",
-      "paypalOrderId": "PAYID-M11029482X",
-      "payerEmail": "marcus.bilal@example.de",
-      "itemTitle": "Foundational Arabic Masterclass",
-      "itemType": "COURSE",
-      "amount": 89,
-      "currency": "USD",
-      "status": "COMPLETED",
-      "date": "2026-10-21 18:45"
-    },
-    {
-      "id": "tx-4",
-      "paypalOrderId": "PAYID-M55019238Z",
-      "payerEmail": "ahmed.khalil@example.com",
-      "itemTitle": "Hifz Acceleration Program",
-      "itemType": "COURSE",
-      "amount": 125,
-      "currency": "USD",
-      "status": "COMPLETED",
-      "date": "2026-10-21 09:20"
-    }
-  ],
-  "students": [
-    {
-      "id": "stu-1",
-      "name": "Tariq Mansoor",
-      "email": "tariq.mansoor@example.co.uk",
-      "joinedDate": "2026-09-15",
-      "enrolledCoursesCount": 2,
-      "completedLessonsCount": 18,
-      "progressPercentage": 75
-    },
-    {
-      "id": "stu-2",
-      "name": "Fatima Zahra",
-      "email": "fatima.zahra@example.fr",
-      "joinedDate": "2026-09-22",
-      "enrolledCoursesCount": 1,
-      "completedLessonsCount": 8,
-      "progressPercentage": 40
-    },
-    {
-      "id": "stu-3",
-      "name": "Marcus Bilal",
-      "email": "marcus.bilal@example.de",
-      "joinedDate": "2026-10-02",
-      "enrolledCoursesCount": 1,
-      "completedLessonsCount": 14,
-      "progressPercentage": 60
-    },
-    {
-      "id": "stu-4",
-      "name": "Aisha Al-Hashimi",
-      "email": "aisha.hashimi@example.com",
-      "joinedDate": "2026-10-10",
-      "enrolledCoursesCount": 3,
-      "completedLessonsCount": 32,
-      "progressPercentage": 92
-    },
-    {
-      "id": "std-1792940160289",
-      "name": "Khaled Ahmed",
-      "email": "khaled@example.com",
-      "joinedDate": "2026-10-25",
-      "enrolledCoursesCount": 0,
-      "completedLessonsCount": 1,
-      "progressPercentage": 100
-    }
-  ],
+  "transactions": [],
+  "students": [],
   "settings": {
     "announcementEnabled": true,
     "announcementTextEn": "✨ Special Intake Open: Book your 1-on-1 recitation correction session with Ustadha Abeer Gad.",

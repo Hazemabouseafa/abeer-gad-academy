@@ -160,7 +160,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     price: 89,
     isFree: false,
     durationHours: 12,
-    promoVideoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    promoVideoUrl: '',
     thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
     isPublished: true,
     featured: true,
@@ -168,7 +168,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     initialChapterTitleAr: 'الوحدة الأولى: المدخل والأسس المنهجية',
     initialLessonTitle: 'Lesson 1: Overview & First Steps',
     initialLessonTitleAr: 'الدرس الأول: نظرة عامة والخطوات التأسيسية',
-    initialLessonVideoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    initialLessonVideoUrl: '',
   });
 
   // Curriculum Modals Form
@@ -177,7 +177,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const [targetChapterId, setTargetChapterId] = useState('');
   const [newLessonTitle, setNewLessonTitle] = useState('');
   const [newLessonTitleAr, setNewLessonTitleAr] = useState('');
-  const [newLessonVideoUrl, setNewLessonVideoUrl] = useState('https://www.youtube.com/embed/dQw4w9WgXcQ');
+  const [newLessonVideoUrl, setNewLessonVideoUrl] = useState('');
   const [newLessonDuration, setNewLessonDuration] = useState('30m');
   const [newLessonIsFree, setNewLessonIsFree] = useState(false);
 
@@ -393,105 +393,29 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const fetchData = async () => {
     try {
       setRefreshing(true);
-      const [resCourses, resSlots, resResources, resSettings] = await Promise.all([
+      const [resCourses, resSlots, resResources, resSettings, resTransactions, resStudents] = await Promise.all([
         fetch('/api/admin/courses').then((r) => r.json()),
         fetch('/api/admin/slots').then((r) => r.json()),
         fetch('/api/admin/resources').then((r) => r.json()),
         fetch('/api/admin/settings').then((r) => r.json()),
+        fetch('/api/admin/transactions').then((r) => r.json()).catch(() => ({ transactions: [] })),
+        fetch('/api/admin/students').then((r) => r.json()).catch(() => ({ students: [] })),
       ]);
 
       if (resCourses.courses) setCourses(resCourses.courses);
       if (resSlots.slots) setSlots(resSlots.slots);
       if (resResources.resources) setResources(resResources.resources);
       if (resSettings.settings) setSettings(resSettings.settings);
-
-      // Financial Transactions
-      setTransactions([
-        {
-          id: 'tx-1',
-          paypalOrderId: 'PAYID-M45892147K',
-          payerEmail: 'tariq.mansoor@example.co.uk',
-          itemTitle: 'Tajweed Rules & Accurate Articulation',
-          itemType: 'COURSE',
-          amount: 110,
-          currency: 'USD',
-          status: 'COMPLETED',
-          date: '2026-10-24 10:15',
-        },
-        {
-          id: 'tx-2',
-          paypalOrderId: 'PAYID-M99301124L',
-          payerEmail: 'fatima.zahra@example.fr',
-          itemTitle: 'Private Lesson (Oct 25 02:00 PM)',
-          itemType: 'PRIVATE_LESSON',
-          amount: 45,
-          currency: 'USD',
-          status: 'COMPLETED',
-          date: '2026-10-23 16:30',
-        },
-        {
-          id: 'tx-3',
-          paypalOrderId: 'PAYID-M11029482X',
-          payerEmail: 'marcus.bilal@example.de',
-          itemTitle: 'Foundational Arabic Masterclass',
-          itemType: 'COURSE',
-          amount: 89,
-          currency: 'USD',
-          status: 'COMPLETED',
-          date: '2026-10-22 18:45',
-        },
-        {
-          id: 'tx-4',
-          paypalOrderId: 'PAYID-M55019238Z',
-          payerEmail: 'ahmed.khalil@example.com',
-          itemTitle: 'Hifz Acceleration Program',
-          itemType: 'COURSE',
-          amount: 125,
-          currency: 'USD',
-          status: 'COMPLETED',
-          date: '2026-10-21 09:20',
-        },
-      ]);
-
-      // Students
-      setStudents([
-        {
-          id: 'stu-1',
-          name: 'طارق منصور (Tariq Mansoor)',
-          email: 'tariq.mansoor@example.co.uk',
-          joinedDate: '2026-09-15',
-          enrolledCoursesCount: 2,
-          completedLessonsCount: 18,
-          progressPercentage: 75,
-        },
-        {
-          id: 'stu-2',
-          name: 'فاطمة الزهراء (Fatima Zahra)',
-          email: 'fatima.zahra@example.fr',
-          joinedDate: '2026-09-22',
-          enrolledCoursesCount: 1,
-          completedLessonsCount: 8,
-          progressPercentage: 40,
-        },
-        {
-          id: 'stu-3',
-          name: 'ماركوس بلال (Marcus Bilal)',
-          email: 'marcus.bilal@example.de',
-          joinedDate: '2026-10-02',
-          enrolledCoursesCount: 1,
-          completedLessonsCount: 14,
-          progressPercentage: 60,
-        },
-        {
-          id: 'stu-4',
-          name: 'عائشة الهاشمي (Aisha Al-Hashimi)',
-          email: 'aisha.hashimi@example.com',
-          joinedDate: '2026-10-10',
-          enrolledCoursesCount: 3,
-          completedLessonsCount: 32,
-          progressPercentage: 92,
-        },
-      ]);
+      if (resTransactions && resTransactions.transactions) {
+        setTransactions(resTransactions.transactions);
+      } else {
+        setTransactions([]);
+      }
+      if (resStudents && resStudents.students) {
+        setStudents(resStudents.students);
+      } else {
+        setStudents([]);
+      }
     } catch (err) {
       console.error('Error fetching admin data:', err);
     } finally {
@@ -522,7 +446,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       price: 89,
       isFree: false,
       durationHours: 12,
-      promoVideoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      promoVideoUrl: '',
       thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
       isPublished: true,
       featured: true,
@@ -530,7 +454,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       initialChapterTitleAr: 'الوحدة الأولى: المدخل والأسس المنهجية',
       initialLessonTitle: 'Lesson 1: Overview & First Steps',
       initialLessonTitleAr: 'الدرس الأول: نظرة عامة والخطوات التأسيسية',
-      initialLessonVideoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      initialLessonVideoUrl: '',
     });
     setShowCourseModal(true);
     setTimeout(() => {
@@ -4023,20 +3947,30 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-surface-borderSubtle">
-                        {transactions.map((tx) => (
-                          <tr key={tx.id} className="hover:bg-surface-muted/50 transition-colors">
-                            <td className="p-4 font-mono font-bold text-navy-900">{tx.paypalOrderId}</td>
-                            <td className="p-4 text-navy-600">{tx.payerEmail}</td>
-                            <td className="p-4 font-bold text-navy-900">{tx.itemTitle}</td>
-                            <td className="p-4 font-extrabold text-brand-700">{formatCurrency(tx.amount)}</td>
-                            <td className="p-4">
-                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-                                {tx.status}
-                              </span>
+                        {transactions.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="p-8 text-center text-navy-400">
+                              {isRtl
+                                ? 'لا توجد معاملات مسجلة بعد. سيتم تسجيل عمليات الدفع تلقائياً فور إتمامها عبر بوابة الدفع.'
+                                : 'No transactions recorded yet. Completed orders will appear here automatically.'}
                             </td>
-                            <td className="p-4 text-navy-500">{tx.date}</td>
                           </tr>
-                        ))}
+                        ) : (
+                          transactions.map((tx) => (
+                            <tr key={tx.id} className="hover:bg-surface-muted/50 transition-colors">
+                              <td className="p-4 font-mono font-bold text-navy-900">{tx.paypalOrderId}</td>
+                              <td className="p-4 text-navy-600">{tx.payerEmail}</td>
+                              <td className="p-4 font-bold text-navy-900">{tx.itemTitle}</td>
+                              <td className="p-4 font-extrabold text-brand-700">{formatCurrency(tx.amount)}</td>
+                              <td className="p-4">
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                                  {tx.status}
+                                </span>
+                              </td>
+                              <td className="p-4 text-navy-500">{tx.date}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -4070,30 +4004,40 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-surface-borderSubtle">
-                        {students.map((stu) => (
-                          <tr key={stu.id} className="hover:bg-surface-muted/50 transition-colors">
-                            <td className="p-4 font-bold text-navy-950">{stu.name}</td>
-                            <td className="p-4 text-navy-600">{stu.email}</td>
-                            <td className="p-4 font-semibold text-brand-800">
-                              {stu.enrolledCoursesCount} {isRtl ? 'دورات' : 'Courses'}
+                        {students.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="p-8 text-center text-navy-400">
+                              {isRtl
+                                ? 'لا يوجد طلاب مسجلون بعد. سيتم قيد المتدربين تلقائياً عند الاشتراك في الدورات أو حجز الدروس.'
+                                : 'No students enrolled yet. Students will appear automatically upon course enrollment or lesson booking.'}
                             </td>
-                            <td className="p-4 text-navy-700">
-                              {stu.completedLessonsCount} {isRtl ? 'درساً' : 'Lessons'}
-                            </td>
-                            <td className="p-4">
-                              <div className="w-24 bg-surface-muted rounded-full h-2 overflow-hidden">
-                                <div
-                                  className="bg-brand-600 h-2 rounded-full"
-                                  style={{ width: `${stu.progressPercentage}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-[10px] text-navy-500 font-bold mt-1 block">
-                                {stu.progressPercentage}%
-                              </span>
-                            </td>
-                            <td className="p-4 text-navy-500">{stu.joinedDate}</td>
                           </tr>
-                        ))}
+                        ) : (
+                          students.map((stu) => (
+                            <tr key={stu.id} className="hover:bg-surface-muted/50 transition-colors">
+                              <td className="p-4 font-bold text-navy-950">{stu.name}</td>
+                              <td className="p-4 text-navy-600">{stu.email}</td>
+                              <td className="p-4 font-semibold text-brand-800">
+                                {stu.enrolledCoursesCount} {isRtl ? 'دورات' : 'Courses'}
+                              </td>
+                              <td className="p-4 text-navy-700">
+                                {stu.completedLessonsCount} {isRtl ? 'درساً' : 'Lessons'}
+                              </td>
+                              <td className="p-4">
+                                <div className="w-24 bg-surface-muted rounded-full h-2 overflow-hidden">
+                                  <div
+                                    className="bg-brand-600 h-2 rounded-full"
+                                    style={{ width: `${stu.progressPercentage}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-[10px] text-navy-500 font-bold mt-1 block">
+                                  {stu.progressPercentage}%
+                                </span>
+                              </td>
+                              <td className="p-4 text-navy-500">{stu.joinedDate}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>

@@ -93,14 +93,14 @@ export async function POST(request: NextRequest) {
           });
         }
       } catch (dbErr) {
-        console.warn('Note: Database payment record skipped (development/mock):', dbErr);
+        console.warn('Note: Database payment record skipped (offline mode):', dbErr);
       }
 
       // Record in local data-store for admin dashboard
       try {
         saveTransaction({
           paypalOrderId: orderId,
-          payerEmail: studentEmail || 'student@example.com',
+          payerEmail: studentEmail || captureResult?.payer?.email_address || 'student@abeergad.academy',
           itemTitle: description || (itemType === 'COURSE' ? 'Course Enrollment' : 'Private Lesson'),
           itemType: itemType === 'PRIVATE_LESSON' ? 'PRIVATE_LESSON' : 'COURSE',
           amount: typeof amount === 'number' ? amount : 45.0,

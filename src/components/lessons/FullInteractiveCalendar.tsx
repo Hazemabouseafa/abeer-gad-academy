@@ -491,7 +491,7 @@ export function FullInteractiveCalendar({
                   required
                   value={studentEmail}
                   onChange={(e) => setStudentEmail(e.target.value)}
-                  placeholder="student@example.com"
+                  placeholder="student@email.com"
                   className="w-full px-3 py-2 ps-9 rounded-xl border border-surface-border text-xs font-mono focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 />
                 <Mail className="w-4 h-4 text-navy-400 absolute start-3 top-2.5" />

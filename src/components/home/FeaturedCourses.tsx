@@ -56,7 +56,7 @@ const fallbackCourses: CourseCardData[] = [
     isFree: true,
     rating: 5.0,
     reviewCount: 142,
-    videoPreviewUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    videoPreviewUrl: '',
   },
   {
     id: 'course-2',
@@ -75,7 +75,7 @@ const fallbackCourses: CourseCardData[] = [
     isFree: false,
     rating: 5.0,
     reviewCount: 218,
-    videoPreviewUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    videoPreviewUrl: '',
   },
   {
     id: 'course-3',
@@ -94,7 +94,7 @@ const fallbackCourses: CourseCardData[] = [
     isFree: false,
     rating: 5.0,
     reviewCount: 96,
-    videoPreviewUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    videoPreviewUrl: '',
   },
 ];
 
@@ -136,7 +136,7 @@ export function FeaturedCourses({ currentLocale }: FeaturedCoursesProps) {
               isFree,
               rating: c.rating || 5.0,
               reviewCount: c.reviewsCount || 100,
-              videoPreviewUrl: c.promoVideoUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+              videoPreviewUrl: c.promoVideoUrl || '',
             };
           });
           setCourseList(mapped);

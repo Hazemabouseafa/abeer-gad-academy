@@ -15,7 +15,7 @@ export function VideoModal({
   isOpen,
   onClose,
   title,
-  videoUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ', // default demo stream
+  videoUrl = '',
   instructor = 'Ustadha Abeer Gad',
 }: VideoModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -49,6 +49,12 @@ export function VideoModal({
 
   if (!isOpen) return null;
 
+  const isDirectVideo =
+    videoUrl.startsWith('/uploads/') ||
+    videoUrl.endsWith('.mp4') ||
+    videoUrl.endsWith('.webm') ||
+    videoUrl.includes('.mp4?');
+
   return (
     <dialog
       ref={dialogRef}
@@ -78,14 +84,33 @@ export function VideoModal({
       </div>
 
       <div className="aspect-video w-full bg-navy-950 relative flex items-center justify-center">
-        {/* Responsive Video Container */}
-        <iframe
-          src="https://www.youtube-nocookie.com/embed/1vR_s4ZpBfc?autoplay=1"
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="w-full h-full border-0"
-        />
+        {videoUrl ? (
+          isDirectVideo ? (
+            <video
+              src={videoUrl}
+              controls
+              autoPlay
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <iframe
+              src={videoUrl.includes('?') ? `${videoUrl}&autoplay=1` : `${videoUrl}?autoplay=1`}
+              title={title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full border-0"
+            />
+          )
+        ) : (
+          <div className="text-center p-8 text-white space-y-2">
+            <div className="w-12 h-12 rounded-full bg-brand-900/60 border border-gold-400/30 flex items-center justify-center mx-auto text-gold-400">
+              <Play className="w-6 h-6 fill-current" />
+            </div>
+            <p className="text-xs text-slate-300">
+              سيتم رفع المحتوى المرئي للدورة قريباً
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="p-4 bg-white flex items-center justify-between text-xs text-navy-600 border-t border-surface-borderSubtle">

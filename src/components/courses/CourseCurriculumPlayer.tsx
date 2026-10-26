@@ -56,7 +56,7 @@ export function CourseCurriculumPlayer({
   // Compute video URL
   let currentVideoUrl = activeLesson ? activeLesson.videoUrl : course.promoVideoUrl;
   if (!currentVideoUrl) {
-    currentVideoUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+    currentVideoUrl = '';
   }
   if (currentVideoUrl.includes('watch?v=')) {
     currentVideoUrl = currentVideoUrl.replace('watch?v=', 'embed/');
@@ -131,24 +131,40 @@ export function CourseCurriculumPlayer({
         {/* ============================================================== */}
         <div id="main-course-player" className="academy-card overflow-hidden bg-white shadow-card-hover rounded-3xl border border-surface-border">
           <div className="aspect-video w-full bg-navy-950 relative flex items-center justify-center">
-            {currentVideoUrl.startsWith('/uploads/') ||
-            currentVideoUrl.endsWith('.mp4') ||
-            currentVideoUrl.endsWith('.webm') ||
-            currentVideoUrl.includes('.mp4?') ? (
-              <video
-                src={currentVideoUrl}
-                controls
-                className="w-full h-full object-cover"
-                poster={course.thumbnail}
-              />
+            {currentVideoUrl ? (
+              currentVideoUrl.startsWith('/uploads/') ||
+              currentVideoUrl.endsWith('.mp4') ||
+              currentVideoUrl.endsWith('.webm') ||
+              currentVideoUrl.includes('.mp4?') ? (
+                <video
+                  src={currentVideoUrl}
+                  controls
+                  className="w-full h-full object-cover"
+                  poster={course.thumbnail}
+                />
+              ) : (
+                <iframe
+                  src={currentVideoUrl}
+                  title={activeLesson ? activeLesson.title : title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full border-0"
+                />
+              )
             ) : (
-              <iframe
-                src={currentVideoUrl}
-                title={activeLesson ? activeLesson.title : title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full border-0"
-              />
+              <div className="text-center p-8 text-white space-y-3">
+                <div className="w-16 h-16 rounded-full bg-brand-900/60 border border-gold-400/30 flex items-center justify-center mx-auto text-gold-400">
+                  <Play className="w-8 h-8 fill-current" />
+                </div>
+                <h4 className="font-bold text-sm sm:text-base">
+                  {isRtl ? 'المحتوى المرئي للدورة' : 'Course Video Stream'}
+                </h4>
+                <p className="text-xs text-slate-300 max-w-sm mx-auto">
+                  {isRtl
+                    ? 'اختر درساً من الخطة الدراسية أدناه لمشاهدة المعاينة المباشرة'
+                    : 'Select a lesson below to begin streaming'}
+                </p>
+              </div>
             )}
           </div>
 
