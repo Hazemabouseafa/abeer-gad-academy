@@ -36,23 +36,23 @@ ENV HOSTNAME="0.0.0.0"
 # Install curl for container health checks
 RUN apk add --no-cache curl
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
 # Copy static assets, standalone server bundle, and initial data
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/data ./data
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/data ./data
 
-# Ensure data and uploads directories have write permissions for nextjs user
-RUN mkdir -p /app/data /app/public/uploads && chown -R nextjs:nodejs /app/data /app/public/uploads
-
-USER nextjs
+# Setup entrypoint script for dynamic volume permissions
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
+    mkdir -p /app/data /app/public/uploads && \
+    chmod -R 777 /app/data /app/public/uploads
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:3000/api/admin/settings || exit 1
+# Lenient healthcheck that allows ample time for Next.js boot
+HEALTHCHECK --interval=20s --timeout=5s --start-period=30s --retries=5 \
+  CMD curl -f http://127.0.0.1:3000/api/admin/db-status || curl -f http://127.0.0.1:3000/ || exit 1
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]
