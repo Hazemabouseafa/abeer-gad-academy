@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { getCourses, getCourseBySlug } from '@/lib/data-store';
 import { CourseCurriculumPlayer } from '@/components/courses/CourseCurriculumPlayer';
 
+export const dynamicParams = true;
+
 export function generateStaticParams() {
   const allCourses = getCourses();
   const slugs = allCourses.map((c) => c.slug);

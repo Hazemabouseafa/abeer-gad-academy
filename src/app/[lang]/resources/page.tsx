@@ -48,7 +48,30 @@ export default async function ResourcesPage({ params: { lang } }: ResourcesPageP
         </div>
 
         {/* Resources Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+        {dynamicResources.length === 0 ? (
+          <div className="py-16 text-center max-w-lg mx-auto bg-white rounded-3xl p-8 border border-surface-border shadow-card-subtle">
+            <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center mx-auto mb-4 border border-brand-100">
+              <FileText className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-navy-950 mb-2">
+              {isRtl ? 'جاري تجهيز المصادر والمذكرات التعليمية' : 'Educational Resources Coming Soon'}
+            </h3>
+            <p className="text-sm text-navy-600 mb-6 leading-relaxed">
+              {isRtl
+                ? 'يقوم فريق الأكاديمية بإعداد وتحديث ملفات التجويد والقواعد الميسرة لتكون متاحة للتحميل قريباً. يمكنك التواصل معنا عبر واتساب لطلب أي ملف دراسي مسبقاً.'
+                : 'The academy is preparing downloadable Tajweed summaries and Arabic grammar guides. Inquire via WhatsApp for custom study materials.'}
+            </p>
+            <a
+              href="https://wa.me/201000000000"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-500 shadow-sm transition-all"
+            >
+              <span>{isRtl ? 'تواصل معنا عبر واتساب' : 'Contact via WhatsApp'}</span>
+            </a>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
           {dynamicResources.map((res) => {
             const title = isRtl ? res.titleAr || res.title : res.title;
             const isAudio = res.fileType?.toLowerCase().includes('mp3') || res.category?.toLowerCase().includes('audio');
@@ -127,6 +150,7 @@ export default async function ResourcesPage({ params: { lang } }: ResourcesPageP
             );
           })}
         </div>
+        )}
       </div>
     </div>
   );

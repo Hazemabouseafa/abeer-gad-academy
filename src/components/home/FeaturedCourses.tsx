@@ -14,6 +14,8 @@ import {
   ArrowLeft,
   CheckCircle2,
   Filter,
+  GraduationCap,
+  MessageCircle,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { CourseData } from '@/lib/data-store';
@@ -38,65 +40,7 @@ interface CourseCardData {
   videoPreviewUrl: string;
 }
 
-const fallbackCourses: CourseCardData[] = [
-  {
-    id: 'course-1',
-    slug: 'foundational-arabic-alphabet-grammar',
-    title: 'Foundational Arabic: Phonetics to Sentence Mastery',
-    titleAr: 'تأسيس اللغة العربية: من مخارج الحروف إلى إعراب الجمل',
-    subtitle: 'Step-by-step masterclass covering reading, writing, and essential Sarf and Nahw principles.',
-    subtitleAr: 'دورة شاملة لتأسيس القراءة والكتابة وقواعد النحو والصرف من البداية وحتى الإتقان.',
-    category: 'Learn Arabic',
-    categoryAr: 'تعلم العربية',
-    level: 'Beginner',
-    levelAr: 'مبتدئ',
-    durationMinutes: 720,
-    lessonCount: 24,
-    price: 0,
-    isFree: true,
-    rating: 5.0,
-    reviewCount: 142,
-    videoPreviewUrl: '',
-  },
-  {
-    id: 'course-2',
-    slug: 'tajweed-and-makharij-masterclass',
-    title: 'Tajweed Rules & Accurate Articulation (Makhaarij)',
-    titleAr: 'أحكام التجويد وضبط مخارج الحروف والصفات',
-    subtitle: 'Master the rules of Noon Sakinah, Meem, Madd, and phonetic characteristics with continuous Sanad guidance.',
-    subtitleAr: 'دراسة تطبيقية لأحكام النون والميم والمدود وصفات الحروف مع توجيهات السند المتصل.',
-    category: 'Tajweed',
-    categoryAr: 'علم التجويد',
-    level: 'All Levels',
-    levelAr: 'جميع المستويات',
-    durationMinutes: 960,
-    lessonCount: 32,
-    price: 110,
-    isFree: false,
-    rating: 5.0,
-    reviewCount: 218,
-    videoPreviewUrl: '',
-  },
-  {
-    id: 'course-3',
-    slug: 'quran-memorization-hifz-methodology',
-    title: 'Hifz Acceleration: Structured Memorization System',
-    titleAr: 'منهجية الحفظ المتقن للقرآن الكريم وتثبيت المتشابهات',
-    subtitle: 'A scientific, cognitive-based curriculum for permanent retention, spaced repetition, and Mutashabihat mastery.',
-    subtitleAr: 'منهج علمي راسخ يجمع بين التكرار المتباعد، ضبط المتشابهات، وجداول المراجعة الدقيقة.',
-    category: 'Quran Memorization',
-    categoryAr: 'حفظ القرآن',
-    level: 'Intermediate',
-    levelAr: 'متوسط',
-    durationMinutes: 840,
-    lessonCount: 28,
-    price: 125,
-    isFree: false,
-    rating: 5.0,
-    reviewCount: 96,
-    videoPreviewUrl: '',
-  },
-];
+const fallbackCourses: CourseCardData[] = [];
 
 interface FeaturedCoursesProps {
   currentLocale: string;
@@ -226,7 +170,31 @@ export function FeaturedCourses({ currentLocale }: FeaturedCoursesProps) {
         </div>
 
         {/* Courses Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        {filteredCourses.length === 0 ? (
+          <div className="py-16 text-center max-w-lg mx-auto bg-white rounded-3xl p-8 border border-surface-border shadow-card-subtle">
+            <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center mx-auto mb-4 border border-brand-100">
+              <GraduationCap className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-navy-950 mb-2">
+              {isRtl ? 'جاري إعداد ورفع الدورات الأكاديمية الجديدة' : 'New Academic Courses In Preparation'}
+            </h3>
+            <p className="text-sm text-navy-600 mb-6 leading-relaxed">
+              {isRtl
+                ? 'يقوم فريق الأكاديمية بإشراف الأستاذة عبير جاد بإعداد المقررات والمناهج بدقة لتكون متاحة للتسجيل قريباً. يمكنك التواصل مباشرة معنا عبر واتساب للاستفسار أو حجز الجلسات الفردية.'
+                : 'The academy is preparing and updating structured curricula under Ustadhah Abeer Gad. Inquire directly or book a private lesson.'}
+            </p>
+            <a
+              href={`https://wa.me/201000000000?text=${encodeURIComponent(isRtl ? 'السلام عليكم، أود الاستفسار عن برامج ودورات الأكاديمية القادمة.' : 'Hello, I would like to inquire about upcoming academy courses.')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-500 shadow-sm transition-all"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>{isRtl ? 'تواصل عبر واتساب للاستفسار' : 'Inquire via WhatsApp'}</span>
+            </a>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {filteredCourses.map((course) => {
             const title = isRtl ? course.titleAr : course.title;
             const subtitle = isRtl ? course.subtitleAr : course.subtitle;
@@ -347,6 +315,7 @@ export function FeaturedCourses({ currentLocale }: FeaturedCoursesProps) {
             );
           })}
         </div>
+        )}
       </div>
 
       {/* Embedded Video Modal */}
