@@ -1,5 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import {
+  SlotPricingSettings,
+  DEFAULT_SLOT_PRICING,
+  calculateSlotPrice,
+} from './slot-pricing';
 
 export interface LessonData {
   id: string;
@@ -190,6 +195,9 @@ export interface SiteSettingsData {
   // Footer About
   footerAboutAr: string;
   footerAboutEn: string;
+
+  // Time-Based Dynamic Slot Pricing
+  slotPricing?: SlotPricingSettings;
 
   updatedAt: string;
 }
@@ -547,6 +555,9 @@ const INITIAL_SETTINGS: SiteSettingsData = {
   footerAboutAr: 'أكاديمية عبير جاد متخصصة في تعليم اللغة العربية وعلوم القرآن الكريم وتجويده، وتجمع بين أصالة السند النبوي الشريف وأحدث أساليب التعليم الرقمي التفاعلي.',
   footerAboutEn: 'Abeer Gad Academy specializes in Classical Arabic, Quran Recitation, and Memorization with authentic continuous Sanad and modern interactive technology.',
 
+  // Time-Based Slot Pricing Defaults (Day: 10 AM - 10 PM -> $45, Night: 10 PM - 10 AM -> $60)
+  slotPricing: DEFAULT_SLOT_PRICING,
+
   updatedAt: new Date().toISOString(),
 };
 
@@ -570,6 +581,10 @@ function ensureStoreExists(): AcademyStore {
     const raw = fs.readFileSync(STORE_FILE, 'utf8');
     const parsed = JSON.parse(raw) as AcademyStore;
     parsed.settings = { ...INITIAL_SETTINGS, ...(parsed.settings || {}) };
+    parsed.settings.slotPricing = {
+      ...DEFAULT_SLOT_PRICING,
+      ...(parsed.settings.slotPricing || {}),
+    };
     if (!parsed.settings.services || parsed.settings.services.length === 0) {
       parsed.settings.services = INITIAL_SERVICES;
     }
@@ -863,13 +878,18 @@ export function saveSlot(data: Partial<SlotData> & { date: string; time: string 
     }
   }
 
+  // Auto-calculate dynamic time-based price if not explicitly provided
+  const pricing = store.settings?.slotPricing || DEFAULT_SLOT_PRICING;
+  const calculated = calculateSlotPrice(data.time, pricing);
+  const finalPrice = typeof data.price === 'number' && data.price >= 0 ? data.price : calculated.price;
+
   const newSlot: SlotData = {
     id: `slot-${Date.now()}`,
     date: data.date,
     time: data.time,
     instructor: data.instructor || 'Ustadha Abeer Gad',
-    price: data.price ?? 45,
-    currency: data.currency || 'USD',
+    price: finalPrice,
+    currency: data.currency || pricing.currency || 'USD',
     status: data.status || 'AVAILABLE',
     meetingUrl: data.meetingUrl || 'https://meet.google.com/abeergad-academy',
     notes: data.notes,
@@ -878,6 +898,24 @@ export function saveSlot(data: Partial<SlotData> & { date: string; time: string 
   store.slots.unshift(newSlot);
   saveStore(store);
   return newSlot;
+}
+
+export function applyPricingToAllSlots(): { updatedCount: number; slots: SlotData[] } {
+  const store = ensureStoreExists();
+  const pricing = store.settings?.slotPricing || DEFAULT_SLOT_PRICING;
+  let count = 0;
+  store.slots = (store.slots || []).map((s) => {
+    // Only update available slots, or all slots
+    const calculated = calculateSlotPrice(s.time, pricing);
+    count++;
+    return {
+      ...s,
+      price: calculated.price,
+      currency: pricing.currency || s.currency || 'USD',
+    };
+  });
+  saveStore(store);
+  return { updatedCount: count, slots: store.slots };
 }
 
 export function toggleSlotStatus(id: string): SlotData | null {

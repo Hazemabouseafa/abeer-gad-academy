@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { calculateSlotPrice } from '@/lib/slot-pricing';
 import type { SlotData } from '@/lib/data-store';
 
 interface FullInteractiveCalendarProps {
@@ -383,6 +384,7 @@ export function FullInteractiveCalendar({
               {activeDaySlots.map((slot) => {
                 const isBooked = slot.status === 'BOOKED';
                 const isSelected = selectedSlot?.id === slot.id;
+                const priceInfo = calculateSlotPrice(slot.time);
 
                 return (
                   <button
@@ -399,21 +401,29 @@ export function FullInteractiveCalendar({
                     }`}
                   >
                     <div className="flex items-center gap-1.5 font-mono text-xs">
+                      <span>{priceInfo.icon}</span>
                       <Clock className="w-3.5 h-3.5" />
                       <span>{slot.time}</span>
                     </div>
 
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        isSelected
-                          ? 'bg-white/20 text-white'
-                          : isBooked
-                          ? 'bg-gray-200 text-gray-600'
-                          : 'bg-emerald-100 text-emerald-800'
-                      }`}
-                    >
-                      {isBooked ? (isRtl ? 'محجوز' : 'Booked') : (isRtl ? 'متاح' : 'Available')}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`font-bold text-xs ${isSelected ? 'text-white' : 'text-brand-800'}`}>
+                        ${slot.price}
+                      </span>
+                      <span
+                        className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                          isSelected
+                            ? 'bg-white/20 text-white'
+                            : isBooked
+                            ? 'bg-gray-200 text-gray-600'
+                            : priceInfo.isDay
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-indigo-100 text-indigo-800'
+                        }`}
+                      >
+                        {isBooked ? (isRtl ? 'محجوز' : 'Booked') : (priceInfo.isDay ? (isRtl ? 'نهاري' : 'Day') : (isRtl ? 'ليلي' : 'Night'))}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
@@ -443,20 +453,30 @@ export function FullInteractiveCalendar({
           </div>
 
           {/* Selected Session Preview Banner */}
-          {selectedSlot ? (
-            <div className="p-3.5 rounded-2xl bg-brand-50/70 border border-brand-200 text-xs text-brand-900 space-y-1">
-              <div className="font-extrabold flex items-center justify-between">
-                <span>{isRtl ? 'الموعد المختار:' : 'Selected Session:'}</span>
-                <span className="text-brand-700 font-mono font-bold text-sm">
-                  {formatCurrency(selectedSlot.price)}
-                </span>
+          {selectedSlot ? (() => {
+            const selectedPriceInfo = calculateSlotPrice(selectedSlot.time);
+            return (
+              <div className="p-3.5 rounded-2xl bg-brand-50/70 border border-brand-200 text-xs text-brand-900 space-y-1.5">
+                <div className="font-extrabold flex items-center justify-between">
+                  <span>{isRtl ? 'الموعد المختار:' : 'Selected Session:'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                      selectedPriceInfo.isDay ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-indigo-100 text-indigo-800 border border-indigo-300'
+                    }`}>
+                      {selectedPriceInfo.icon} {isRtl ? (selectedPriceInfo.isDay ? 'فترة نهارية' : 'فترة مسائية/ليلية') : (selectedPriceInfo.isDay ? 'Daytime' : 'Nighttime')}
+                    </span>
+                    <span className="text-brand-700 font-mono font-bold text-sm">
+                      {formatCurrency(selectedSlot.price)}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-[11px] font-mono text-navy-700 flex items-center gap-2">
+                  <span>📅 {selectedSlot.date}</span>
+                  <span>⏰ {selectedSlot.time}</span>
+                </div>
               </div>
-              <div className="text-[11px] font-mono text-navy-700 flex items-center gap-2">
-                <span>📅 {selectedSlot.date}</span>
-                <span>⏰ {selectedSlot.time}</span>
-              </div>
-            </div>
-          ) : (
+            );
+          })() : (
             <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
               {isRtl ? 'يرجى النقر على موعد متاح من التقويم بالأعلى' : 'Please select an available slot from the calendar'}
             </div>

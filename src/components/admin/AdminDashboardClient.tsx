@@ -43,8 +43,16 @@ import {
   ArrowLeft,
   ChevronRight,
   ChevronLeft,
+  Save,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import {
+  calculateSlotPrice,
+  DEFAULT_SLOT_PRICING,
+  type SlotPricingSettings,
+} from '@/lib/slot-pricing';
 import type {
   CourseData,
   SlotData,
@@ -180,6 +188,11 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const [newLessonVideoUrl, setNewLessonVideoUrl] = useState('');
   const [newLessonDuration, setNewLessonDuration] = useState('30m');
   const [newLessonIsFree, setNewLessonIsFree] = useState(false);
+
+  // Time-Based Dynamic Slot Pricing States
+  const [slotPricingForm, setSlotPricingForm] = useState<SlotPricingSettings>(DEFAULT_SLOT_PRICING);
+  const [savingPricing, setSavingPricing] = useState(false);
+  const [applyingPricing, setApplyingPricing] = useState(false);
 
   // Slot Form
   const [slotFormData, setSlotFormData] = useState({
@@ -405,7 +418,15 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       if (resCourses.courses) setCourses(resCourses.courses);
       if (resSlots.slots) setSlots(resSlots.slots);
       if (resResources.resources) setResources(resResources.resources);
-      if (resSettings.settings) setSettings(resSettings.settings);
+      if (resSettings.settings) {
+        setSettings(resSettings.settings);
+        if (resSettings.settings.slotPricing) {
+          setSlotPricingForm({
+            ...DEFAULT_SLOT_PRICING,
+            ...resSettings.settings.slotPricing,
+          });
+        }
+      }
       if (resTransactions && resTransactions.transactions) {
         setTransactions(resTransactions.transactions);
       } else {
@@ -847,6 +868,54 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleSaveSlotPricing = async () => {
+    try {
+      setSavingPricing(true);
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slotPricing: slotPricingForm }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+        triggerToast(isRtl ? 'تم حفظ وتحديث نظام أسعار الحصص بنجاح' : 'Slot pricing updated successfully');
+      } else {
+        triggerToast(isRtl ? 'فشل حفظ إعدادات الأسعار' : 'Failed to save pricing');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast(isRtl ? 'حدث خطأ في الحفظ' : 'Error saving pricing');
+    } finally {
+      setSavingPricing(false);
+    }
+  };
+
+  const handleApplySlotPricingToAll = async () => {
+    if (!confirm(isRtl ? 'هل تريد تطبيق هذه الأسعار على كافة المواعيد الحالية في النظام؟' : 'Apply these prices to all current slots?')) return;
+    try {
+      setApplyingPricing(true);
+      // First ensure latest settings are saved
+      await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slotPricing: slotPricingForm }),
+      });
+
+      const res = await fetch('/api/admin/slots/apply-pricing', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.slots) {
+        setSlots(data.slots);
+        triggerToast(isRtl ? `تم تحديث أسعار ${data.updatedCount || data.slots.length} موعد وفق النظام الجديد بنجاح!` : `Updated prices for ${data.updatedCount} slots`);
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast(isRtl ? 'حدث خطأ أثناء تطبيق الأسعار' : 'Error applying prices');
+    } finally {
+      setApplyingPricing(false);
     }
   };
 
@@ -3329,6 +3398,132 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                 </div>
 
                 {/* ========================================================== */}
+                {/* TIME-BASED DYNAMIC PRICING CONFIGURATION CARD */}
+                {/* ========================================================== */}
+                <div className="bg-gradient-to-r from-amber-50/80 via-white to-indigo-50/80 rounded-3xl border border-surface-border p-5 sm:p-6 shadow-card-subtle space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="badge-gold text-[10px] mb-1 inline-flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-brand-700" />
+                        <span>{isRtl ? 'نظام التسعير الزمني الذكي للحصص الفردية' : 'Dynamic Time-Based Slot Pricing'}</span>
+                      </span>
+                      <h4 className="font-extrabold text-base text-navy-950 flex items-center gap-2">
+                        <span>{isRtl ? 'تحديد أسعار الحصص حسب توقيت الجلسة (صباحي / مسائي)' : 'Configure Day & Night Lesson Rates'}</span>
+                      </h4>
+                      <p className="text-xs text-navy-500">
+                        {isRtl
+                          ? 'يمكنك تعديل أسعار الفترات في أي وقت وتطبيقها فوراً بنقرة واحدة على كافة المواعيد الحالية والجديدة'
+                          : 'Define automated rates for daytime and nighttime slots, editable anytime by the administrator'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={handleApplySlotPricingToAll}
+                        disabled={applyingPricing}
+                        className="px-3.5 py-2 rounded-xl bg-white hover:bg-surface-muted border border-surface-border text-navy-800 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                        title={isRtl ? 'تحديث أسعار كافة المواعيد المتاحة حالياً وفقاً لهذه الأسعار' : 'Apply rates to all existing slots'}
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 text-brand-700 ${applyingPricing ? 'animate-spin' : ''}`} />
+                        <span>{applyingPricing ? (isRtl ? 'جاري التطبيق...' : 'Applying...') : (isRtl ? 'تطبيق على كافة المواعيد' : 'Apply to All Slots')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveSlotPricing}
+                        disabled={savingPricing}
+                        className="px-4 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>{savingPricing ? (isRtl ? 'جاري الحفظ...' : 'Saving...') : (isRtl ? 'حفظ الأسعار' : 'Save Rates')}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2 Interactive Period Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* DAYTIME CARD */}
+                    <div className="p-4 rounded-2xl bg-white/90 border border-amber-200 shadow-sm space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">☀️</span>
+                          <div>
+                            <h5 className="font-extrabold text-xs text-navy-950">
+                              {isRtl ? 'الفترة الصباحية / النهارية' : 'Daytime Window'}
+                            </h5>
+                            <span className="text-[11px] font-mono text-amber-700 font-semibold block">
+                              {isRtl ? 'من 10:00 صباحاً حتى 10:00 مساءً (10:00 - 22:00)' : '10:00 AM - 10:00 PM'}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold border border-amber-200">
+                          {isRtl ? '12 ساعة نهارية' : '12 Hours Day'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-navy-700 block mb-1">
+                          {isRtl ? 'سعر الحصة الصباحية ($ USD)' : 'Daytime Lesson Rate ($ USD)'}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={slotPricingForm.dayPrice}
+                            onChange={(e) => setSlotPricingForm({ ...slotPricingForm, dayPrice: Number(e.target.value) })}
+                            className="w-full px-3 py-2 ps-8 rounded-xl border border-surface-border text-xs font-mono font-bold text-navy-900 focus:ring-2 focus:ring-brand-500/20"
+                          />
+                          <span className="absolute start-3 top-2 font-mono font-bold text-navy-400 text-xs">$</span>
+                        </div>
+                        <span className="text-[10px] text-navy-400 mt-1 block">
+                          {isRtl ? 'السعر التلقائي للحصص بين 10:00 ص و 10:00 م' : 'Applied to slots between 10:00 AM & 10:00 PM'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* NIGHTTIME CARD */}
+                    <div className="p-4 rounded-2xl bg-white/90 border border-indigo-200 shadow-sm space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">🌙</span>
+                          <div>
+                            <h5 className="font-extrabold text-xs text-navy-950">
+                              {isRtl ? 'الفترة المسائية / الليلية' : 'Nighttime Window'}
+                            </h5>
+                            <span className="text-[11px] font-mono text-indigo-700 font-semibold block">
+                              {isRtl ? 'من 10:00 مساءً حتى 10:00 صباحاً (22:00 - 10:00)' : '10:00 PM - 10:00 AM'}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold border border-indigo-200">
+                          {isRtl ? '12 ساعة ليلية' : '12 Hours Night'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-navy-700 block mb-1">
+                          {isRtl ? 'سعر الحصة المسائية/الليلية ($ USD)' : 'Nighttime Lesson Rate ($ USD)'}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={slotPricingForm.nightPrice}
+                            onChange={(e) => setSlotPricingForm({ ...slotPricingForm, nightPrice: Number(e.target.value) })}
+                            className="w-full px-3 py-2 ps-8 rounded-xl border border-surface-border text-xs font-mono font-bold text-navy-900 focus:ring-2 focus:ring-brand-500/20"
+                          />
+                          <span className="absolute start-3 top-2 font-mono font-bold text-navy-400 text-xs">$</span>
+                        </div>
+                        <span className="text-[10px] text-navy-400 mt-1 block">
+                          {isRtl ? 'السعر التلقائي للحصص بين 10:00 م و 10:00 ص' : 'Applied to slots between 10:00 PM & 10:00 AM'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ========================================================== */}
                 {/* INTERACTIVE ADMIN MONTH CALENDAR */}
                 {/* ========================================================== */}
                 <div className="bg-white rounded-3xl border border-surface-border p-6 shadow-card-subtle space-y-4">
@@ -3493,20 +3688,35 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                             type="text"
                             required
                             value={slotFormData.time}
-                            onChange={(e) => setSlotFormData({ ...slotFormData, time: e.target.value })}
+                            onChange={(e) => {
+                              const newTime = e.target.value;
+                              const calc = calculateSlotPrice(newTime, slotPricingForm);
+                              setSlotFormData({ ...slotFormData, time: newTime, price: calc.price });
+                            }}
                             placeholder="e.g. 10:00 AM UTC"
                             className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono"
                           />
                           {/* Quick Time Preset Chips */}
                           <div className="flex flex-wrap gap-1 mt-1.5">
-                            {['09:00 AM UTC', '11:00 AM UTC', '02:00 PM UTC', '04:00 PM UTC', '06:00 PM UTC', '08:00 PM UTC'].map((preset) => (
+                            {[
+                              { label: '☀️ 10:00 ص', time: '10:00 AM UTC' },
+                              { label: '☀️ 02:00 م', time: '02:00 PM UTC' },
+                              { label: '☀️ 06:00 م', time: '06:00 PM UTC' },
+                              { label: '☀️ 09:00 م', time: '09:00 PM UTC' },
+                              { label: '🌙 10:00 م', time: '10:00 PM UTC' },
+                              { label: '🌙 11:30 م', time: '11:30 PM UTC' },
+                              { label: '🌙 02:00 ص', time: '02:00 AM UTC' },
+                            ].map((preset) => (
                               <button
-                                key={preset}
+                                key={preset.time}
                                 type="button"
-                                onClick={() => setSlotFormData({ ...slotFormData, time: preset })}
+                                onClick={() => {
+                                  const calc = calculateSlotPrice(preset.time, slotPricingForm);
+                                  setSlotFormData({ ...slotFormData, time: preset.time, price: calc.price });
+                                }}
                                 className="px-1.5 py-0.5 rounded text-[10px] bg-surface-muted hover:bg-brand-50 hover:text-brand-800 border border-surface-borderSubtle font-mono"
                               >
-                                {preset.slice(0, 5)}
+                                {preset.label}
                               </button>
                             ))}
                           </div>
@@ -3525,12 +3735,24 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         </div>
 
                         <div>
-                          <label className="font-bold text-navy-700 block mb-1">{isRtl ? 'السعر ($ USD)' : 'Price ($ USD)'}</label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="font-bold text-navy-700 block">{isRtl ? 'السعر ($ USD)' : 'Price ($ USD)'}</label>
+                            {(() => {
+                              const calc = calculateSlotPrice(slotFormData.time, slotPricingForm);
+                              return (
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1 ${
+                                  calc.isDay ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                }`}>
+                                  {calc.icon} {isRtl ? (calc.isDay ? `سعر نهاري ($${slotPricingForm.dayPrice})` : `سعر ليلي ($${slotPricingForm.nightPrice})`) : (calc.isDay ? `Day ($${slotPricingForm.dayPrice})` : `Night ($${slotPricingForm.nightPrice})`)}
+                                </span>
+                              );
+                            })()}
+                          </div>
                           <input
                             type="number"
                             value={slotFormData.price}
                             onChange={(e) => setSlotFormData({ ...slotFormData, price: Number(e.target.value) })}
-                            className="w-full px-3 py-2 rounded-xl border border-surface-border font-bold"
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border font-bold font-mono"
                           />
                         </div>
                       </div>
@@ -3614,9 +3836,21 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                       )}
 
                       <div className="pt-2 border-t border-surface-border flex items-center justify-between">
-                        <span className="font-black text-brand-700 text-sm">
-                          {formatCurrency(slot.price)}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-black text-brand-700 text-sm">
+                            {formatCurrency(slot.price)}
+                          </span>
+                          {(() => {
+                            const pInfo = calculateSlotPrice(slot.time, slotPricingForm);
+                            return (
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                                pInfo.isDay ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                              }`}>
+                                {pInfo.icon} {isRtl ? (pInfo.isDay ? 'نهاري' : 'ليلي') : (pInfo.isDay ? 'Day' : 'Night')}
+                              </span>
+                            );
+                          })()}
+                        </div>
                         <div className="flex items-center gap-1">
                           <button
                             type="button"

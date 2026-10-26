@@ -346,6 +346,14 @@
     ],
     "footerAboutAr": "أكاديمية عبير جاد متخصصة في تعليم اللغة العربية وعلوم القرآن الكريم وتجويده، وتجمع بين أصالة السند النبوي الشريف وأحدث أساليب التعليم الرقمي التفاعلي.",
     "footerAboutEn": "Abeer Gad Academy specializes in Classical Arabic, Quran Recitation, and Memorization with authentic continuous Sanad and modern interactive technology.",
+    "slotPricing": {
+      "dayPrice": 45,
+      "nightPrice": 60,
+      "dayStartHour": 10,
+      "dayEndHour": 22,
+      "currency": "USD",
+      "autoApply": true
+    },
     "updatedAt": "2026-10-25T15:11:55.600Z",
     "autoTranslate": false
   }
