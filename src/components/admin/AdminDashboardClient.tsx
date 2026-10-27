@@ -84,10 +84,19 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   >('OVERVIEW');
 
   // Sub-tab inside FRONTEND_CMS
-  const [cmsSubTab, setCmsSubTab] = useState<'HERO' | 'SERVICES' | 'TESTIMONIALS' | 'COMMUNICATION'>('HERO');
+  const [cmsSubTab, setCmsSubTab] = useState<'HERO' | 'SERVICES' | 'TESTIMONIALS' | 'COMMUNICATION' | 'PAYPAL'>('HERO');
 
   // Sub-tab inside FINANCIALS_STUDENTS
-  const [financeSubTab, setFinanceSubTab] = useState<'TRANSACTIONS' | 'STUDENTS'>('TRANSACTIONS');
+  const [financeSubTab, setFinanceSubTab] = useState<'TRANSACTIONS' | 'STUDENTS' | 'PAYPAL_SETTINGS'>('TRANSACTIONS');
+
+  // PayPal Configuration States
+  const [showPayPalSecret, setShowPayPalSecret] = useState(false);
+  const [testingPayPal, setTestingPayPal] = useState(false);
+  const [savingPayPal, setSavingPayPal] = useState(false);
+  const [paypalTestResult, setPaypalTestResult] = useState<{
+    valid: boolean;
+    message: string;
+  } | null>(null);
 
   // Service Inline Editor State
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
@@ -458,7 +467,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
         fetch('/api/admin/courses').then((r) => r.json()),
         fetch('/api/admin/slots').then((r) => r.json()),
         fetch('/api/admin/resources').then((r) => r.json()),
-        fetch('/api/admin/settings').then((r) => r.json()),
+        fetch('/api/admin/settings?admin=1').then((r) => r.json()),
         fetch('/api/admin/transactions').then((r) => r.json()).catch(() => ({ transactions: [] })),
         fetch('/api/admin/students').then((r) => r.json()).catch(() => ({ students: [] })),
       ]);
@@ -1090,6 +1099,250 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       alert('Error updating settings');
     }
   };
+
+  // --- PayPal Connection & API Settings Handlers ---
+  const handleSavePayPalSettings = async (testConnectionAfterSave = false) => {
+    try {
+      if (testConnectionAfterSave) {
+        setTestingPayPal(true);
+      } else {
+        setSavingPayPal(true);
+      }
+      setPaypalTestResult(null);
+
+      const res = await fetch('/api/admin/paypal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: testConnectionAfterSave ? 'save_and_test' : 'save',
+          paypalClientId: settings.paypalClientId || '',
+          paypalClientSecret: settings.paypalClientSecret || '',
+          paypalMode: settings.paypalMode || 'live',
+        }),
+      });
+      const data = await res.json();
+
+      if (data.settings) {
+        setSettings(data.settings);
+      }
+
+      if (testConnectionAfterSave) {
+        if (data.valid) {
+          setPaypalTestResult({
+            valid: true,
+            message: isRtl
+              ? `✅ تم حفظ البيانات والاتصال بخوادم PayPal (${(data.mode || 'LIVE').toUpperCase()}) بنجاح! الحساب متصل وجاهز لاستقبال المدفوعات.`
+              : `✅ Credentials saved and verified with PayPal (${(data.mode || 'LIVE').toUpperCase()}) successfully!`,
+          });
+          triggerToast(isRtl ? 'تم التحقق من اتصال PayPal وحفظ المفاتيح بنجاح' : 'PayPal credentials verified & saved!');
+        } else {
+          setPaypalTestResult({
+            valid: false,
+            message:
+              data.error ||
+              (isRtl
+                ? '❌ تعذر المصادقة مع PayPal. يرجى التأكد من صحة Client ID و Secret Key ومطابقة وضع التشغيل (Live / Sandbox).'
+                : '❌ Failed to authenticate with PayPal. Please check your Client ID, Secret Key, and Mode.'),
+          });
+        }
+      } else if (data.success) {
+        setPaypalTestResult({
+          valid: true,
+          message: isRtl
+            ? 'تم حفظ بيانات الاتصال بـ PayPal بنجاح وتفعيلها على المنصة.'
+            : 'PayPal credentials saved and activated on the platform.',
+        });
+        triggerToast(isRtl ? 'تم حفظ إعدادات PayPal بنجاح' : 'PayPal settings saved!');
+      }
+    } catch (err) {
+      console.error(err);
+      setPaypalTestResult({
+        valid: false,
+        message: isRtl ? 'حدث خطأ أثناء حفظ أو اختبار إعدادات PayPal' : 'Error saving or testing PayPal settings',
+      });
+    } finally {
+      setSavingPayPal(false);
+      setTestingPayPal(false);
+    }
+  };
+
+  const renderPayPalSettingsCard = () => (
+    <div className="academy-card p-6 bg-white border-2 border-[#003087]/20 rounded-2xl space-y-5 shadow-card-subtle">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-surface-border">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-[#FFC439]/20 border border-[#FFC439] flex items-center justify-center shrink-0">
+            <CreditCard className="w-5 h-5 text-[#003087]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="font-extrabold text-navy-950 text-sm sm:text-base">
+                {isRtl ? 'إعدادات الربط ببوابة الدفع العالمية (PayPal API Settings)' : 'PayPal Gateway API Configuration'}
+              </h4>
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${
+                  (settings.paypalMode || 'live') === 'live'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                }`}
+              >
+                {(settings.paypalMode || 'live') === 'live'
+                  ? isRtl
+                    ? 'LIVE • وضع مباشر حقيقي'
+                    : 'LIVE MODE'
+                  : isRtl
+                  ? 'SANDBOX • وضع تجريبي'
+                  : 'SANDBOX MODE'}
+              </span>
+            </div>
+            <p className="text-xs text-navy-500 mt-0.5">
+              {isRtl
+                ? 'تحكم في بيانات الربط المباشر بحساب PayPal (Client ID & Secret Key) لتشغيل الدفع التلقائي للدورات والحصص الخاصة'
+                : 'Configure your PayPal REST API Client ID and Secret Key for live course and private lesson checkouts'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={testingPayPal || savingPayPal}
+            onClick={() => handleSavePayPalSettings(true)}
+            className="px-4 py-2 rounded-xl bg-[#003087] hover:bg-[#001F5C] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-60"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#FFC439] ${testingPayPal ? 'animate-spin' : ''}`} />
+            <span>
+              {testingPayPal
+                ? isRtl
+                  ? 'جاري فحص الاتصال...'
+                : 'Testing Connection...'
+                : isRtl
+                ? 'حفظ وفحص الاتصال بـ PayPal'
+                : 'Save & Test Connection'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            disabled={savingPayPal || testingPayPal}
+            onClick={() => handleSavePayPalSettings(false)}
+            className="px-4 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-60"
+          >
+            <Save className="w-3.5 h-3.5 text-gold-300" />
+            <span>
+              {savingPayPal
+                ? isRtl
+                  ? 'جاري الحفظ...'
+                  : 'Saving...'
+                : isRtl
+                ? 'حفظ المفاتيح'
+                : 'Save Keys'}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {paypalTestResult && (
+        <div
+          className={`p-4 rounded-xl border text-xs font-bold flex items-center gap-2.5 ${
+            paypalTestResult.valid
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              : 'bg-rose-50 border-rose-200 text-rose-900'
+          }`}
+        >
+          <CheckCircle2
+            className={`w-4 h-4 shrink-0 ${
+              paypalTestResult.valid ? 'text-emerald-600' : 'text-rose-600'
+            }`}
+          />
+          <span>{paypalTestResult.message}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div className="md:col-span-1">
+          <label className="font-bold text-navy-800 block mb-1.5">
+            {isRtl ? 'بيئة التشغيل (PayPal Environment)' : 'PayPal Environment Mode'}
+          </label>
+          <select
+            value={settings.paypalMode || 'live'}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                paypalMode: e.target.value as 'live' | 'sandbox',
+              })
+            }
+            className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border bg-white font-bold text-navy-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+          >
+            <option value="live">
+              {isRtl ? '🟢 Live (مباشر - استقبال أموال حقيقية)' : '🟢 Live (Production - Real Payments)'}
+            </option>
+            <option value="sandbox">
+              {isRtl ? '🟡 Sandbox (تجريبي - للاختبار فقط)' : '🟡 Sandbox (Testing Mode)'}
+            </option>
+          </select>
+          <span className="text-[11px] text-navy-400 mt-1 block">
+            {isRtl
+              ? 'اختر Live عند استخدام مفاتيح الحساب التجاري الحقيقي.'
+              : 'Select Live when using real production credentials.'}
+          </span>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="font-bold text-navy-800 block mb-1.5">
+            {isRtl ? 'معرّف العميل (PayPal Client ID)' : 'PayPal Client ID'}
+          </label>
+          <input
+            type="text"
+            dir="ltr"
+            value={settings.paypalClientId || ''}
+            onChange={(e) => setSettings({ ...settings, paypalClientId: e.target.value })}
+            placeholder="BAAl7Fn0BnuGQIUuqjDwEvLdEIlEuXpqrH0mpB..."
+            className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+          />
+        </div>
+
+        <div className="md:col-span-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="font-bold text-navy-800 block">
+              {isRtl ? 'المفتاح السري لـ PayPal (PayPal Secret Key)' : 'PayPal Secret Key'}
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowPayPalSecret(!showPayPalSecret)}
+              className="text-[11px] font-bold text-brand-700 hover:text-brand-900 flex items-center gap-1"
+            >
+              {showPayPalSecret ? (
+                <>
+                  <EyeOff className="w-3.5 h-3.5" />
+                  <span>{isRtl ? 'إخفاء المفتاح السري' : 'Hide Secret Key'}</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{isRtl ? 'إظهار المفتاح السري' : 'Show Secret Key'}</span>
+                </>
+              )}
+            </button>
+          </div>
+          <div className="relative">
+            <input
+              type={showPayPalSecret ? 'text' : 'password'}
+              dir="ltr"
+              value={settings.paypalClientSecret || ''}
+              onChange={(e) => setSettings({ ...settings, paypalClientSecret: e.target.value })}
+              placeholder="EKTl-t1zJSFcTwgGwVEqLfBRRGQKe6dHnv5ETpfYpzQ..."
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+            />
+          </div>
+          <span className="text-[11px] text-navy-500 mt-1.5 block">
+            {isRtl
+              ? 'يُستخدم هذا المفتاح السري للمصادقة الآمنة مع خوادم PayPal وإنشاء وتأكيد طلبات الدفع تلقائياً.'
+              : 'Used for server-side OAuth2 authentication with PayPal to create and capture orders.'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 
   const handleUpdateServiceField = (serviceId: string, field: keyof ServiceCardItem, value: any) => {
     setSettings((prev) => ({
@@ -1898,6 +2151,19 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     }`}
                   >
                     {isRtl ? 'الإعلانات والتواصل والفوتر' : 'Announcements & Contact'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCmsSubTab('PAYPAL')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      cmsSubTab === 'PAYPAL'
+                        ? 'bg-[#003087] text-white shadow-card-subtle'
+                        : 'bg-[#FFC439]/25 text-[#003087] border border-[#FFC439] hover:bg-[#FFC439]/40'
+                    }`}
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>{isRtl ? 'إعدادات الربط بـ PayPal' : 'PayPal Settings'}</span>
                   </button>
                 </div>
 
@@ -3440,6 +3706,16 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                       </div>
                     </div>
                   </div>
+
+                  {/* PayPal Gateway Settings also included here for convenience */}
+                  {renderPayPalSettingsCard()}
+                </div>
+              )}
+
+              {/* Sub-tab 5: PAYPAL SETTINGS */}
+              {cmsSubTab === 'PAYPAL' && (
+                <div className="space-y-6">
+                  {renderPayPalSettingsCard()}
                 </div>
               )}
             </div>
@@ -4959,6 +5235,19 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                       {students.length}
                     </span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFinanceSubTab('PAYPAL_SETTINGS')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      financeSubTab === 'PAYPAL_SETTINGS'
+                        ? 'bg-[#003087] text-white shadow-card-subtle'
+                        : 'bg-[#FFC439]/25 text-[#003087] border border-[#FFC439] hover:bg-[#FFC439]/40'
+                    }`}
+                  >
+                    <Settings className="w-4 h-4 shrink-0" />
+                    <span>{isRtl ? 'إعدادات الربط بـ PayPal (Client ID & Secret)' : 'PayPal API Settings'}</span>
+                  </button>
                 </div>
 
                 <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-navy-700 px-2">
@@ -4972,7 +5261,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
               {/* Sub-tab 1: PAYPAL TRANSACTIONS LEDGER */}
               {financeSubTab === 'TRANSACTIONS' && (
                 <div className="bg-white rounded-2xl border border-surface-border overflow-hidden shadow-card-subtle">
-                  <div className="p-5 border-b border-surface-border flex items-center justify-between">
+                  <div className="p-5 border-b border-surface-border flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="font-extrabold text-navy-950 text-sm">
                         {isRtl ? 'سجل عمليات الدفع الإلكتروني المعتمدة عبر PayPal' : 'PayPal Live Transactions Ledger'}
@@ -4983,9 +5272,19 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           : 'Real-time record of verified payments, capture IDs, and customer emails'}
                       </p>
                     </div>
-                    <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      {isRtl ? 'بوابة دفع نشطة ومعتمدة' : 'Verified Gateway'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFinanceSubTab('PAYPAL_SETTINGS')}
+                        className="px-3.5 py-1.5 rounded-xl bg-[#003087] hover:bg-[#001F5C] text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-[#FFC439]" />
+                        <span>{isRtl ? 'تعديل بيانات الربط بـ PayPal' : 'Edit PayPal API Keys'}</span>
+                      </button>
+                      <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        {isRtl ? 'بوابة دفع نشطة ومعتمدة' : 'Verified Gateway'}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="overflow-x-auto">
@@ -5095,6 +5394,13 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                       </tbody>
                     </table>
                   </div>
+                </div>
+              )}
+
+              {/* Sub-tab 3: PAYPAL API SETTINGS */}
+              {financeSubTab === 'PAYPAL_SETTINGS' && (
+                <div className="space-y-6">
+                  {renderPayPalSettingsCard()}
                 </div>
               )}
             </div>

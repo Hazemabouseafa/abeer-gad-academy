@@ -5,10 +5,24 @@ import { translateSingle } from '@/lib/translate';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const settings = getSiteSettings();
-    return NextResponse.json({ success: true, settings });
+    const url = new URL(request.url);
+    const isAdminQuery = url.searchParams.get('admin') === '1';
+    const cookieHeader = request.headers.get('cookie') || '';
+    const hasAdminCookie = cookieHeader.includes('abeer_admin_session');
+
+    if (isAdminQuery || hasAdminCookie) {
+      return NextResponse.json({ success: true, settings });
+    }
+
+    // Mask secret key for public frontend consumers
+    const publicSettings = {
+      ...settings,
+      paypalClientSecret: undefined,
+    };
+    return NextResponse.json({ success: true, settings: publicSettings });
   } catch (error) {
     return NextResponse.json({ success: false, error: 'Failed to fetch settings' }, { status: 500 });
   }

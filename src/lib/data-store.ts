@@ -216,6 +216,11 @@ export interface SiteSettingsData {
   // Time-Based Dynamic Slot Pricing
   slotPricing?: SlotPricingSettings;
 
+  // PayPal Integration Settings
+  paypalClientId?: string;
+  paypalClientSecret?: string;
+  paypalMode?: 'live' | 'sandbox';
+
   updatedAt: string;
 }
 
@@ -382,6 +387,13 @@ const INITIAL_SETTINGS: SiteSettingsData = {
   // Time-Based Slot Pricing Defaults (Day: 10 AM - 10 PM -> $45, Night: 10 PM - 10 AM -> $60)
   slotPricing: DEFAULT_SLOT_PRICING,
 
+  // PayPal Settings Defaults (reads from env if available, editable from Admin Dashboard)
+  paypalClientId: (process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '').replace(/['"]/g, '').trim(),
+  paypalClientSecret: (process.env.PAYPAL_CLIENT_SECRET || '').replace(/['"]/g, '').trim(),
+  paypalMode: ((process.env.PAYPAL_MODE || 'live').replace(/['"]/g, '').trim().toLowerCase() === 'sandbox'
+    ? 'sandbox'
+    : 'live') as 'live' | 'sandbox',
+
   updatedAt: new Date().toISOString(),
 };
 
@@ -405,6 +417,15 @@ function ensureStoreExists(): AcademyStore {
     const raw = fs.readFileSync(STORE_FILE, 'utf8');
     const parsed = JSON.parse(raw) as AcademyStore;
     parsed.settings = { ...INITIAL_SETTINGS, ...(parsed.settings || {}) };
+    if (!parsed.settings.paypalClientId && INITIAL_SETTINGS.paypalClientId) {
+      parsed.settings.paypalClientId = INITIAL_SETTINGS.paypalClientId;
+    }
+    if (!parsed.settings.paypalClientSecret && INITIAL_SETTINGS.paypalClientSecret) {
+      parsed.settings.paypalClientSecret = INITIAL_SETTINGS.paypalClientSecret;
+    }
+    if (!parsed.settings.paypalMode) {
+      parsed.settings.paypalMode = INITIAL_SETTINGS.paypalMode || 'live';
+    }
     parsed.settings.slotPricing = {
       ...DEFAULT_SLOT_PRICING,
       ...(parsed.settings.slotPricing || {}),
