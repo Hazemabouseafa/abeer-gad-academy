@@ -6,19 +6,21 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { slotId, studentName, studentEmail, studentPhone, notes } = body;
+    const { slotId, date, time, studentName, studentEmail, studentPhone, notes } = body;
 
-    if (!slotId || !studentName || !studentEmail || !studentPhone) {
+    if ((!slotId && (!date || !time)) || !studentName || !studentEmail || !studentPhone) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Slot ID, student name, email, and phone number are all required',
+          error: 'Date/time (or Slot ID), student name, email, and phone number are all required',
         },
         { status: 400 }
       );
     }
 
-    const updatedSlot = bookSlot(slotId, {
+    const updatedSlot = bookSlot(slotId || '', {
+      date,
+      time,
       studentName,
       studentEmail,
       studentPhone,
@@ -27,7 +29,7 @@ export async function POST(request: Request) {
 
     if (!updatedSlot) {
       return NextResponse.json(
-        { success: false, error: 'Slot not found or already booked' },
+        { success: false, error: 'هذا اليوم أو الموعد محجوز بالفعل، يرجى اختيار يوم أو وقت آخر متاح' },
         { status: 404 }
       );
     }

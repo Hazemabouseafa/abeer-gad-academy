@@ -319,8 +319,12 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const [expandedTracks, setExpandedTracks] = useState<Record<string, boolean>>({});
 
   // Admin Slots Calendar State
-  const [adminCalendarMonth, setAdminCalendarMonth] = useState<Date>(new Date(2026, 9, 1));
+  const [adminCalendarMonth, setAdminCalendarMonth] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [adminSelectedFilterDate, setAdminSelectedFilterDate] = useState<string | null>(null);
+  const [blockedDates, setBlockedDates] = useState<string[]>([]);
 
   // Manual Transaction & Student Management State
   const [showAddTxModal, setShowAddTxModal] = useState(false);
@@ -532,6 +536,11 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
       if (resCourses.courses) setCourses(resCourses.courses);
       if (resSlots.slots) setSlots(resSlots.slots);
+      if (Array.isArray(resSlots.blockedDates)) {
+        setBlockedDates(resSlots.blockedDates);
+      } else if (Array.isArray(resSettings.settings?.blockedDates)) {
+        setBlockedDates(resSettings.settings.blockedDates);
+      }
       if (resResources.resources) setResources(resResources.resources);
       if (resSettings.settings) {
         setSettings(resSettings.settings);
@@ -1658,6 +1667,36 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     } catch (err) {
       console.error(err);
       alert('Error deleting item');
+    }
+  };
+
+  const handleToggleBlockedDate = async (dateStr: string) => {
+    try {
+      const res = await fetch('/api/admin/slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggle-blocked-date',
+          date: dateStr,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.blockedDates)) {
+        setBlockedDates(data.blockedDates);
+        setSettings((prev) => ({ ...prev, blockedDates: data.blockedDates }));
+        const isNowBlocked = data.blockedDates.includes(dateStr);
+        triggerToast(
+          isNowBlocked
+            ? isRtl
+              ? `🔒 تم تحديد يوم (${dateStr}) كـ محجوز بالكامل — لن يظهر متاحاً للطلاب`
+              : `🔒 Marked (${dateStr}) as Fully Booked`
+            : isRtl
+            ? `✅ تم فتح يوم (${dateStr}) وأصبح متاحاً للحجز أمام الطلاب`
+            : `✅ Opened (${dateStr}) for student bookings`
+        );
+      }
+    } catch (err) {
+      console.error('Error toggling blocked date:', err);
     }
   };
 
@@ -5274,21 +5313,30 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                 </div>
 
                 {/* ========================================================== */}
-                {/* INTERACTIVE ADMIN MONTH CALENDAR */}
+                {/* INTERACTIVE ADMIN MONTH CALENDAR (BLOCK / UNBLOCK DAYS) */}
                 {/* ========================================================== */}
-                <div className="bg-white rounded-3xl border border-surface-border p-6 shadow-card-subtle space-y-4">
-                  <div className="flex items-center justify-between">
+                <div className="bg-white rounded-3xl border border-surface-border p-6 shadow-card-subtle space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <span className="badge-light text-[10px] mb-1 inline-flex items-center gap-1">
                         <Calendar className="w-3 h-3 text-brand-700" />
-                        <span>{isRtl ? 'تقويم إدارة الأيام الشاغرة' : 'Slots Availability Calendar'}</span>
+                        <span>
+                          {isRtl
+                            ? 'نظام الإتاحة التلقائية وتحديد الأيام المحجوزة'
+                            : 'Open Calendar & Blocked Days Manager'}
+                        </span>
                       </span>
                       <h4 className="font-extrabold text-base text-navy-950">
                         {isRtl ? monthNamesAr[adminMonth] : monthNamesEn[adminMonth]} {adminYear}
                       </h4>
+                      <p className="text-xs text-navy-600 mt-1">
+                        {isRtl
+                          ? '💡 جميع الأيام والساعات متاحة للطلاب تلقائياً — اضغط على أي يوم في التقويم بالأسفل لتحديده كـ (يوم محجوز / مغلق) أو لإعادة فتحه للطلاب فوراً.'
+                          : '💡 All days and hours are open to students by default — click any day below to mark it as (Busy / Fully Booked) or click again to reopen it.'}
+                      </p>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 self-end sm:self-center">
                       <button
                         type="button"
                         onClick={() => setAdminCalendarMonth(new Date(adminYear, adminMonth - 1, 1))}
@@ -5308,6 +5356,22 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     </div>
                   </div>
 
+                  {/* Legend */}
+                  <div className="flex flex-wrap items-center gap-4 text-xs bg-surface-muted/50 p-3 rounded-2xl border border-surface-border">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-md bg-emerald-500 inline-block" />
+                      <span className="font-bold text-navy-800">
+                        {isRtl ? 'يوم متاح تلقائياً للطلاب (اضغط لقفل اليوم)' : 'Open Day (Click to block)'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-md bg-red-500 inline-block" />
+                      <span className="font-bold text-red-700">
+                        {isRtl ? 'يوم محجوز بالكامل / غير متاح (اضغط لإعادة فتحه)' : 'Blocked Day (Click to reopen)'}
+                      </span>
+                    </div>
+                  </div>
+
                   {/* Days of Week */}
                   <div className="grid grid-cols-7 gap-1 text-center">
                     {(isRtl ? daysOfWeekAr : daysOfWeekEn).map((d) => (
@@ -5317,8 +5381,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     ))}
                   </div>
 
-                  {/* Calendar Grid */}
-                  <div className="grid grid-cols-7 gap-1.5">
+                  {/* Calendar Grid: Click any day to toggle Blocked / Available */}
+                  <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                     {Array.from({ length: adminFirstDayIndex }).map((_, i) => (
                       <div key={`admin-empty-${i}`} className="aspect-square rounded-2xl bg-gray-50/40" />
                     ))}
@@ -5327,43 +5391,50 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                       const dayNum = i + 1;
                       const dateStr = `${adminYear}-${(adminMonth + 1).toString().padStart(2, '0')}-${dayNum.toString().padStart(2, '0')}`;
                       const daySlots = slots.filter((s) => s.date === dateStr);
-                      const availCount = daySlots.filter((s) => s.status === 'AVAILABLE').length;
                       const bookedCount = daySlots.filter((s) => s.status === 'BOOKED').length;
-                      const isSelected = adminSelectedFilterDate === dateStr;
+                      const isBlocked = blockedDates.includes(dateStr);
 
                       return (
                         <button
                           key={dateStr}
                           type="button"
-                          onClick={() => {
-                            if (isSelected) {
-                              setAdminSelectedFilterDate(null);
-                            } else {
-                              setAdminSelectedFilterDate(dateStr);
-                              setSlotFormData((prev) => ({ ...prev, date: dateStr }));
-                            }
-                          }}
-                          className={`aspect-square p-2 rounded-2xl border text-center transition-all flex flex-col justify-between items-center relative ${
-                            isSelected
-                              ? 'border-brand-700 bg-brand-50 ring-2 ring-brand-600/30'
-                              : daySlots.length > 0
-                              ? 'border-surface-border bg-white hover:border-brand-300'
-                              : 'border-surface-borderSubtle bg-surface-muted/30 hover:bg-surface-muted text-gray-400'
+                          onClick={() => handleToggleBlockedDate(dateStr)}
+                          className={`aspect-square p-1.5 sm:p-2 rounded-2xl border text-center transition-all flex flex-col justify-between items-center relative ${
+                            isBlocked
+                              ? 'border-red-300 bg-red-50 hover:bg-red-100/80 text-red-900 shadow-sm'
+                              : 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/70 text-navy-900'
                           }`}
+                          title={
+                            isBlocked
+                              ? isRtl
+                                ? 'هذا اليوم محجوز بالكامل — اضغط لإتاحته للطلاب'
+                                : 'Blocked Day — Click to open'
+                              : isRtl
+                              ? 'هذا اليوم متاح للطلاب — اضغط لتحديده كمحجوز'
+                              : 'Open Day — Click to mark as booked'
+                          }
                         >
-                          <span className={`text-xs font-extrabold ${isSelected ? 'text-brand-900 font-black' : 'text-navy-900'}`}>
+                          <span
+                            className={`text-xs sm:text-sm font-extrabold ${
+                              isBlocked ? 'text-red-700 line-through' : 'text-navy-950'
+                            }`}
+                          >
                             {dayNum}
                           </span>
 
                           <div className="flex flex-col gap-0.5 w-full items-center">
-                            {availCount > 0 && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded-full font-extrabold bg-emerald-100 text-emerald-800 w-full truncate">
-                                {availCount} {isRtl ? 'شاغر' : 'avail'}
+                            {isBlocked ? (
+                              <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full font-extrabold bg-red-600 text-white w-full truncate">
+                                {isRtl ? '🔒 محجوز' : '🔒 Busy'}
+                              </span>
+                            ) : (
+                              <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full font-extrabold bg-emerald-600 text-white w-full truncate">
+                                {isRtl ? '✓ متاح' : '✓ Open'}
                               </span>
                             )}
                             {bookedCount > 0 && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded-full font-extrabold bg-amber-100 text-amber-800 w-full truncate">
-                                {bookedCount} {isRtl ? 'محجوز' : 'booked'}
+                              <span className="text-[8px] px-1 py-0.2 rounded-full font-extrabold bg-amber-100 text-amber-900 w-full truncate">
+                                {bookedCount} {isRtl ? 'حصة' : 'booked'}
                               </span>
                             )}
                           </div>
@@ -5372,26 +5443,71 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     })}
                   </div>
 
-                  {adminSelectedFilterDate && (
-                    <div className="p-3 rounded-2xl bg-brand-50 border border-brand-200 flex items-center justify-between text-xs">
-                      <span className="font-bold text-brand-900">
-                        {isRtl ? `تصفية المواعيد ليوم:` : 'Filtering slots for:'} <strong className="font-mono">{adminSelectedFilterDate}</strong> ({displayedSlots.length} {isRtl ? 'مواعيد' : 'slots'})
+                  {/* Summary of Blocked Dates */}
+                  <div className="p-4 rounded-2xl bg-surface-muted/60 border border-surface-border space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-navy-900">
+                        {isRtl
+                          ? `الأيام المحددة كـ (محجوزة بالكامل / غير متاحة للطلاب): (${blockedDates.length})`
+                          : `Currently Blocked Dates: (${blockedDates.length})`}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSlotFormData((prev) => ({ ...prev, date: adminSelectedFilterDate }));
-                          setShowSlotModal(true);
-                          setTimeout(() => {
-                            document.getElementById('slot-inline-editor')?.scrollIntoView({ behavior: 'smooth' });
-                          }, 50);
-                        }}
-                        className="px-2.5 py-1 rounded-xl bg-brand-700 text-white font-bold hover:bg-brand-800"
-                      >
-                        + {isRtl ? 'إضافة موعد لهذا اليوم' : 'Add Slot for this day'}
-                      </button>
+                      {blockedDates.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (
+                              !confirm(
+                                isRtl
+                                  ? 'هل تريد إلغاء حجز جميع الأيام وفتح كافة الأيام للطلاب؟'
+                                  : 'Unblock all dates and open all days?'
+                              )
+                            )
+                              return;
+                            const res = await fetch('/api/admin/slots', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ action: 'set-blocked-dates', blockedDates: [] }),
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                              setBlockedDates([]);
+                              setSettings((prev) => ({ ...prev, blockedDates: [] }));
+                              triggerToast(isRtl ? 'تم فتح كافة الأيام للطلاب' : 'All days opened');
+                            }
+                          }}
+                          className="text-[11px] font-bold text-emerald-700 hover:underline"
+                        >
+                          {isRtl ? 'فتح كافة الأيام بضغطة واحدة' : 'Open All Days'}
+                        </button>
+                      )}
                     </div>
-                  )}
+                    {blockedDates.length === 0 ? (
+                      <p className="text-xs text-emerald-800 font-semibold">
+                        {isRtl
+                          ? '✅ لا توجد أيام مقفلة حالياً — جميع الأيام متاحة للطلاب للحجز في أي وقت مع الحساب التلقائي للسعر.'
+                          : '✅ No blocked dates — all days are open for students with automatic time-based pricing.'}
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {blockedDates.map((dStr) => (
+                          <span
+                            key={dStr}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-mono font-bold"
+                          >
+                            <span>🔒 {dStr}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleBlockedDate(dStr)}
+                              className="hover:text-red-950 font-black"
+                              title={isRtl ? 'إلغاء قفل هذا اليوم' : 'Unblock this date'}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* INLINE SLOT CREATION FORM (No Popups!) */}

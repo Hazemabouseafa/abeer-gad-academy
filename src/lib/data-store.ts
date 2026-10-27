@@ -234,6 +234,9 @@ export interface SiteSettingsData {
   // Time-Based Dynamic Slot Pricing
   slotPricing?: SlotPricingSettings;
 
+  // Blocked Dates (Days marked by Admin as busy / unavailable; all other days are open by default)
+  blockedDates?: string[];
+
   // PayPal Integration Settings
   paypalClientId?: string;
   paypalClientSecret?: string;
@@ -405,6 +408,9 @@ const INITIAL_SETTINGS: SiteSettingsData = {
   // Time-Based Slot Pricing Defaults (Day: 10 AM - 10 PM -> $45, Night: 10 PM - 10 AM -> $60)
   slotPricing: DEFAULT_SLOT_PRICING,
 
+  // Blocked Dates Default (empty = all days are available by default)
+  blockedDates: [],
+
   // PayPal Settings Defaults (reads from env if available, editable from Admin Dashboard)
   paypalClientId: (process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '').replace(/['"]/g, '').trim(),
   paypalClientSecret: (process.env.PAYPAL_CLIENT_SECRET || '').replace(/['"]/g, '').trim(),
@@ -448,6 +454,9 @@ function ensureStoreExists(): AcademyStore {
       ...DEFAULT_SLOT_PRICING,
       ...(parsed.settings.slotPricing || {}),
     };
+    if (!Array.isArray(parsed.settings.blockedDates)) {
+      parsed.settings.blockedDates = [];
+    }
     if (!parsed.settings.services || parsed.settings.services.length === 0) {
       parsed.settings.services = INITIAL_SERVICES;
     } else {
@@ -807,9 +816,41 @@ export function toggleSlotStatus(id: string): SlotData | null {
   return slot;
 }
 
+export function getBlockedDates(): string[] {
+  const store = ensureStoreExists();
+  return Array.isArray(store.settings?.blockedDates) ? store.settings.blockedDates : [];
+}
+
+export function toggleBlockedDate(dateStr: string): string[] {
+  const store = ensureStoreExists();
+  const current = Array.isArray(store.settings?.blockedDates) ? [...store.settings.blockedDates] : [];
+  const idx = current.indexOf(dateStr);
+  if (idx >= 0) {
+    current.splice(idx, 1);
+  } else {
+    current.push(dateStr);
+    current.sort();
+  }
+  store.settings.blockedDates = current;
+  store.settings.updatedAt = new Date().toISOString();
+  saveStore(store);
+  return current;
+}
+
+export function setBlockedDates(dates: string[]): string[] {
+  const store = ensureStoreExists();
+  const clean = Array.from(new Set((dates || []).filter(Boolean))).sort();
+  store.settings.blockedDates = clean;
+  store.settings.updatedAt = new Date().toISOString();
+  saveStore(store);
+  return clean;
+}
+
 export function bookSlot(
   id: string,
   bookingInfo: {
+    date?: string;
+    time?: string;
     studentName: string;
     studentEmail: string;
     studentPhone: string;
@@ -817,15 +858,65 @@ export function bookSlot(
   }
 ): SlotData | null {
   const store = ensureStoreExists();
-  const slot = store.slots.find((s) => s.id === id);
-  if (!slot) return null;
+  const pricing = store.settings?.slotPricing || DEFAULT_SLOT_PRICING;
+  const blockedDates = Array.isArray(store.settings?.blockedDates) ? store.settings.blockedDates : [];
 
-  slot.status = 'BOOKED';
-  slot.studentName = bookingInfo.studentName;
-  slot.studentEmail = bookingInfo.studentEmail;
-  slot.studentPhone = bookingInfo.studentPhone;
-  if (bookingInfo.notes) {
-    slot.notes = bookingInfo.notes;
+  let slot = store.slots.find((s) => s.id === id);
+
+  // If no slot matched by id, check if date & time are provided (open calendar booking)
+  const targetDate = slot?.date || bookingInfo.date;
+  const targetTime = slot?.time || bookingInfo.time;
+
+  if (!targetDate || !targetTime) {
+    return null;
+  }
+
+  // Reject if the date is blocked by Admin
+  if (blockedDates.includes(targetDate)) {
+    return null;
+  }
+
+  // Check if there is an existing slot at the same date & time
+  if (!slot) {
+    slot = store.slots.find(
+      (s) => s.date === targetDate && s.time.trim().toLowerCase() === targetTime.trim().toLowerCase()
+    );
+  }
+
+  // If already booked by someone else, reject
+  if (slot && slot.status === 'BOOKED') {
+    return null;
+  }
+
+  const calculated = calculateSlotPrice(targetTime, pricing);
+
+  if (slot) {
+    slot.status = 'BOOKED';
+    slot.price = calculated.price;
+    slot.currency = pricing.currency || slot.currency || 'USD';
+    slot.studentName = bookingInfo.studentName;
+    slot.studentEmail = bookingInfo.studentEmail;
+    slot.studentPhone = bookingInfo.studentPhone;
+    if (bookingInfo.notes) {
+      slot.notes = bookingInfo.notes;
+    }
+  } else {
+    slot = {
+      id: `slot-${Date.now()}`,
+      date: targetDate,
+      time: targetTime,
+      instructor: 'Ustadha Abeer Gad',
+      price: calculated.price,
+      currency: pricing.currency || 'USD',
+      status: 'BOOKED',
+      studentName: bookingInfo.studentName,
+      studentEmail: bookingInfo.studentEmail,
+      studentPhone: bookingInfo.studentPhone,
+      meetingUrl: 'https://meet.google.com/abeergad-academy',
+      notes: bookingInfo.notes,
+      createdAt: new Date().toISOString(),
+    };
+    store.slots.unshift(slot);
   }
 
   // Also record or update student

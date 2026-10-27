@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getSlots } from '@/lib/data-store';
+import { getSlots, getBlockedDates, getSiteSettings } from '@/lib/data-store';
+import { DEFAULT_SLOT_PRICING } from '@/lib/slot-pricing';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,7 +15,16 @@ export async function GET(request: Request) {
       slots = slots.filter((s) => s.status === 'AVAILABLE');
     }
 
-    return NextResponse.json({ success: true, slots });
+    const blockedDates = getBlockedDates();
+    const settings = getSiteSettings();
+    const slotPricing = settings.slotPricing || DEFAULT_SLOT_PRICING;
+
+    return NextResponse.json({
+      success: true,
+      slots,
+      blockedDates,
+      slotPricing,
+    });
   } catch (error) {
     console.error('Error fetching slots:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch slots' }, { status: 500 });
