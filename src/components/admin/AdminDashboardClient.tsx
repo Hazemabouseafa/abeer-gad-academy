@@ -349,6 +349,16 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     progressPercentage: 0,
   });
 
+  // Server 5 GB Storage Usage State
+  const [serverStorage, setServerStorage] = useState<{
+    usedMb: number;
+    maxMb: number;
+    usedGb: number;
+    maxGb: number;
+    percentage: number;
+    isExceeded: boolean;
+  } | null>(null);
+
   // Trigger Toast Notification
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -525,14 +535,26 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const fetchData = async () => {
     try {
       setRefreshing(true);
-      const [resCourses, resSlots, resResources, resSettings, resTransactions, resStudents] = await Promise.all([
+      const [resCourses, resSlots, resResources, resSettings, resTransactions, resStudents, resStorage] = await Promise.all([
         fetch('/api/admin/courses').then((r) => r.json()),
         fetch('/api/admin/slots').then((r) => r.json()),
         fetch('/api/admin/resources').then((r) => r.json()),
         fetch('/api/admin/settings?admin=1').then((r) => r.json()),
         fetch('/api/admin/transactions').then((r) => r.json()).catch(() => ({ transactions: [] })),
         fetch('/api/admin/students').then((r) => r.json()).catch(() => ({ students: [] })),
+        fetch('/api/admin/upload').then((r) => r.json()).catch(() => null),
       ]);
+
+      if (resStorage && resStorage.success) {
+        setServerStorage({
+          usedMb: resStorage.usedMb,
+          maxMb: resStorage.maxMb,
+          usedGb: resStorage.usedGb,
+          maxGb: resStorage.maxGb,
+          percentage: resStorage.percentage,
+          isExceeded: resStorage.isExceeded,
+        });
+      }
 
       if (resCourses.courses) setCourses(resCourses.courses);
       if (resSlots.slots) setSlots(resSlots.slots);
@@ -1965,6 +1987,35 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                   <span className="w-2 h-2 rounded-full bg-emerald-500 me-1 animate-pulse" />
                   {isRtl ? 'متصل بقاعدة البيانات الحية' : 'Live Store Connected'}
                 </span>
+                {serverStorage && (
+                  <span
+                    className={`hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[10px] font-bold ${
+                      serverStorage.isExceeded
+                        ? 'bg-red-50 text-red-800 border-red-300'
+                        : serverStorage.percentage > 85
+                        ? 'bg-amber-50 text-amber-800 border-amber-300'
+                        : 'bg-surface-muted text-navy-700 border-surface-border'
+                    }`}
+                    title={isRtl ? 'مساحة تخزين الملفات المرفوعة على السيرفر' : 'Server Storage'}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        serverStorage.isExceeded
+                          ? 'bg-red-600'
+                          : serverStorage.percentage > 85
+                          ? 'bg-amber-600'
+                          : 'bg-emerald-600'
+                      }`}
+                    />
+                    <span>
+                      {isRtl ? 'سعة التخزين:' : 'Disk:'}{' '}
+                      <strong className="font-mono">
+                        {serverStorage.usedMb < 1000 ? `${serverStorage.usedMb} MB` : `${serverStorage.usedGb} GB`} / 5 GB
+                      </strong>{' '}
+                      ({serverStorage.percentage}%)
+                    </span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
