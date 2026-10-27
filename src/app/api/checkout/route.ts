@@ -101,6 +101,8 @@ export async function POST(request: NextRequest) {
         saveTransaction({
           paypalOrderId: orderId,
           payerEmail: studentEmail || captureResult?.payer?.email_address || 'student@abeergad.academy',
+          payerName: studentName || captureResult?.payer?.name?.given_name || 'Student',
+          payerPhone: studentPhone || '',
           itemTitle: description || (itemType === 'COURSE' ? 'Course Enrollment' : 'Private Lesson'),
           itemType: itemType === 'PRIVATE_LESSON' ? 'PRIVATE_LESSON' : 'COURSE',
           amount: typeof amount === 'number' ? amount : 45.0,
@@ -115,6 +117,8 @@ export async function POST(request: NextRequest) {
             email: effectiveEmail,
             name: studentName || captureResult?.payer?.name?.given_name || 'Student',
             phone: studentPhone || undefined,
+            itemType: itemType === 'PRIVATE_LESSON' ? 'PRIVATE_LESSON' : 'COURSE',
+            itemId,
           });
         }
       } catch (storeErr) {

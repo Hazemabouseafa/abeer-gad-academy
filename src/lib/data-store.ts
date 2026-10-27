@@ -88,6 +88,8 @@ export interface TransactionData {
   id: string;
   paypalOrderId: string;
   payerEmail: string;
+  payerName?: string;
+  payerPhone?: string;
   itemTitle: string;
   itemType: 'COURSE' | 'PRIVATE_LESSON';
   amount: number;
@@ -100,6 +102,7 @@ export interface StudentData {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   joinedDate: string;
   enrolledCoursesCount: number;
   completedLessonsCount: number;
@@ -825,13 +828,20 @@ export function bookSlot(
     slot.notes = bookingInfo.notes;
   }
 
-  // Also record a student or transaction if not existing
-  const studentExists = store.students.some((st) => st.email.toLowerCase() === bookingInfo.studentEmail.toLowerCase());
-  if (!studentExists) {
-    store.students.push({
+  // Also record or update student
+  const existingStudent = store.students.find(
+    (st) => st.email.toLowerCase() === bookingInfo.studentEmail.toLowerCase()
+  );
+  if (existingStudent) {
+    if (bookingInfo.studentName) existingStudent.name = bookingInfo.studentName;
+    if (bookingInfo.studentPhone) existingStudent.phone = bookingInfo.studentPhone;
+    existingStudent.completedLessonsCount = (existingStudent.completedLessonsCount || 0) + 1;
+  } else {
+    store.students.unshift({
       id: `std-${Date.now()}`,
       name: bookingInfo.studentName,
       email: bookingInfo.studentEmail,
+      phone: bookingInfo.studentPhone,
       joinedDate: new Date().toISOString().slice(0, 10),
       enrolledCoursesCount: 0,
       completedLessonsCount: 1,
@@ -860,15 +870,34 @@ export function getTransactions(): TransactionData[] {
   return store.transactions || [];
 }
 
-export function saveTransaction(data: Omit<TransactionData, 'id'>): TransactionData {
+export function saveTransaction(data: Omit<TransactionData, 'id'> & { id?: string }): TransactionData {
   const store = ensureStoreExists();
+  if (data.id) {
+    const idx = store.transactions.findIndex((t) => t.id === data.id);
+    if (idx >= 0) {
+      store.transactions[idx] = { ...store.transactions[idx], ...data, id: data.id };
+      saveStore(store);
+      return store.transactions[idx];
+    }
+  }
   const newTx: TransactionData = {
-    id: `tx-${Date.now()}`,
     ...data,
+    id: data.id || `tx-${Date.now()}`,
   };
   store.transactions.unshift(newTx);
   saveStore(store);
   return newTx;
+}
+
+export function deleteTransaction(id: string): boolean {
+  const store = ensureStoreExists();
+  const initialLen = store.transactions.length;
+  store.transactions = store.transactions.filter((t) => t.id !== id);
+  if (store.transactions.length !== initialLen) {
+    saveStore(store);
+    return true;
+  }
+  return false;
 }
 
 // Students
@@ -877,14 +906,36 @@ export function getStudents(): StudentData[] {
   return store.students || [];
 }
 
-export function recordStudent(data: { name: string; email: string; phone?: string }): StudentData {
+export function recordStudent(data: {
+  name: string;
+  email: string;
+  phone?: string;
+  itemType?: 'COURSE' | 'PRIVATE_LESSON';
+  itemId?: string;
+}): StudentData {
   const store = ensureStoreExists();
+
+  // Increment course studentsCount if enrolling in a course
+  if (data.itemType === 'COURSE' && data.itemId) {
+    const course = store.courses.find((c) => c.id === data.itemId || c.slug === data.itemId);
+    if (course) {
+      course.studentsCount = (course.studentsCount || 0) + 1;
+    }
+  }
+
   const existing = store.students.find((s) => s.email.toLowerCase() === data.email.toLowerCase());
   if (existing) {
     if (data.name && (!existing.name || existing.name === 'Student')) {
       existing.name = data.name;
     }
-    existing.enrolledCoursesCount = (existing.enrolledCoursesCount || 0) + 1;
+    if (data.phone) {
+      existing.phone = data.phone;
+    }
+    if (data.itemType === 'PRIVATE_LESSON') {
+      existing.completedLessonsCount = (existing.completedLessonsCount || 0) + 1;
+    } else {
+      existing.enrolledCoursesCount = (existing.enrolledCoursesCount || 0) + 1;
+    }
     saveStore(store);
     return existing;
   }
@@ -892,14 +943,51 @@ export function recordStudent(data: { name: string; email: string; phone?: strin
     id: `stu-${Date.now()}`,
     name: data.name || 'Student',
     email: data.email,
+    phone: data.phone,
     joinedDate: new Date().toISOString().split('T')[0],
-    enrolledCoursesCount: 1,
-    completedLessonsCount: 0,
-    progressPercentage: 0,
+    enrolledCoursesCount: data.itemType === 'PRIVATE_LESSON' ? 0 : 1,
+    completedLessonsCount: data.itemType === 'PRIVATE_LESSON' ? 1 : 0,
+    progressPercentage: data.itemType === 'PRIVATE_LESSON' ? 100 : 10,
   };
   store.students.unshift(newStudent);
   saveStore(store);
   return newStudent;
+}
+
+export function saveStudent(data: Partial<StudentData> & { name: string; email: string }): StudentData {
+  const store = ensureStoreExists();
+  if (data.id) {
+    const idx = store.students.findIndex((s) => s.id === data.id);
+    if (idx >= 0) {
+      store.students[idx] = { ...store.students[idx], ...data };
+      saveStore(store);
+      return store.students[idx];
+    }
+  }
+  const newStudent: StudentData = {
+    id: `stu-${Date.now()}`,
+    name: data.name,
+    email: data.email,
+    phone: data.phone || '',
+    joinedDate: data.joinedDate || new Date().toISOString().split('T')[0],
+    enrolledCoursesCount: Number(data.enrolledCoursesCount) || 0,
+    completedLessonsCount: Number(data.completedLessonsCount) || 0,
+    progressPercentage: Number(data.progressPercentage) || 0,
+  };
+  store.students.unshift(newStudent);
+  saveStore(store);
+  return newStudent;
+}
+
+export function deleteStudent(id: string): boolean {
+  const store = ensureStoreExists();
+  const initialLen = store.students.length;
+  store.students = store.students.filter((s) => s.id !== id);
+  if (store.students.length !== initialLen) {
+    saveStore(store);
+    return true;
+  }
+  return false;
 }
 
 // Settings

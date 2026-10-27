@@ -99,6 +99,7 @@ export function PayPalCheckoutButton({
           itemId,
           amount,
           currency,
+          description: itemTitle,
           studentName: name.trim(),
           studentEmail: email.trim(),
           studentPhone: phone.trim(),

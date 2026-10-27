@@ -322,6 +322,29 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const [adminCalendarMonth, setAdminCalendarMonth] = useState<Date>(new Date(2026, 9, 1));
   const [adminSelectedFilterDate, setAdminSelectedFilterDate] = useState<string | null>(null);
 
+  // Manual Transaction & Student Management State
+  const [showAddTxModal, setShowAddTxModal] = useState(false);
+  const [txFormData, setTxFormData] = useState({
+    payerName: '',
+    payerEmail: '',
+    payerPhone: '',
+    itemTitle: '',
+    itemType: 'COURSE' as 'COURSE' | 'PRIVATE_LESSON',
+    amount: 45,
+    status: 'COMPLETED' as 'COMPLETED' | 'PENDING' | 'REFUNDED',
+    alsoRecordStudent: true,
+  });
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [studentFormData, setStudentFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    enrolledCoursesCount: 1,
+    completedLessonsCount: 0,
+    progressPercentage: 0,
+  });
+
   // Trigger Toast Notification
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -1638,6 +1661,123 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     }
   };
 
+  // --- Real Transactions & Students Handlers ---
+  const handleSaveManualTransaction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!txFormData.payerEmail || !txFormData.itemTitle) return;
+    try {
+      const res = await fetch('/api/admin/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(txFormData),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTransactions(data.transactions || []);
+        if (txFormData.alsoRecordStudent) {
+          const stRes = await fetch('/api/admin/students').then((r) => r.json());
+          if (stRes.students) setStudents(stRes.students);
+        }
+        setShowAddTxModal(false);
+        setTxFormData({
+          payerName: '',
+          payerEmail: '',
+          payerPhone: '',
+          itemTitle: '',
+          itemType: 'COURSE',
+          amount: 45,
+          status: 'COMPLETED',
+          alsoRecordStudent: true,
+        });
+        triggerToast(isRtl ? 'تم تسجيل العملية المالية بنجاح' : 'Transaction recorded successfully');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    if (!confirm(isRtl ? 'هل أنت متأكد من حذف هذه العملية المالية من السجل؟' : 'Delete this transaction?')) return;
+    try {
+      const res = await fetch(`/api/admin/transactions?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTransactions(data.transactions || []);
+        triggerToast(isRtl ? 'تم حذف العملية المالية' : 'Transaction deleted');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleOpenAddStudent = () => {
+    setEditingStudentId(null);
+    setStudentFormData({
+      name: '',
+      email: '',
+      phone: '',
+      enrolledCoursesCount: 1,
+      completedLessonsCount: 0,
+      progressPercentage: 0,
+    });
+    setShowAddStudentModal(true);
+  };
+
+  const handleOpenEditStudent = (stu: StudentData) => {
+    setEditingStudentId(stu.id);
+    setStudentFormData({
+      name: stu.name,
+      email: stu.email,
+      phone: stu.phone || '',
+      enrolledCoursesCount: stu.enrolledCoursesCount || 0,
+      completedLessonsCount: stu.completedLessonsCount || 0,
+      progressPercentage: stu.progressPercentage || 0,
+    });
+    setShowAddStudentModal(true);
+  };
+
+  const handleSaveStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!studentFormData.name || !studentFormData.email) return;
+    try {
+      const res = await fetch('/api/admin/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingStudentId || undefined,
+          ...studentFormData,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStudents(data.students || []);
+        setShowAddStudentModal(false);
+        setEditingStudentId(null);
+        triggerToast(isRtl ? 'تم حفظ بيانات الطالب بنجاح' : 'Student saved successfully');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteStudent = async (id: string) => {
+    if (!confirm(isRtl ? 'هل أنت متأكد من حذف هذا الطالب من السجل؟' : 'Delete this student record?')) return;
+    try {
+      const res = await fetch(`/api/admin/students?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStudents(data.students || []);
+        triggerToast(isRtl ? 'تم حذف سجل الطالب' : 'Student record deleted');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleOpenEditTestimonial = (t: TestimonialItem) => {
     setEditingTestimonialId(t.id);
     setTestimonialFormData(t);
@@ -1978,70 +2118,118 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                 </button>
               </div>
 
-              {/* 4 Metric Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <div className="academy-card p-5 bg-white border border-surface-border flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-semibold text-navy-500 uppercase tracking-wider block">
-                      {isRtl ? 'إجمالي الإيرادات (USD)' : 'Total Revenue'}
-                    </span>
-                    <div className="text-2xl font-black text-brand-800 mt-1">
-                      {formatCurrency(14850)}
-                    </div>
-                    <span className="badge-light text-[11px] mt-2">+18% this month</span>
-                  </div>
-                  <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-100">
-                    <DollarSign className="w-6 h-6" />
-                  </div>
-                </div>
+              {/* 4 Real-Data Metric Cards */}
+              {(() => {
+                const completedTransactions = transactions.filter((t) => t.status === 'COMPLETED' || !t.status);
+                const realTotalRevenue = completedTransactions.reduce(
+                  (acc, t) => acc + (Number(t.amount) || 0),
+                  0
+                );
+                const realStudentsCount = students.length;
+                const realBookedSlotsCount = slots.filter((s) => s.status === 'BOOKED').length;
+                const realAvailableSlotsCount = slots.filter((s) => s.status === 'AVAILABLE').length;
+                const publishedCoursesCount = courses.filter((c) => c.isPublished).length;
+                const activeTracksCount = (settings.services || []).filter((s) => s.isActive !== false).length;
 
-                <div className="academy-card p-5 bg-white border border-surface-border flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-semibold text-navy-500 uppercase tracking-wider block">
-                      {isRtl ? 'الطلاب النشطون' : 'Active Students'}
-                    </span>
-                    <div className="text-2xl font-black text-navy-900 mt-1">
-                      {settings.heroStudentsCount || '1,250+'}
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    <div
+                      onClick={() => {
+                        setActiveNav('FINANCIALS_STUDENTS');
+                        setFinanceSubTab('TRANSACTIONS');
+                      }}
+                      className="academy-card p-5 bg-white border border-surface-border hover:border-brand-300 cursor-pointer transition-all flex items-center justify-between"
+                    >
+                      <div>
+                        <span className="text-xs font-semibold text-navy-500 uppercase tracking-wider block">
+                          {isRtl ? 'إجمالي الإيرادات الفعلية (USD)' : 'Real Total Revenue'}
+                        </span>
+                        <div className="text-2xl font-black text-brand-800 mt-1">
+                          {formatCurrency(realTotalRevenue)}
+                        </div>
+                        <span className="badge-light text-[11px] mt-2 inline-block">
+                          {completedTransactions.length}{' '}
+                          {isRtl ? 'عملية دفع مؤكدة' : 'Verified Payments'}
+                        </span>
+                      </div>
+                      <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-100">
+                        <DollarSign className="w-6 h-6" />
+                      </div>
                     </div>
-                    <span className="text-xs text-navy-500 mt-2 block">{isRtl ? 'حسابات مسجلة' : 'Verified Accounts'}</span>
-                  </div>
-                  <div className="w-12 h-12 rounded-2xl bg-gold-50 text-gold-700 flex items-center justify-center border border-gold-200">
-                    <Users className="w-6 h-6" />
-                  </div>
-                </div>
 
-                <div className="academy-card p-5 bg-white border border-surface-border flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-semibold text-navy-500 uppercase tracking-wider block">
-                      {isRtl ? 'الحجوزات الخاصة' : 'Private Bookings'}
-                    </span>
-                    <div className="text-2xl font-black text-navy-900 mt-1">
-                      {slots.filter((s) => s.status === 'BOOKED').length + 84}
+                    <div
+                      onClick={() => {
+                        setActiveNav('FINANCIALS_STUDENTS');
+                        setFinanceSubTab('STUDENTS');
+                      }}
+                      className="academy-card p-5 bg-white border border-surface-border hover:border-brand-300 cursor-pointer transition-all flex items-center justify-between"
+                    >
+                      <div>
+                        <span className="text-xs font-semibold text-navy-500 uppercase tracking-wider block">
+                          {isRtl ? 'الطلاب المسجلون فعلياً' : 'Registered Students'}
+                        </span>
+                        <div className="text-2xl font-black text-navy-900 mt-1">
+                          {realStudentsCount}
+                        </div>
+                        <span className="text-xs text-navy-500 mt-2 block">
+                          {realStudentsCount === 0
+                            ? isRtl
+                              ? 'لا يوجد طلاب مسجلون بعد'
+                              : 'No students registered yet'
+                            : isRtl
+                            ? `${realStudentsCount} طالب مسجل في قاعدة البيانات`
+                            : `${realStudentsCount} active student records`}
+                        </span>
+                      </div>
+                      <div className="w-12 h-12 rounded-2xl bg-gold-50 text-gold-700 flex items-center justify-center border border-gold-200">
+                        <Users className="w-6 h-6" />
+                      </div>
                     </div>
-                    <span className="text-xs text-navy-500 mt-2 block">{isRtl ? 'جلسات مباشرة' : '1-on-1 Sessions'}</span>
-                  </div>
-                  <div className="w-12 h-12 rounded-2xl bg-quran-50 text-quran-700 flex items-center justify-center border border-quran-200">
-                    <Calendar className="w-6 h-6" />
-                  </div>
-                </div>
 
-                <div className="academy-card p-5 bg-white border border-surface-border flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-semibold text-navy-500 uppercase tracking-wider block">
-                      {isRtl ? 'الدورات المنشورة' : 'Live Curricula'}
-                    </span>
-                    <div className="text-2xl font-black text-navy-900 mt-1">
-                      {courses.filter((c) => c.isPublished).length} / {courses.length}
+                    <div
+                      onClick={() => setActiveNav('SLOTS')}
+                      className="academy-card p-5 bg-white border border-surface-border hover:border-brand-300 cursor-pointer transition-all flex items-center justify-between"
+                    >
+                      <div>
+                        <span className="text-xs font-semibold text-navy-500 uppercase tracking-wider block">
+                          {isRtl ? 'الحجوزات الخاصة الفعلية' : 'Booked Private Sessions'}
+                        </span>
+                        <div className="text-2xl font-black text-navy-900 mt-1">
+                          {realBookedSlotsCount}
+                        </div>
+                        <span className="text-xs text-navy-500 mt-2 block">
+                          {realAvailableSlotsCount}{' '}
+                          {isRtl ? 'موعد شاغر متاح للحجز' : 'Available Slots'}
+                        </span>
+                      </div>
+                      <div className="w-12 h-12 rounded-2xl bg-quran-50 text-quran-700 flex items-center justify-center border border-quran-200">
+                        <Calendar className="w-6 h-6" />
+                      </div>
                     </div>
-                    <span className="text-xs text-emerald-600 font-bold mt-2 block">
-                      {isRtl ? 'نشطة في الكتالوج' : 'Publicly Available'}
-                    </span>
+
+                    <div
+                      onClick={() => setActiveNav('COURSES')}
+                      className="academy-card p-5 bg-white border border-surface-border hover:border-brand-300 cursor-pointer transition-all flex items-center justify-between"
+                    >
+                      <div>
+                        <span className="text-xs font-semibold text-navy-500 uppercase tracking-wider block">
+                          {isRtl ? 'الدورات والمسارات النشطة' : 'Live Courses & Tracks'}
+                        </span>
+                        <div className="text-2xl font-black text-navy-900 mt-1">
+                          {publishedCoursesCount} / {courses.length}
+                        </div>
+                        <span className="text-xs text-emerald-600 font-bold mt-2 block">
+                          {activeTracksCount}{' '}
+                          {isRtl ? 'مسارات تعليمية مفعّلة' : 'Active Academic Tracks'}
+                        </span>
+                      </div>
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-200">
+                        <Layers className="w-6 h-6" />
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-200">
-                    <Layers className="w-6 h-6" />
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Quick Actions Bar */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -2122,50 +2310,120 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                 </button>
               </div>
 
-              {/* Recent Orders Preview */}
-              <div className="bg-white rounded-2xl border border-surface-border overflow-hidden shadow-card-subtle">
-                <div className="p-4 sm:p-5 border-b border-surface-border flex items-center justify-between">
-                  <h3 className="font-extrabold text-navy-950 text-sm">
-                    {isRtl ? 'أحدث المعاملات والمدفوعات المعتمدة عبر PayPal' : 'Recent PayPal Transactions'}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveNav('FINANCIALS_STUDENTS');
-                      setFinanceSubTab('TRANSACTIONS');
-                    }}
-                    className="text-xs font-bold text-brand-700 hover:underline"
-                  >
-                    {isRtl ? 'عرض الكل ←' : 'View all →'}
-                  </button>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-start text-xs">
-                    <thead className="bg-surface-muted text-navy-500 font-bold border-b border-surface-border">
-                      <tr>
-                        <th className="p-3.5 text-start">{isRtl ? 'رقم الطلب' : 'Order ID'}</th>
-                        <th className="p-3.5 text-start">{isRtl ? 'المشتري' : 'Payer'}</th>
-                        <th className="p-3.5 text-start">{isRtl ? 'الدورة / البند' : 'Item'}</th>
-                        <th className="p-3.5 text-start">{isRtl ? 'المبلغ' : 'Amount'}</th>
-                        <th className="p-3.5 text-start">{isRtl ? 'الحالة' : 'Status'}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-surface-borderSubtle">
-                      {transactions.slice(0, 3).map((tx) => (
-                        <tr key={tx.id} className="hover:bg-surface-muted/50">
-                          <td className="p-3.5 font-mono font-bold text-navy-900">{tx.paypalOrderId}</td>
-                          <td className="p-3.5 text-navy-600">{tx.payerEmail}</td>
-                          <td className="p-3.5 font-bold text-navy-900">{tx.itemTitle}</td>
-                          <td className="p-3.5 font-extrabold text-brand-700">{formatCurrency(tx.amount)}</td>
-                          <td className="p-3.5">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-                              {tx.status}
-                            </span>
-                          </td>
+              {/* Real Recent Transactions & Real Students Preview */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Recent Transactions Preview */}
+                <div className="bg-white rounded-2xl border border-surface-border overflow-hidden shadow-card-subtle">
+                  <div className="p-4 sm:p-5 border-b border-surface-border flex items-center justify-between">
+                    <h3 className="font-extrabold text-navy-950 text-sm">
+                      {isRtl ? 'أحدث الإيرادات والمدفوعات الفعلية' : 'Recent Real Transactions'}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveNav('FINANCIALS_STUDENTS');
+                        setFinanceSubTab('TRANSACTIONS');
+                      }}
+                      className="text-xs font-bold text-brand-700 hover:underline"
+                    >
+                      {isRtl ? 'عرض وإدارة السجل المالي ←' : 'Manage Ledger →'}
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-start text-xs">
+                      <thead className="bg-surface-muted text-navy-500 font-bold border-b border-surface-border">
+                        <tr>
+                          <th className="p-3.5 text-start">{isRtl ? 'رقم الطلب' : 'Order ID'}</th>
+                          <th className="p-3.5 text-start">{isRtl ? 'المشتري' : 'Payer'}</th>
+                          <th className="p-3.5 text-start">{isRtl ? 'الدورة / البند' : 'Item'}</th>
+                          <th className="p-3.5 text-start">{isRtl ? 'المبلغ' : 'Amount'}</th>
+                          <th className="p-3.5 text-start">{isRtl ? 'الحالة' : 'Status'}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-surface-borderSubtle">
+                        {transactions.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="p-6 text-center text-navy-400">
+                              {isRtl
+                                ? 'لا توجد معاملات مالية مسجلة حتى الآن ($0.00). ستظهر الإيرادات الحقيقية هنا فور إتمام أي عملية دفع.'
+                                : 'No transactions recorded yet ($0.00). Real payments will appear here automatically.'}
+                            </td>
+                          </tr>
+                        ) : (
+                          transactions.slice(0, 5).map((tx) => (
+                            <tr key={tx.id} className="hover:bg-surface-muted/50">
+                              <td className="p-3.5 font-mono font-bold text-navy-900">{tx.paypalOrderId}</td>
+                              <td className="p-3.5 text-navy-600">{tx.payerName || tx.payerEmail}</td>
+                              <td className="p-3.5 font-bold text-navy-900">{tx.itemTitle}</td>
+                              <td className="p-3.5 font-extrabold text-brand-700">{formatCurrency(tx.amount)}</td>
+                              <td className="p-3.5">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                                  {tx.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Recent Students Preview */}
+                <div className="bg-white rounded-2xl border border-surface-border overflow-hidden shadow-card-subtle">
+                  <div className="p-4 sm:p-5 border-b border-surface-border flex items-center justify-between">
+                    <h3 className="font-extrabold text-navy-950 text-sm">
+                      {isRtl ? 'أحدث الطلاب المسجلين فعلياً' : 'Recent Enrolled Students'}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveNav('FINANCIALS_STUDENTS');
+                        setFinanceSubTab('STUDENTS');
+                      }}
+                      className="text-xs font-bold text-brand-700 hover:underline"
+                    >
+                      {isRtl ? 'عرض وإدارة الطلاب ←' : 'Manage Students →'}
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-start text-xs">
+                      <thead className="bg-surface-muted text-navy-500 font-bold border-b border-surface-border">
+                        <tr>
+                          <th className="p-3.5 text-start">{isRtl ? 'اسم الطالب' : 'Student'}</th>
+                          <th className="p-3.5 text-start">{isRtl ? 'البريد / الهاتف' : 'Contact'}</th>
+                          <th className="p-3.5 text-start">{isRtl ? 'الاشتراكات' : 'Enrollments'}</th>
+                          <th className="p-3.5 text-start">{isRtl ? 'تاريخ الانضمام' : 'Joined'}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-surface-borderSubtle">
+                        {students.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="p-6 text-center text-navy-400">
+                              {isRtl
+                                ? 'لا يوجد طلاب مسجلون حتى الآن (0 طلاب). يظهر الطلاب تلقائياً فور حجز موعد أو الاشتراك في دورة.'
+                                : 'No students enrolled yet (0 students). Students appear automatically upon booking or enrollment.'}
+                            </td>
+                          </tr>
+                        ) : (
+                          students.slice(0, 5).map((stu) => (
+                            <tr key={stu.id} className="hover:bg-surface-muted/50">
+                              <td className="p-3.5 font-bold text-navy-950">{stu.name}</td>
+                              <td className="p-3.5 text-navy-600">
+                                <div>{stu.email}</div>
+                                {stu.phone && <div className="text-[10px] font-mono text-emerald-700">{stu.phone}</div>}
+                              </td>
+                              <td className="p-3.5 font-semibold text-brand-800">
+                                {stu.enrolledCoursesCount} {isRtl ? 'دورات' : 'Courses'} • {stu.completedLessonsCount}{' '}
+                                {isRtl ? 'حصة' : 'Lessons'}
+                              </td>
+                              <td className="p-3.5 text-navy-500">{stu.joinedDate}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -5656,72 +5914,208 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
               {/* Sub-tab 1: PAYPAL TRANSACTIONS LEDGER */}
               {financeSubTab === 'TRANSACTIONS' && (
-                <div className="bg-white rounded-2xl border border-surface-border overflow-hidden shadow-card-subtle">
-                  <div className="p-5 border-b border-surface-border flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h3 className="font-extrabold text-navy-950 text-sm">
-                        {isRtl ? 'سجل عمليات الدفع الإلكتروني المعتمدة عبر PayPal' : 'PayPal Live Transactions Ledger'}
-                      </h3>
-                      <p className="text-xs text-navy-500">
-                        {isRtl
-                          ? 'متابعة تفاصيل عمليات الشراء، أرقام المعاملات الرسمية، والمبالغ المحصلة فوراً'
-                          : 'Real-time record of verified payments, capture IDs, and customer emails'}
-                      </p>
+                <div className="space-y-4">
+                  <div className="bg-white rounded-2xl border border-surface-border overflow-hidden shadow-card-subtle">
+                    <div className="p-5 border-b border-surface-border flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="font-extrabold text-navy-950 text-sm">
+                          {isRtl ? 'سجل عمليات الدفع الإلكتروني والإيرادات الفعلية' : 'Live Transactions & Revenue Ledger'}
+                        </h3>
+                        <p className="text-xs text-navy-500">
+                          {isRtl
+                            ? 'متابعة تفاصيل عمليات الشراء الفعلية، أو تسجيل دفعة يدوية، أو حذف أي معاملة تجريبية'
+                            : 'Real-time record of verified payments, with ability to record manual payments or delete test entries'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddTxModal(!showAddTxModal)}
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>{isRtl ? 'تسجيل دفعة / إيراد يدوياً' : 'Record Payment'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFinanceSubTab('PAYPAL_SETTINGS')}
+                          className="px-3.5 py-1.5 rounded-xl bg-[#003087] hover:bg-[#001F5C] text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                        >
+                          <Settings className="w-3.5 h-3.5 text-[#FFC439]" />
+                          <span>{isRtl ? 'تعديل بيانات الربط بـ PayPal' : 'Edit PayPal API Keys'}</span>
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setFinanceSubTab('PAYPAL_SETTINGS')}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#003087] hover:bg-[#001F5C] text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
-                      >
-                        <Settings className="w-3.5 h-3.5 text-[#FFC439]" />
-                        <span>{isRtl ? 'تعديل بيانات الربط بـ PayPal' : 'Edit PayPal API Keys'}</span>
-                      </button>
-                      <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        {isRtl ? 'بوابة دفع نشطة ومعتمدة' : 'Verified Gateway'}
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-start text-xs">
-                      <thead className="bg-surface-muted text-navy-500 font-bold border-b border-surface-border">
-                        <tr>
-                          <th className="p-4 text-start">{isRtl ? 'رقم طلب PayPal' : 'Order ID'}</th>
-                          <th className="p-4 text-start">{isRtl ? 'البريد الإلكتروني' : 'Payer Email'}</th>
-                          <th className="p-4 text-start">{isRtl ? 'البند / الدورة' : 'Item Description'}</th>
-                          <th className="p-4 text-start">{isRtl ? 'المبلغ' : 'Amount'}</th>
-                          <th className="p-4 text-start">{isRtl ? 'الحالة' : 'Status'}</th>
-                          <th className="p-4 text-start">{isRtl ? 'التاريخ والوقت' : 'Timestamp'}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-surface-borderSubtle">
-                        {transactions.length === 0 ? (
+                    {showAddTxModal && (
+                      <form
+                        onSubmit={handleSaveManualTransaction}
+                        className="p-5 bg-emerald-50/50 border-b border-emerald-200 space-y-4 text-xs"
+                      >
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-extrabold text-emerald-950">
+                            {isRtl ? 'إضافة عملية دفع حقيقية إلى سجل الإيرادات' : 'Add Real Payment to Ledger'}
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddTxModal(false)}
+                            className="text-navy-500 hover:text-navy-800"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'اسم الطالب / المشتري' : 'Student Name'}
+                            </label>
+                            <input
+                              type="text"
+                              value={txFormData.payerName}
+                              onChange={(e) => setTxFormData({ ...txFormData, payerName: e.target.value })}
+                              placeholder="أحمد محمد"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'البريد الإلكتروني *' : 'Email *'}
+                            </label>
+                            <input
+                              type="email"
+                              required
+                              value={txFormData.payerEmail}
+                              onChange={(e) => setTxFormData({ ...txFormData, payerEmail: e.target.value })}
+                              placeholder="student@example.com"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'اسم الدورة أو الحصة *' : 'Item / Course Title *'}
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={txFormData.itemTitle}
+                              onChange={(e) => setTxFormData({ ...txFormData, itemTitle: e.target.value })}
+                              placeholder="مثال: حصة تصحيح تلاوة فردية"
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'المبلغ المحصل ($ USD) *' : 'Amount ($ USD) *'}
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min={0}
+                              required
+                              value={txFormData.amount}
+                              onChange={(e) => setTxFormData({ ...txFormData, amount: Number(e.target.value) })}
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-mono font-bold"
+                            />
+                          </div>
+                          <div>
+                            <label className="font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'نوع البند' : 'Item Type'}
+                            </label>
+                            <select
+                              value={txFormData.itemType}
+                              onChange={(e) =>
+                                setTxFormData({
+                                  ...txFormData,
+                                  itemType: e.target.value as 'COURSE' | 'PRIVATE_LESSON',
+                                })
+                              }
+                              className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                            >
+                              <option value="COURSE">{isRtl ? 'دورة تدريبية' : 'Course'}</option>
+                              <option value="PRIVATE_LESSON">{isRtl ? 'حصة خاصة' : 'Private Lesson'}</option>
+                            </select>
+                          </div>
+                          <div className="flex items-center pt-5">
+                            <label className="inline-flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={txFormData.alsoRecordStudent}
+                                onChange={(e) =>
+                                  setTxFormData({ ...txFormData, alsoRecordStudent: e.target.checked })
+                                }
+                                className="w-4 h-4 rounded text-emerald-600"
+                              />
+                              <span className="font-bold text-navy-800">
+                                {isRtl ? 'إضافة المشترك تلقائياً لسجل الطلاب' : 'Also add to Students list'}
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="submit"
+                            className="px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold hover:bg-emerald-800"
+                          >
+                            {isRtl ? 'حفظ العملية المالية' : 'Save Transaction'}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-start text-xs">
+                        <thead className="bg-surface-muted text-navy-500 font-bold border-b border-surface-border">
                           <tr>
-                            <td colSpan={6} className="p-8 text-center text-navy-400">
-                              {isRtl
-                                ? 'لا توجد معاملات مسجلة بعد. سيتم تسجيل عمليات الدفع تلقائياً فور إتمامها عبر بوابة الدفع.'
-                                : 'No transactions recorded yet. Completed orders will appear here automatically.'}
-                            </td>
+                            <th className="p-4 text-start">{isRtl ? 'رقم الطلب' : 'Order ID'}</th>
+                            <th className="p-4 text-start">{isRtl ? 'المشتري / البريد' : 'Payer'}</th>
+                            <th className="p-4 text-start">{isRtl ? 'البند / الدورة' : 'Item Description'}</th>
+                            <th className="p-4 text-start">{isRtl ? 'المبلغ' : 'Amount'}</th>
+                            <th className="p-4 text-start">{isRtl ? 'الحالة' : 'Status'}</th>
+                            <th className="p-4 text-start">{isRtl ? 'التاريخ والوقت' : 'Timestamp'}</th>
+                            <th className="p-4 text-end">{isRtl ? 'إجراءات' : 'Actions'}</th>
                           </tr>
-                        ) : (
-                          transactions.map((tx) => (
-                            <tr key={tx.id} className="hover:bg-surface-muted/50 transition-colors">
-                              <td className="p-4 font-mono font-bold text-navy-900">{tx.paypalOrderId}</td>
-                              <td className="p-4 text-navy-600">{tx.payerEmail}</td>
-                              <td className="p-4 font-bold text-navy-900">{tx.itemTitle}</td>
-                              <td className="p-4 font-extrabold text-brand-700">{formatCurrency(tx.amount)}</td>
-                              <td className="p-4">
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-                                  {tx.status}
-                                </span>
+                        </thead>
+                        <tbody className="divide-y divide-surface-borderSubtle">
+                          {transactions.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} className="p-8 text-center text-navy-400">
+                                {isRtl
+                                  ? 'لا توجد معاملات مسجلة بعد ($0.00). سيتم تسجيل عمليات الدفع تلقائياً فور إتمامها عبر بوابة الدفع أو عند إضافتها يدوياً.'
+                                  : 'No transactions recorded yet ($0.00). Completed orders will appear here automatically.'}
                               </td>
-                              <td className="p-4 text-navy-500">{tx.date}</td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                          ) : (
+                            transactions.map((tx) => (
+                              <tr key={tx.id} className="hover:bg-surface-muted/50 transition-colors">
+                                <td className="p-4 font-mono font-bold text-navy-900">{tx.paypalOrderId}</td>
+                                <td className="p-4 text-navy-600">
+                                  {tx.payerName && <div className="font-bold text-navy-900">{tx.payerName}</div>}
+                                  <div>{tx.payerEmail}</div>
+                                </td>
+                                <td className="p-4 font-bold text-navy-900">{tx.itemTitle}</td>
+                                <td className="p-4 font-extrabold text-brand-700">{formatCurrency(tx.amount)}</td>
+                                <td className="p-4">
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                                    {tx.status}
+                                  </span>
+                                </td>
+                                <td className="p-4 text-navy-500">{tx.date}</td>
+                                <td className="p-4 text-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteTransaction(tx.id)}
+                                    className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                                    title={isRtl ? 'حذف المعاملة' : 'Delete Transaction'}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
@@ -5729,43 +6123,184 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
               {/* Sub-tab 2: STUDENTS & PROGRESS */}
               {financeSubTab === 'STUDENTS' && (
                 <div className="bg-white rounded-2xl border border-surface-border overflow-hidden shadow-card-subtle">
-                  <div className="p-5 border-b border-surface-border">
-                    <h3 className="font-extrabold text-navy-950 text-sm">
-                      {isRtl ? 'سجل الطلاب والتقدم التعليمي' : 'Enrolled Students & Progress'}
-                    </h3>
-                    <p className="text-xs text-navy-500">
-                      {isRtl
-                        ? 'متابعة نسبة إنجاز كل طالب للدروس والدورات المسجل بها'
-                        : 'Track student completion rates and course participation'}
-                    </p>
+                  <div className="p-5 border-b border-surface-border flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-extrabold text-navy-950 text-sm">
+                        {isRtl ? 'سجل الطلاب المسجلين فعلياً والتقدم التعليمي' : 'Enrolled Students & Progress'}
+                      </h3>
+                      <p className="text-xs text-navy-500">
+                        {isRtl
+                          ? 'يُسجّل الطلاب هنا تلقائياً عند حجز حصة أو الاشتراك في دورة، ويمكنك أيضاً إضافة أو تعديل أو حذف أي طالب'
+                          : 'Students are recorded automatically upon booking or enrollment, and can also be managed manually'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleOpenAddStudent}
+                      className="px-3.5 py-1.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{isRtl ? 'إضافة طالب جديد' : 'Add Student'}</span>
+                    </button>
                   </div>
+
+                  {showAddStudentModal && (
+                    <form
+                      onSubmit={handleSaveStudent}
+                      className="p-5 bg-brand-50/40 border-b border-brand-200 space-y-4 text-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-extrabold text-navy-950">
+                          {editingStudentId
+                            ? isRtl
+                              ? 'تعديل بيانات الطالب وتقدمه'
+                              : 'Edit Student Record'
+                            : isRtl
+                            ? 'إضافة طالب جديد لسجل الأكاديمية'
+                            : 'Add New Student'}
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddStudentModal(false)}
+                          className="text-navy-500 hover:text-navy-800"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="font-bold text-navy-700 block mb-1">
+                            {isRtl ? 'اسم الطالب *' : 'Student Name *'}
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={studentFormData.name}
+                            onChange={(e) => setStudentFormData({ ...studentFormData, name: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-navy-700 block mb-1">
+                            {isRtl ? 'البريد الإلكتروني *' : 'Email *'}
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={studentFormData.email}
+                            onChange={(e) => setStudentFormData({ ...studentFormData, email: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-navy-700 block mb-1">
+                            {isRtl ? 'رقم الهاتف / الواتساب' : 'Phone / WhatsApp'}
+                          </label>
+                          <input
+                            type="text"
+                            value={studentFormData.phone}
+                            onChange={(e) => setStudentFormData({ ...studentFormData, phone: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-navy-700 block mb-1">
+                            {isRtl ? 'عدد الدورات المسجلة' : 'Enrolled Courses'}
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={studentFormData.enrolledCoursesCount}
+                            onChange={(e) =>
+                              setStudentFormData({
+                                ...studentFormData,
+                                enrolledCoursesCount: Number(e.target.value),
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-navy-700 block mb-1">
+                            {isRtl ? 'عدد الدروس / الحصص المكتملة' : 'Completed Lessons'}
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={studentFormData.completedLessonsCount}
+                            onChange={(e) =>
+                              setStudentFormData({
+                                ...studentFormData,
+                                completedLessonsCount: Number(e.target.value),
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-navy-700 block mb-1">
+                            {isRtl ? 'نسبة الإنجاز (%)' : 'Progress (%)'}
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={studentFormData.progressPercentage}
+                            onChange={(e) =>
+                              setStudentFormData({
+                                ...studentFormData,
+                                progressPercentage: Number(e.target.value),
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="submit"
+                          className="px-4 py-2 rounded-xl bg-brand-700 text-white font-bold hover:bg-brand-800"
+                        >
+                          {isRtl ? 'حفظ بيانات الطالب' : 'Save Student'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-start text-xs">
                       <thead className="bg-surface-muted text-navy-500 font-bold border-b border-surface-border">
                         <tr>
                           <th className="p-4 text-start">{isRtl ? 'اسم الطالب' : 'Student Name'}</th>
-                          <th className="p-4 text-start">{isRtl ? 'البريد الإلكتروني' : 'Email'}</th>
+                          <th className="p-4 text-start">{isRtl ? 'البريد والهاتف' : 'Email & Phone'}</th>
                           <th className="p-4 text-start">{isRtl ? 'الدورات المسجلة' : 'Courses'}</th>
                           <th className="p-4 text-start">{isRtl ? 'الدروس المكتملة' : 'Lessons Completed'}</th>
                           <th className="p-4 text-start">{isRtl ? 'معدل الإنجاز' : 'Progress'}</th>
                           <th className="p-4 text-start">{isRtl ? 'تاريخ الانضمام' : 'Joined'}</th>
+                          <th className="p-4 text-end">{isRtl ? 'إجراءات' : 'Actions'}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-surface-borderSubtle">
                         {students.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="p-8 text-center text-navy-400">
+                            <td colSpan={7} className="p-8 text-center text-navy-400">
                               {isRtl
-                                ? 'لا يوجد طلاب مسجلون بعد. سيتم قيد المتدربين تلقائياً عند الاشتراك في الدورات أو حجز الدروس.'
-                                : 'No students enrolled yet. Students will appear automatically upon course enrollment or lesson booking.'}
+                                ? 'لا يوجد طلاب مسجلون بعد (0 طلاب). سيتم قيد المتدربين تلقائياً عند الاشتراك في الدورات أو حجز الدروس.'
+                                : 'No students enrolled yet (0 students). Students will appear automatically upon course enrollment or lesson booking.'}
                             </td>
                           </tr>
                         ) : (
                           students.map((stu) => (
                             <tr key={stu.id} className="hover:bg-surface-muted/50 transition-colors">
                               <td className="p-4 font-bold text-navy-950">{stu.name}</td>
-                              <td className="p-4 text-navy-600">{stu.email}</td>
+                              <td className="p-4 text-navy-600">
+                                <div>{stu.email}</div>
+                                {stu.phone && (
+                                  <div className="text-[11px] font-mono text-emerald-700 font-bold">
+                                    📞 {stu.phone}
+                                  </div>
+                                )}
+                              </td>
                               <td className="p-4 font-semibold text-brand-800">
                                 {stu.enrolledCoursesCount} {isRtl ? 'دورات' : 'Courses'}
                               </td>
@@ -5784,6 +6319,26 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                 </span>
                               </td>
                               <td className="p-4 text-navy-500">{stu.joinedDate}</td>
+                              <td className="p-4 text-end">
+                                <div className="inline-flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditStudent(stu)}
+                                    className="p-1.5 rounded-lg text-navy-600 hover:bg-surface-muted transition-colors"
+                                    title={isRtl ? 'تعديل الطالب' : 'Edit Student'}
+                                  >
+                                    <Edit3 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteStudent(stu.id)}
+                                    className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                                    title={isRtl ? 'حذف الطالب' : 'Delete Student'}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
                             </tr>
                           ))
                         )}
