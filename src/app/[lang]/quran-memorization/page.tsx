@@ -1,8 +1,8 @@
 import { setRequestLocale } from 'next-intl/server';
-import { locales } from '@/i18n/routing';
-import { Bookmark, Sparkles, Award, ShieldCheck, CheckCircle2, ArrowRight, ArrowLeft, Calendar } from 'lucide-react';
-import { Link } from '@/i18n/routing';
-import { getTrackByHref } from '@/lib/data-store';
+import { locales, Link } from '@/i18n/routing';
+import { Bookmark, Calendar } from 'lucide-react';
+import { getTrackByHref, getCourses } from '@/lib/data-store';
+import { TrackUnitsGrid } from '@/components/tracks/TrackUnitsGrid';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +17,10 @@ interface PageProps {
 export default async function QuranMemorizationPage({ params: { lang } }: PageProps) {
   setRequestLocale(lang);
   const isRtl = lang === 'ar';
-  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
   const track = getTrackByHref('/quran-memorization');
-  const hifzPillars = track?.items && track.items.length > 0 ? track.items : [
+  const courses = getCourses();
+  const fallbackItems = [
     {
       id: 'hifz-pillar-1',
       title: 'The 3-Tier Retention System',
@@ -71,59 +71,13 @@ export default async function QuranMemorizationPage({ params: { lang } }: PagePr
           </p>
         </div>
 
-        {/* Hifz Methodology Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto mb-12">
-          {hifzPillars.map((item, idx) => {
-            const pointsList = isRtl ? item.pointsAr : item.points;
-            return (
-              <div
-                key={item.id || idx}
-                className="academy-card p-6 sm:p-7 flex flex-col justify-between hover:border-gold-300 group"
-              >
-                <div className="space-y-4">
-                  <div className="w-10 h-10 rounded-xl bg-gold-50 text-gold-700 flex items-center justify-center border border-gold-200">
-                    <Bookmark className="w-5 h-5 text-gold-700" />
-                  </div>
-                  {item.level && (
-                    <span className="badge-gold text-xs">
-                      {isRtl ? item.levelAr : item.level}
-                    </span>
-                  )}
-                  <h3 className="text-lg font-bold text-navy-900 group-hover:text-brand-800 transition-colors">
-                    {isRtl ? item.titleAr : item.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-navy-600 leading-relaxed">
-                    {isRtl ? item.descAr : item.desc}
-                  </p>
-
-                  {Array.isArray(pointsList) && pointsList.length > 0 && (
-                    <div className="pt-3 border-t border-surface-borderSubtle space-y-2">
-                      {pointsList.map((pt, pIdx) => (
-                        <div
-                          key={pIdx}
-                          className="flex items-center gap-2 text-xs text-navy-700 font-medium"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                          <span>{pt}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-6 mt-4 border-t border-surface-borderSubtle">
-                  <Link
-                    href="/courses"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-900"
-                  >
-                    <span>{isRtl ? 'عرض منهج المسار' : 'View Track Details'}</span>
-                    <ArrowIcon className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <TrackUnitsGrid
+          track={track}
+          fallbackItems={fallbackItems}
+          trackSlug="quran-memorization"
+          lang={lang}
+          courses={courses}
+        />
 
         {/* Bottom CTA Box */}
         <div className="max-w-4xl mx-auto p-8 rounded-2xl bg-gradient-to-r from-brand-700 to-brand-900 text-white text-center sm:text-start flex flex-col sm:flex-row items-center justify-between gap-6 shadow-card-hover">

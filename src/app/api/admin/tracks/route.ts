@@ -54,6 +54,12 @@ export async function POST(request: Request) {
       if (itemData.durationAr && !itemData.duration) {
         itemData.duration = await translateSingle(itemData.durationAr, 'ar', 'en');
       }
+      if (itemData.detailedContentAr && !itemData.detailedContentEn) {
+        itemData.detailedContentEn = await translateSingle(itemData.detailedContentAr, 'ar', 'en');
+      }
+      if (itemData.ctaTextAr && !itemData.ctaTextEn) {
+        itemData.ctaTextEn = await translateSingle(itemData.ctaTextAr, 'ar', 'en');
+      }
       if (Array.isArray(itemData.pointsAr) && (!Array.isArray(itemData.points) || itemData.points.length === 0)) {
         itemData.points = await Promise.all(
           itemData.pointsAr.map((p: string) => translateSingle(p, 'ar', 'en'))

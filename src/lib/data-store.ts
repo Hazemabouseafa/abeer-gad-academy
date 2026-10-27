@@ -131,6 +131,8 @@ export interface PillarCardItem {
   featuresAr: string[];
 }
 
+export type TrackItemActionType = 'PRIVATE_LESSON' | 'COURSE' | 'DIRECT_CONTENT' | 'CUSTOM_LINK';
+
 export interface TrackItem {
   id: string;
   title: string;
@@ -144,6 +146,19 @@ export interface TrackItem {
   lessonsCount?: number;
   points?: string[];
   pointsAr?: string[];
+
+  // Admin-defined unit target & content logic
+  actionType?: TrackItemActionType;
+  linkedCourseSlug?: string;
+  price?: number;
+  isFree?: boolean;
+  videoUrl?: string;
+  fileUrl?: string;
+  detailedContentAr?: string;
+  detailedContentEn?: string;
+  ctaTextAr?: string;
+  ctaTextEn?: string;
+  customUrl?: string;
 }
 
 export interface ServiceCardItem {
@@ -920,8 +935,18 @@ export function getTrackById(id: string): ServiceCardItem | undefined {
 
 export function getTrackByHref(href: string): ServiceCardItem | undefined {
   const tracks = getTracks();
-  const cleanHref = href.startsWith('/') ? href : `/${href}`;
-  return tracks.find((t) => t.href === cleanHref || t.href.replace(/^\//, '') === cleanHref.replace(/^\//, ''));
+  const clean = href.replace(/^\/+|\/+$/g, '').replace(/^tracks\//, '');
+  return tracks.find((t) => {
+    const tClean = t.href.replace(/^\/+|\/+$/g, '').replace(/^tracks\//, '');
+    return (
+      tClean === clean ||
+      t.id === clean ||
+      t.id.endsWith(clean) ||
+      t.href === href ||
+      t.href === `/${clean}` ||
+      t.href === `/tracks/${clean}`
+    );
+  });
 }
 
 export function saveTrack(data: Partial<ServiceCardItem>): ServiceCardItem {
@@ -1034,6 +1059,17 @@ export function saveTrackItem(trackId: string, itemData: Partial<TrackItem>): Tr
     lessonsCount: itemData.lessonsCount || 10,
     points: itemData.points || [],
     pointsAr: itemData.pointsAr || [],
+    actionType: itemData.actionType || 'PRIVATE_LESSON',
+    linkedCourseSlug: itemData.linkedCourseSlug || '',
+    price: itemData.price ?? 0,
+    isFree: itemData.isFree ?? false,
+    videoUrl: itemData.videoUrl || '',
+    fileUrl: itemData.fileUrl || '',
+    detailedContentAr: itemData.detailedContentAr || '',
+    detailedContentEn: itemData.detailedContentEn || '',
+    ctaTextAr: itemData.ctaTextAr || '',
+    ctaTextEn: itemData.ctaTextEn || '',
+    customUrl: itemData.customUrl || '',
   };
 
   items.push(newItem);

@@ -1,8 +1,8 @@
 import { setRequestLocale } from 'next-intl/server';
 import { locales } from '@/i18n/routing';
-import { ScrollText, Play, CheckCircle2, Award, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
-import { Link } from '@/i18n/routing';
-import { getTrackByHref } from '@/lib/data-store';
+import { ScrollText } from 'lucide-react';
+import { getTrackByHref, getCourses } from '@/lib/data-store';
+import { TrackUnitsGrid } from '@/components/tracks/TrackUnitsGrid';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +17,10 @@ interface PageProps {
 export default async function QuranReadingPage({ params: { lang } }: PageProps) {
   setRequestLocale(lang);
   const isRtl = lang === 'ar';
-  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
   const track = getTrackByHref('/quran-reading');
-  const modules = track?.items && track.items.length > 0 ? track.items : [
+  const courses = getCourses();
+  const fallbackItems = [
     {
       id: 'quran-read-mod-1',
       title: 'Noorani Qaida Master Track',
@@ -71,54 +71,13 @@ export default async function QuranReadingPage({ params: { lang } }: PageProps) 
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {modules.map((mod, idx) => {
-            const stepsList = isRtl ? (mod.pointsAr || (mod as any).stepsAr) : (mod.points || (mod as any).steps);
-            return (
-              <div
-                key={mod.id || idx}
-                className="academy-card p-6 sm:p-7 flex flex-col justify-between hover:border-gold-300"
-              >
-                <div className="space-y-4">
-                  <div className="w-10 h-10 rounded-2xl bg-gold-50 text-gold-700 flex items-center justify-center font-bold text-sm">
-                    0{idx + 1}
-                  </div>
-                  <h3 className="text-lg font-bold text-navy-950">
-                    {isRtl ? mod.titleAr : mod.title}
-                  </h3>
-                  <p className="text-xs text-navy-600 leading-relaxed">
-                    {isRtl ? mod.descAr : mod.desc}
-                  </p>
-
-                  {Array.isArray(stepsList) && stepsList.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-surface-borderSubtle">
-                      <span className="text-[11px] font-extrabold text-navy-500 uppercase tracking-wider block">
-                        {isRtl ? 'المحاور والمهارات:' : 'Key Competencies:'}
-                      </span>
-                      <ul className="space-y-1.5 text-xs text-navy-700">
-                        {stepsList.map((st: string, sIdx: number) => (
-                          <li key={sIdx} className="flex items-center gap-2">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                            <span>{st}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-6 mt-4 border-t border-surface-borderSubtle">
-                  <Link
-                    href="/courses"
-                    className="btn-primary w-full text-xs text-center justify-center py-2.5"
-                  >
-                    <span>{isRtl ? 'التسجيل في هذا المستوى' : 'Join This Module'}</span>
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <TrackUnitsGrid
+          track={track}
+          fallbackItems={fallbackItems}
+          trackSlug="quran-reading"
+          lang={lang}
+          courses={courses}
+        />
       </div>
     </div>
   );

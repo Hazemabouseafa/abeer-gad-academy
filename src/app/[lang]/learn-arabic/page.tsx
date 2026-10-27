@@ -1,8 +1,8 @@
 import { setRequestLocale } from 'next-intl/server';
 import { locales } from '@/i18n/routing';
-import { BookOpen, CheckCircle2, ArrowRight, ArrowLeft, Star, Sparkles, GraduationCap } from 'lucide-react';
-import { Link } from '@/i18n/routing';
-import { getTrackByHref } from '@/lib/data-store';
+import { BookOpen } from 'lucide-react';
+import { getTrackByHref, getCourses } from '@/lib/data-store';
+import { TrackUnitsGrid } from '@/components/tracks/TrackUnitsGrid';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +17,10 @@ interface PageProps {
 export default async function LearnArabicPage({ params: { lang } }: PageProps) {
   setRequestLocale(lang);
   const isRtl = lang === 'ar';
-  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
   const track = getTrackByHref('/learn-arabic');
-  const pathways = track?.items && track.items.length > 0 ? track.items : [
+  const courses = getCourses();
+  const fallbackItems = [
     {
       id: 'arabic-stage-1',
       level: 'Stage 1',
@@ -100,62 +100,13 @@ export default async function LearnArabicPage({ params: { lang } }: PageProps) {
           </p>
         </div>
 
-        {/* Pathways Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          {pathways.map((item, idx) => {
-            const pointsList = isRtl ? item.pointsAr : item.points;
-            const lessons = item.lessonsCount || (item as any).lessons || 12;
-
-            return (
-              <div
-                key={item.id || idx}
-                className="academy-card p-6 sm:p-8 flex flex-col justify-between hover:border-brand-400 group"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="badge-gold text-xs">
-                      {isRtl ? item.levelAr : item.level}
-                    </span>
-                    <span className="text-xs text-navy-500 font-semibold font-mono">
-                      {isRtl ? item.durationAr : item.duration} &bull; {lessons} {isRtl ? 'درساً' : 'Lessons'}
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-navy-900 group-hover:text-brand-800 transition-colors">
-                    {isRtl ? item.titleAr : item.title}
-                  </h3>
-                  <p className="text-sm text-navy-600 leading-relaxed">
-                    {isRtl ? item.descAr : item.desc}
-                  </p>
-
-                  {/* Highlights / Learning Points */}
-                  {Array.isArray(pointsList) && pointsList.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-2">
-                      {pointsList.map((pt, pIdx) => (
-                        <span key={pIdx} className="text-[11px] px-2.5 py-1 rounded-lg bg-surface-muted border border-surface-borderSubtle text-navy-700 font-medium">
-                          ✓ {pt}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-6 mt-4 border-t border-surface-borderSubtle flex items-center justify-between">
-                  <span className="text-xs font-semibold text-brand-700">
-                    {isRtl ? 'يشمل تمارين واختبارات دورية' : 'Interactive Quizzes Included'}
-                  </span>
-                  <Link
-                    href="/courses"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-navy-800 hover:text-brand-800 transition-colors"
-                  >
-                    <span>{isRtl ? 'التفاصيل والتسجيل' : 'Enroll in Track'}</span>
-                    <ArrowIcon className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <TrackUnitsGrid
+          track={track}
+          fallbackItems={fallbackItems}
+          trackSlug="learn-arabic"
+          lang={lang}
+          courses={courses}
+        />
       </div>
     </div>
   );

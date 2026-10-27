@@ -67,6 +67,7 @@ import type {
   PillarCardItem,
   ServiceCardItem,
   TrackItem,
+  TrackItemActionType,
 } from '@/lib/data-store';
 import { MediaInputWithChoice } from './MediaInputWithChoice';
 
@@ -267,7 +268,30 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [targetTrackIdForItem, setTargetTrackIdForItem] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [itemFormData, setItemFormData] = useState({
+  const [itemFormData, setItemFormData] = useState<{
+    titleAr: string;
+    title: string;
+    levelAr: string;
+    level: string;
+    descAr: string;
+    desc: string;
+    durationAr: string;
+    duration: string;
+    lessonsCount: number;
+    pointsTextAr: string;
+    pointsTextEn: string;
+    actionType: TrackItemActionType;
+    linkedCourseSlug: string;
+    price: number;
+    isFree: boolean;
+    videoUrl: string;
+    fileUrl: string;
+    detailedContentAr: string;
+    detailedContentEn: string;
+    ctaTextAr: string;
+    ctaTextEn: string;
+    customUrl: string;
+  }>({
     titleAr: '',
     title: '',
     levelAr: '',
@@ -279,6 +303,17 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     lessonsCount: 12,
     pointsTextAr: '',
     pointsTextEn: '',
+    actionType: 'PRIVATE_LESSON',
+    linkedCourseSlug: '',
+    price: 0,
+    isFree: false,
+    videoUrl: '',
+    fileUrl: '',
+    detailedContentAr: '',
+    detailedContentEn: '',
+    ctaTextAr: '',
+    ctaTextEn: '',
+    customUrl: '',
   });
   const [savingItem, setSavingItem] = useState(false);
   const [expandedTracks, setExpandedTracks] = useState<Record<string, boolean>>({});
@@ -1463,8 +1498,22 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       lessonsCount: 12,
       pointsTextAr: '',
       pointsTextEn: '',
+      actionType: 'PRIVATE_LESSON',
+      linkedCourseSlug: '',
+      price: 0,
+      isFree: false,
+      videoUrl: '',
+      fileUrl: '',
+      detailedContentAr: '',
+      detailedContentEn: '',
+      ctaTextAr: '',
+      ctaTextEn: '',
+      customUrl: '',
     });
     setShowAddItemModal(true);
+    setTimeout(() => {
+      document.getElementById('add-track-item-modal-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   };
 
   const handleOpenEditItemInTrack = (trackId: string, item: TrackItem) => {
@@ -1482,8 +1531,22 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       lessonsCount: item.lessonsCount || 12,
       pointsTextAr: Array.isArray(item.pointsAr) ? item.pointsAr.join('\n') : '',
       pointsTextEn: Array.isArray(item.points) ? item.points.join('\n') : '',
+      actionType: item.actionType || 'PRIVATE_LESSON',
+      linkedCourseSlug: item.linkedCourseSlug || '',
+      price: typeof item.price === 'number' ? item.price : 0,
+      isFree: Boolean(item.isFree),
+      videoUrl: item.videoUrl || '',
+      fileUrl: item.fileUrl || '',
+      detailedContentAr: item.detailedContentAr || '',
+      detailedContentEn: item.detailedContentEn || '',
+      ctaTextAr: item.ctaTextAr || '',
+      ctaTextEn: item.ctaTextEn || '',
+      customUrl: item.customUrl || '',
     });
     setShowAddItemModal(true);
+    setTimeout(() => {
+      document.getElementById('add-track-item-modal-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   };
 
   const handleSaveTrackItemModal = async (e: React.FormEvent) => {
@@ -1510,6 +1573,17 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
         lessonsCount: Number(itemFormData.lessonsCount) || 12,
         pointsAr,
         points: pointsEn.length > 0 ? pointsEn : undefined,
+        actionType: itemFormData.actionType || 'PRIVATE_LESSON',
+        linkedCourseSlug: itemFormData.linkedCourseSlug || '',
+        price: Number(itemFormData.price) || 0,
+        isFree: Boolean(itemFormData.isFree),
+        videoUrl: itemFormData.videoUrl || '',
+        fileUrl: itemFormData.fileUrl || '',
+        detailedContentAr: itemFormData.detailedContentAr || '',
+        detailedContentEn: itemFormData.detailedContentEn || '',
+        ctaTextAr: itemFormData.ctaTextAr || '',
+        ctaTextEn: itemFormData.ctaTextEn || '',
+        customUrl: itemFormData.customUrl || '',
       };
 
       const res = await fetch('/api/admin/tracks', {
@@ -2825,6 +2899,249 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                               className="w-full px-3 py-2 rounded-xl border border-surface-border font-arabic text-xs"
                             />
                           </div>
+
+                          {/* UNIT DESTINATION & CONTENT TYPE SELECTOR */}
+                          <div className="md:col-span-2 pt-3 border-t border-surface-border space-y-4">
+                            <div>
+                              <label className="font-extrabold text-navy-900 block mb-1.5 text-xs">
+                                {isRtl
+                                  ? '🎯 ماذا يجد العميل عند الدخول على هذه الوحدة / المرحلة؟ (تحديد نوع المحتوى والوجهة)'
+                                  : '🎯 What does the student find inside this Unit / Stage? (Content & Action Type)'}
+                              </label>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                {[
+                                  {
+                                    type: 'PRIVATE_LESSON' as TrackItemActionType,
+                                    labelAr: 'حصة خاصة / حجز موعد',
+                                    labelEn: '1-on-1 Private Lesson',
+                                    subAr: 'تقويم حجز المواعيد المباشر + شرح تمهيدي',
+                                    subEn: 'Live Booking Calendar + Intro Content',
+                                  },
+                                  {
+                                    type: 'COURSE' as TrackItemActionType,
+                                    labelAr: 'دورة تدريبية متكاملة',
+                                    labelEn: 'Full Structured Course',
+                                    subAr: 'ربط بدورة مسجلة وعرض جميع دروسها واشتراكها',
+                                    subEn: 'Link to a Course & its lessons',
+                                  },
+                                  {
+                                    type: 'DIRECT_CONTENT' as TrackItemActionType,
+                                    labelAr: 'درس مرئي / محتوى مباشر',
+                                    labelEn: 'Direct Video / PDF Lesson',
+                                    subAr: 'فيديو شرح + مذكرة PDF + مادة علمية مكتوبة',
+                                    subEn: 'Video Player + PDF + Written Guide',
+                                  },
+                                  {
+                                    type: 'CUSTOM_LINK' as TrackItemActionType,
+                                    labelAr: 'رابط مخصص / وجهة خارجية',
+                                    labelEn: 'Custom Link / URL',
+                                    subAr: 'توجيه العميل لصفحة أو رابط يحدده المدير',
+                                    subEn: 'Redirect student to a custom URL',
+                                  },
+                                ].map((opt) => {
+                                  const isSelected = itemFormData.actionType === opt.type;
+                                  return (
+                                    <button
+                                      key={opt.type}
+                                      type="button"
+                                      onClick={() => setItemFormData({ ...itemFormData, actionType: opt.type })}
+                                      className={`p-3 rounded-2xl border text-right transition-all flex flex-col justify-between gap-1 ${
+                                        isSelected
+                                          ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-500/20'
+                                          : 'border-surface-border bg-surface-muted/40 hover:bg-surface-muted'
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between w-full">
+                                        <span className={`font-extrabold text-xs ${isSelected ? 'text-emerald-900' : 'text-navy-900'}`}>
+                                          {isRtl ? opt.labelAr : opt.labelEn}
+                                        </span>
+                                        <span
+                                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                            isSelected ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-navy-300 bg-white'
+                                          }`}
+                                        >
+                                          {isSelected && <Check className="w-2.5 h-2.5" />}
+                                        </span>
+                                      </div>
+                                      <p className="text-[10px] text-navy-500 leading-snug">
+                                        {isRtl ? opt.subAr : opt.subEn}
+                                      </p>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* CONDITIONAL: Linked Course Selector when actionType === 'COURSE' */}
+                            {itemFormData.actionType === 'COURSE' && (
+                              <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-200 space-y-3">
+                                <label className="font-bold text-purple-950 block">
+                                  {isRtl ? 'اختر الدورة التدريبية المرتبطة بهذه الوحدة' : 'Select Linked Course'}
+                                </label>
+                                <select
+                                  value={itemFormData.linkedCourseSlug}
+                                  onChange={(e) => {
+                                    const selectedSlug = e.target.value;
+                                    const matchedCourse = courses.find((c) => c.slug === selectedSlug || c.id === selectedSlug);
+                                    setItemFormData({
+                                      ...itemFormData,
+                                      linkedCourseSlug: selectedSlug,
+                                      price: matchedCourse && !itemFormData.price ? matchedCourse.price : itemFormData.price,
+                                    });
+                                  }}
+                                  className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-white text-navy-900 font-bold text-xs"
+                                >
+                                  <option value="">
+                                    {isRtl ? '-- اختر دورة من الدورات المضافة في الأكاديمية --' : '-- Select an existing course --'}
+                                  </option>
+                                  {courses.map((c) => (
+                                    <option key={c.id} value={c.slug}>
+                                      {isRtl ? c.titleAr : c.title} ({c.price > 0 ? `$${c.price}` : isRtl ? 'مجاني' : 'Free'})
+                                    </option>
+                                  ))}
+                                </select>
+                                <p className="text-[11px] text-purple-800">
+                                  {isRtl
+                                    ? 'عند دخول الطالب لهذه الوحدة سيجد مشغل دروس هذه الدورة بالكامل وزر الاشتراك المباشر بها.'
+                                    : 'Students entering this unit will see the full course curriculum player and enrollment options.'}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* CONDITIONAL: Custom URL when actionType === 'CUSTOM_LINK' */}
+                            {itemFormData.actionType === 'CUSTOM_LINK' && (
+                              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
+                                <label className="font-bold text-amber-950 block">
+                                  {isRtl ? 'الرابط المخصص للوحدة (URL أو مسار داخلي)' : 'Custom Destination URL'}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={itemFormData.customUrl}
+                                  onChange={(e) => setItemFormData({ ...itemFormData, customUrl: e.target.value })}
+                                  placeholder="https://... أو /courses/..."
+                                  className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white text-xs font-mono"
+                                  dir="ltr"
+                                />
+                              </div>
+                            )}
+
+                            {/* PRICING & CTA CUSTOMIZATION */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-2xl bg-surface-muted/50 border border-surface-border">
+                              <div>
+                                <label className="font-bold text-navy-700 block mb-1">
+                                  {isRtl ? 'سعر مستقل لهذه الوحدة ($ USD - اختياري)' : 'Unit Price ($ USD - Optional)'}
+                                </label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  step="0.01"
+                                  disabled={itemFormData.isFree}
+                                  value={itemFormData.isFree ? 0 : itemFormData.price}
+                                  onChange={(e) => setItemFormData({ ...itemFormData, price: Number(e.target.value) })}
+                                  placeholder="0 = حسب التسعير الزمني أو مجاني"
+                                  className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white text-xs disabled:opacity-50"
+                                />
+                                <span className="text-[10px] text-navy-500 block mt-1">
+                                  {isRtl
+                                    ? 'إذا وضعت سعراً > 0 سيظهر زر دفع PayPal مباشر لهذه الوحدة'
+                                    : 'If > 0, a direct PayPal checkout button appears inside the unit'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center pt-4">
+                                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={itemFormData.isFree}
+                                    onChange={(e) =>
+                                      setItemFormData({
+                                        ...itemFormData,
+                                        isFree: e.target.checked,
+                                        price: e.target.checked ? 0 : itemFormData.price,
+                                      })
+                                    }
+                                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                                  />
+                                  <span className="font-bold text-navy-800 text-xs">
+                                    {isRtl ? 'وحدة مجانية تماماً (تظهر شارة مجاناً للعميل)' : 'Free Unit (Displays Free Badge)'}
+                                  </span>
+                                </label>
+                              </div>
+
+                              <div>
+                                <label className="font-bold text-navy-700 block mb-1">
+                                  {isRtl ? 'نص زر الدخول للوحدة (اختياري - بالعربية)' : 'Custom Button Label (Arabic - Optional)'}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={itemFormData.ctaTextAr}
+                                  onChange={(e) => setItemFormData({ ...itemFormData, ctaTextAr: e.target.value })}
+                                  placeholder={
+                                    itemFormData.actionType === 'PRIVATE_LESSON'
+                                      ? 'ادخل للوحدة واحجز حصتك'
+                                      : itemFormData.actionType === 'COURSE'
+                                      ? 'استعرض الدورة والدروس'
+                                      : 'ابدأ دراسة هذه الوحدة'
+                                  }
+                                  className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-arabic text-xs"
+                                />
+                              </div>
+                            </div>
+
+                            {/* DIRECT EDUCATIONAL CONTENT INSIDE UNIT (VIDEO, PDF, WRITTEN EXPLANATION) */}
+                            <div className="p-4 rounded-2xl bg-emerald-50/40 border border-emerald-200 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-extrabold text-navy-900 text-xs flex items-center gap-1.5">
+                                  <Video className="w-4 h-4 text-emerald-700" />
+                                  <span>
+                                    {isRtl
+                                      ? 'المحتوى العلمي المباشر داخل صفحة الوحدة (فيديو / ملف PDF / شرح تفصيلي)'
+                                      : 'Direct Educational Content Inside Unit Page (Video / PDF / Detailed Text)'}
+                                  </span>
+                                </h4>
+                                <span className="text-[10px] text-emerald-800 font-bold">
+                                  {isRtl ? 'يظهر للطالب فور فتح صفحة الوحدة' : 'Displayed inside the unit page'}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <MediaInputWithChoice
+                                  label={isRtl ? 'فيديو شرح الوحدة (رفع فيديو أو رابط يوتيوب / MP4)' : 'Unit Video (Upload or YouTube/MP4 URL)'}
+                                  value={itemFormData.videoUrl}
+                                  onChange={(url) => setItemFormData({ ...itemFormData, videoUrl: url })}
+                                  category="videos"
+                                  accept="video/*"
+                                  placeholder="https://www.youtube.com/watch?v=... أو ارفع ملف فيديو"
+                                  isRtl={isRtl}
+                                />
+
+                                <MediaInputWithChoice
+                                  label={isRtl ? 'ملف PDF أو مذكرة الوحدة (رفع ملف أو رابط)' : 'Unit PDF / Worksheet (Upload or URL)'}
+                                  value={itemFormData.fileUrl}
+                                  onChange={(url) => setItemFormData({ ...itemFormData, fileUrl: url })}
+                                  category="resources"
+                                  accept=".pdf,.doc,.docx,application/pdf"
+                                  placeholder="https://... أو ارفع ملف PDF"
+                                  isRtl={isRtl}
+                                />
+                              </div>
+
+                              <div>
+                                <label className="font-bold text-navy-700 block mb-1">
+                                  {isRtl
+                                    ? 'المادة العلمية أو الشرح التفصيلي داخل صفحة الوحدة (بالعربية)'
+                                    : 'Detailed Written Lesson / Instructions Inside Unit (Arabic)'}
+                                </label>
+                                <textarea
+                                  rows={4}
+                                  value={itemFormData.detailedContentAr}
+                                  onChange={(e) => setItemFormData({ ...itemFormData, detailedContentAr: e.target.value })}
+                                  placeholder="اكتب هنا الشرح المفصل للوحدة، القواعد العلمية، خطوات التطبيق العملي، أو تعليمات التحضير قبل الحصة..."
+                                  className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-arabic text-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
                         <div className="pt-3 border-t border-surface-borderSubtle flex justify-end gap-2">
@@ -3184,16 +3501,57 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     {items.map((item, itIdx) => {
                                       const itemPoints = isRtl ? item.pointsAr : item.points;
+                                      const actionType = item.actionType || 'PRIVATE_LESSON';
+                                      const cleanTrackSlug = (service.href || '')
+                                        .replace(/^\/+/, '')
+                                        .replace(/^tracks\//, '');
+                                      const unitPreviewUrl = `/${currentLocale}/tracks/${cleanTrackSlug}/${item.id}`;
+
+                                      const actionBadge =
+                                        actionType === 'COURSE'
+                                          ? {
+                                              label: isRtl ? '🎓 دورة تدريبية' : '🎓 Course',
+                                              cls: 'bg-purple-50 text-purple-800 border-purple-200',
+                                            }
+                                          : actionType === 'DIRECT_CONTENT'
+                                          ? {
+                                              label: isRtl ? '🎬 درس ومحتوى مباشر' : '🎬 Direct Lesson',
+                                              cls: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                                            }
+                                          : actionType === 'CUSTOM_LINK'
+                                          ? {
+                                              label: isRtl ? '🔗 رابط مخصص' : '🔗 Custom Link',
+                                              cls: 'bg-amber-50 text-amber-800 border-amber-200',
+                                            }
+                                          : {
+                                              label: isRtl ? '📅 حصة خاصة / حجز موعد' : '📅 1-on-1 Lesson',
+                                              cls: 'bg-blue-50 text-blue-800 border-blue-200',
+                                            };
+
                                       return (
                                         <div
                                           key={item.id || itIdx}
                                           className="p-3.5 rounded-2xl bg-white border border-surface-border hover:border-brand-200 shadow-sm flex flex-col justify-between gap-3 group transition-all"
                                         >
                                           <div className="space-y-1.5">
-                                            <div className="flex items-center justify-between">
-                                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
-                                                {isRtl ? item.levelAr : item.level}
-                                              </span>
+                                            <div className="flex items-center justify-between flex-wrap gap-1.5">
+                                              <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                                                  {isRtl ? item.levelAr : item.level}
+                                                </span>
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${actionBadge.cls}`}>
+                                                  {actionBadge.label}
+                                                </span>
+                                                {item.isFree ? (
+                                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                    {isRtl ? 'مجاني' : 'Free'}
+                                                  </span>
+                                                ) : item.price && item.price > 0 ? (
+                                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-navy-900 text-amber-300">
+                                                    ${item.price}
+                                                  </span>
+                                                ) : null}
+                                              </div>
                                               {(item.duration || item.lessonsCount) && (
                                                 <span className="text-[10px] text-navy-500 font-medium">
                                                   {item.duration && (isRtl ? item.durationAr : item.duration)}
@@ -3212,6 +3570,32 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                               </p>
                                             )}
 
+                                            {/* Indicators for attached media / linked course */}
+                                            {(item.videoUrl || item.fileUrl || item.linkedCourseSlug || item.detailedContentAr) && (
+                                              <div className="flex flex-wrap gap-1.5 pt-1">
+                                                {item.videoUrl && (
+                                                  <span className="text-[9px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
+                                                    ▶ {isRtl ? 'فيديو مرفق' : 'Video'}
+                                                  </span>
+                                                )}
+                                                {item.fileUrl && (
+                                                  <span className="text-[9px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200 font-bold">
+                                                    📄 {isRtl ? 'ملف PDF' : 'PDF'}
+                                                  </span>
+                                                )}
+                                                {item.linkedCourseSlug && (
+                                                  <span className="text-[9px] px-2 py-0.5 rounded-md bg-purple-50 text-purple-800 border border-purple-200 font-bold">
+                                                    🔗 {isRtl ? `مرتبط بدورة: ${item.linkedCourseSlug}` : `Course: ${item.linkedCourseSlug}`}
+                                                  </span>
+                                                )}
+                                                {item.detailedContentAr && (
+                                                  <span className="text-[9px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-bold">
+                                                    📝 {isRtl ? 'مادة علمية مشروحة' : 'Written Guide'}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+
                                             {Array.isArray(itemPoints) && itemPoints.length > 0 && (
                                               <div className="flex flex-wrap gap-1 pt-1">
                                                 {itemPoints.map((pt, pIdx) => (
@@ -3227,24 +3611,36 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                           </div>
 
                                           {/* Item Action Buttons */}
-                                          <div className="pt-2 border-t border-surface-borderSubtle flex items-center justify-end gap-1.5">
-                                            <button
-                                              type="button"
-                                              onClick={() => handleOpenEditItemInTrack(service.id, item)}
-                                              className="px-2.5 py-1 rounded-lg border border-surface-border bg-surface-muted hover:bg-surface-elevated text-navy-700 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                                          <div className="pt-2 border-t border-surface-borderSubtle flex items-center justify-between gap-1.5">
+                                            <a
+                                              href={unitPreviewUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="px-2.5 py-1 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1 transition-colors"
                                             >
-                                              <Edit3 className="w-3 h-3 text-navy-500" />
-                                              <span>{isRtl ? 'تعديل المرحلة' : 'Edit Stage'}</span>
-                                            </button>
+                                              <ExternalLink className="w-3 h-3" />
+                                              <span>{isRtl ? 'معاينة صفحة الوحدة' : 'Preview Unit Page'}</span>
+                                            </a>
 
-                                            <button
-                                              type="button"
-                                              onClick={() => handleDeleteTrackItemAction(service.id, item.id)}
-                                              className="p-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] transition-colors"
-                                              title={isRtl ? 'حذف هذه المرحلة' : 'Delete Stage'}
-                                            >
-                                              <Trash2 className="w-3 h-3" />
-                                            </button>
+                                            <div className="flex items-center gap-1.5">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleOpenEditItemInTrack(service.id, item)}
+                                                className="px-2.5 py-1 rounded-lg border border-surface-border bg-surface-muted hover:bg-surface-elevated text-navy-700 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                                              >
+                                                <Edit3 className="w-3 h-3 text-navy-500" />
+                                                <span>{isRtl ? 'تعديل المحتوى والوجهة' : 'Edit Unit & Content'}</span>
+                                              </button>
+
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteTrackItemAction(service.id, item.id)}
+                                                className="p-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] transition-colors"
+                                                title={isRtl ? 'حذف هذه المرحلة' : 'Delete Stage'}
+                                              >
+                                                <Trash2 className="w-3 h-3" />
+                                              </button>
+                                            </div>
                                           </div>
                                         </div>
                                       );
