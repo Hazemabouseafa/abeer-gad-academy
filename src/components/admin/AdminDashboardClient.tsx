@@ -49,13 +49,23 @@ import {
   Save,
   Sun,
   Moon,
+  Smartphone,
+  Wallet,
+  AlertCircle,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import {
   calculateSlotPrice,
   DEFAULT_SLOT_PRICING,
+  formatHour12,
+  getPeriodWindows,
+  generateDayTimeSlots,
+  generateNightTimeSlots,
   type SlotPricingSettings,
 } from '@/lib/slot-pricing';
+import {
+  SUPPORTED_WALLETS,
+} from '@/lib/shehnawi';
 import type {
   CourseData,
   SlotData,
@@ -63,6 +73,7 @@ import type {
   TransactionData,
   StudentData,
   SiteSettingsData,
+  ShehnawiSettings,
   TestimonialItem,
   PillarCardItem,
   ServiceCardItem,
@@ -85,16 +96,25 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   >('OVERVIEW');
 
   // Sub-tab inside FRONTEND_CMS
-  const [cmsSubTab, setCmsSubTab] = useState<'HERO' | 'SERVICES' | 'TESTIMONIALS' | 'COMMUNICATION' | 'PAYPAL'>('HERO');
+  const [cmsSubTab, setCmsSubTab] = useState<'HERO' | 'SERVICES' | 'TESTIMONIALS' | 'COMMUNICATION' | 'PAYPAL' | 'SHEHNAWI'>('HERO');
 
   // Sub-tab inside FINANCIALS_STUDENTS
-  const [financeSubTab, setFinanceSubTab] = useState<'TRANSACTIONS' | 'STUDENTS' | 'PAYPAL_SETTINGS'>('TRANSACTIONS');
+  const [financeSubTab, setFinanceSubTab] = useState<'TRANSACTIONS' | 'STUDENTS' | 'PAYPAL_SETTINGS' | 'SHEHNAWI_SETTINGS'>('TRANSACTIONS');
 
   // PayPal Configuration States
   const [showPayPalSecret, setShowPayPalSecret] = useState(false);
   const [testingPayPal, setTestingPayPal] = useState(false);
   const [savingPayPal, setSavingPayPal] = useState(false);
   const [paypalTestResult, setPaypalTestResult] = useState<{
+    valid: boolean;
+    message: string;
+  } | null>(null);
+
+  // Shehnawi (Egyptian Wallets & InstaPay) Gateway States
+  const [showShehnawiSecret, setShowShehnawiSecret] = useState(false);
+  const [testingShehnawi, setTestingShehnawi] = useState(false);
+  const [savingShehnawi, setSavingShehnawi] = useState(false);
+  const [shehnawiTestResult, setShehnawiTestResult] = useState<{
     valid: boolean;
     message: string;
   } | null>(null);
@@ -1433,6 +1453,411 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     </div>
   );
 
+  // --- Shehnawi (Egyptian Wallets & InstaPay) Settings Handlers ---
+  const handleSaveShehnawiSettings = async (testConnectionAfterSave = false) => {
+    try {
+      if (testConnectionAfterSave) {
+        setTestingShehnawi(true);
+      } else {
+        setSavingShehnawi(true);
+      }
+      setShehnawiTestResult(null);
+
+      const payload = {
+        enabled: settings.shehnawi?.enabled ?? true,
+        walletNumber: settings.shehnawi?.walletNumber || '01012345678',
+        instapayHandle: settings.shehnawi?.instapayHandle || 'abeergad@instapay',
+        exchangeRateUsdToEgp: Number(settings.shehnawi?.exchangeRateUsdToEgp) || 50.0,
+        merchantId: settings.shehnawi?.merchantId || '',
+        apiKey: settings.shehnawi?.apiKey || '',
+        secretKey: settings.shehnawi?.secretKey || '',
+        instructionsAr: settings.shehnawi?.instructionsAr || '',
+        instructionsEn: settings.shehnawi?.instructionsEn || '',
+        testMode: Boolean(settings.shehnawi?.testMode),
+      };
+
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shehnawi: payload }),
+      });
+      const data = await res.json();
+      if (data.settings) {
+        setSettings(data.settings);
+      }
+
+      if (testConnectionAfterSave) {
+        const testRes = await fetch('/api/admin/shehnawi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const testData = await testRes.json();
+        if (testData.valid) {
+          setShehnawiTestResult({
+            valid: true,
+            message: isRtl ? `✅ ${testData.messageAr}` : `✅ ${testData.messageEn}`,
+          });
+          triggerToast(isRtl ? 'تم التحقق من بوابة شحناوي وحفظ البيانات بنجاح' : 'Shehnawi gateway verified & saved!');
+        } else {
+          setShehnawiTestResult({
+            valid: false,
+            message: isRtl ? `❌ ${testData.messageAr}` : `❌ ${testData.messageEn}`,
+          });
+        }
+      } else if (data.success) {
+        setShehnawiTestResult({
+          valid: true,
+          message: isRtl ? 'تم حفظ إعدادات بوابة شحناوي وتفعيلها بنجاح.' : 'Shehnawi settings saved and activated.',
+        });
+        triggerToast(isRtl ? 'تم حفظ إعدادات بوابة شحناوي بنجاح' : 'Shehnawi settings saved!');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setShehnawiTestResult({
+        valid: false,
+        message: isRtl ? 'حدث خطأ أثناء حفظ أو فحص بوابة شحناوي' : 'Error saving or testing Shehnawi settings',
+      });
+    } finally {
+      setSavingShehnawi(false);
+      setTestingShehnawi(false);
+    }
+  };
+
+  const renderShehnawiSettingsCard = () => {
+    const shehnawi = settings.shehnawi || {
+      enabled: true,
+      walletNumber: '01012345678',
+      instapayHandle: 'abeergad@instapay',
+      exchangeRateUsdToEgp: 50.0,
+      merchantId: 'SHH-ABEER-2026',
+      apiKey: '',
+      secretKey: '',
+      instructionsAr:
+        'قم بالتحويل عبر فودافون كاش أو إنستاباي أو أي محفظة مصرية إلى الرقم الموضح، ثم اكتب رقم المحفظة المحول منها ورقم العملية لتأكيد الحجز فوراً.',
+      instructionsEn:
+        'Transfer via Vodafone Cash, InstaPay, or any Egyptian wallet to the provided details, then submit your sender number and transaction reference.',
+      testMode: false,
+    };
+
+    const shehnawiTransactions = transactions.filter(
+      (t) => t.paymentMethod === 'SHEHNAWI' || (t.paypalOrderId && t.paypalOrderId.startsWith('SHEHNAWI'))
+    );
+    const totalShehnawiEgp = shehnawiTransactions.reduce(
+      (acc, t) => acc + (t.amountEgp || t.amount * (shehnawi.exchangeRateUsdToEgp || 50)),
+      0
+    );
+
+    return (
+      <div className="academy-card p-6 bg-white border-2 border-purple-500/20 rounded-2xl space-y-5 shadow-card-subtle">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-surface-border">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 via-purple-700 to-indigo-800 text-white flex items-center justify-center shadow-md">
+              <Smartphone className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-extrabold text-navy-950 text-base">
+                  {isRtl
+                    ? 'بوابة شحناوي • المحافظ الإلكترونية وإنستاباي في مصر'
+                    : 'Shehnawi Gateway • Egyptian E-Wallets & InstaPay'}
+                </h4>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200">
+                  {isRtl ? 'فودافون كاش / إنستاباي' : 'Egypt Cash & IPN'}
+                </span>
+              </div>
+              <p className="text-xs text-navy-500 mt-0.5">
+                {isRtl
+                  ? 'تمكين الطلاب من الدفع الفوري بالجنيه المصري عبر فودافون كاش، إنستاباي، أورنج، اتصالات، وي باي، والمحافظ البنكية'
+                  : 'Allows Egyptian students to pay in EGP via Vodafone Cash, InstaPay IPN, Orange, Etisalat, WE, and Bank Wallets'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => handleSaveShehnawiSettings(false)}
+              disabled={savingShehnawi || testingShehnawi}
+              className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>
+                {savingShehnawi
+                  ? isRtl ? 'جاري الحفظ...' : 'Saving...'
+                  : isRtl ? 'حفظ إعدادات شحناوي' : 'Save Shehnawi Settings'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSaveShehnawiSettings(true)}
+              disabled={savingShehnawi || testingShehnawi}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-purple-700 hover:from-red-700 hover:to-purple-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-amber-300" />
+              <span>
+                {testingShehnawi
+                  ? isRtl ? 'جاري التحقق...' : 'Testing...'
+                  : isRtl ? 'اختبار وحفظ البوابة' : 'Test & Save Gateway'}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Live Shehnawi Stats Strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-purple-50/70 via-red-50/40 to-indigo-50/70 border border-purple-200/60">
+          <div>
+            <span className="text-[10px] font-bold text-navy-500 uppercase block">
+              {isRtl ? 'حالة البوابة للطلاب' : 'Gateway Status'}
+            </span>
+            <div className="flex items-center gap-2 mt-1">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={shehnawi.enabled}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      shehnawi: { ...shehnawi, enabled: e.target.checked },
+                    })
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+              <span className={`text-xs font-black ${shehnawi.enabled ? 'text-emerald-700' : 'text-red-600'}`}>
+                {shehnawi.enabled
+                  ? isRtl ? 'مفعلة وتظهر للطلاب' : 'Active & Visible'
+                  : isRtl ? 'معطلة حالياً' : 'Disabled'}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-bold text-navy-500 uppercase block">
+              {isRtl ? 'إجمالي المحصل عبر المحافظ' : 'Total E-Wallet Volume'}
+            </span>
+            <span className="text-sm font-black text-purple-900 font-mono mt-0.5 block">
+              {totalShehnawiEgp.toLocaleString()} ج.م{' '}
+              <span className="text-[10px] text-navy-400 font-normal">
+                ({shehnawiTransactions.length} {isRtl ? 'عملية' : 'orders'})
+              </span>
+            </span>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-bold text-navy-500 uppercase block">
+              {isRtl ? 'سعر الصرف المطبق ($1 USD)' : 'Exchange Rate'}
+            </span>
+            <span className="text-sm font-black text-brand-800 font-mono mt-0.5 block">
+              $1 = {shehnawi.exchangeRateUsdToEgp || 50} ج.م
+            </span>
+          </div>
+        </div>
+
+        {/* Test Result Alert Banner */}
+        {shehnawiTestResult && (
+          <div
+            className={`p-3.5 rounded-xl border flex items-center gap-2.5 text-xs ${
+              shehnawiTestResult.valid
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900 font-bold'
+                : 'bg-red-50 border-red-200 text-red-900 font-semibold'
+            }`}
+          >
+            {shehnawiTestResult.valid ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+            )}
+            <p className="leading-relaxed">{shehnawiTestResult.message}</p>
+          </div>
+        )}
+
+        {/* Shehnawi Settings Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          {/* Main Egypt Wallet Phone Number */}
+          <div className="md:col-span-1">
+            <label className="font-bold text-navy-800 block mb-1.5">
+              {isRtl ? 'رقم محفظة الكاش للتحويل (فودافون كاش / كاش مصر) *' : 'Main Cash Wallet Number *'}
+            </label>
+            <input
+              type="text"
+              dir="ltr"
+              value={shehnawi.walletNumber || ''}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  shehnawi: { ...shehnawi, walletNumber: e.target.value },
+                })
+              }
+              placeholder="01012345678"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs font-bold text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+            />
+            <span className="text-[11px] text-navy-400 mt-1 block">
+              {isRtl
+                ? 'الرقم الذي يقوم الطالب بتحويل الرسوم إليه عبر فودافون كاش أو أي محفظة إلكترونية.'
+                : 'Recipient number for Vodafone Cash, Orange, Etisalat, WE.'}
+            </span>
+          </div>
+
+          {/* InstaPay IPN Address */}
+          <div className="md:col-span-1">
+            <label className="font-bold text-navy-800 block mb-1.5">
+              {isRtl ? 'عنوان / معرّف إنستاباي للتحويل اللحظي (InstaPay IPN)' : 'InstaPay Handle (IPN)'}
+            </label>
+            <input
+              type="text"
+              dir="ltr"
+              value={shehnawi.instapayHandle || ''}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  shehnawi: { ...shehnawi, instapayHandle: e.target.value },
+                })
+              }
+              placeholder="username@instapay"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs font-bold text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+            />
+            <span className="text-[11px] text-navy-400 mt-1 block">
+              {isRtl
+                ? 'عنوان حسابك على تطبيق إنستاباي للتحويلات الفورية من البنوك المصرية.'
+                : 'InstaPay address for instant bank-to-wallet transfers.'}
+            </span>
+          </div>
+
+          {/* USD to EGP Rate */}
+          <div className="md:col-span-1">
+            <label className="font-bold text-navy-800 block mb-1.5">
+              {isRtl ? 'سعر صرف الدولار بالجنيه المصري (USD to EGP) *' : 'USD to EGP Rate *'}
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                step="0.5"
+                min="1"
+                value={shehnawi.exchangeRateUsdToEgp || 50}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    shehnawi: { ...shehnawi, exchangeRateUsdToEgp: Number(e.target.value) },
+                  })
+                }
+                className="w-full px-3.5 py-2.5 ps-12 rounded-xl border border-surface-border font-mono text-xs font-bold text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+              />
+              <span className="absolute start-3 top-2.5 font-mono font-bold text-xs text-navy-400">
+                ج.م / $
+              </span>
+            </div>
+            <span className="text-[11px] text-navy-400 mt-1 block">
+              {isRtl
+                ? `الحصة بسعر $45 تُحسب للطالب بـ (${((shehnawi.exchangeRateUsdToEgp || 50) * 45).toLocaleString()} ج.م).`
+                : `A $45 lesson converts to ${((shehnawi.exchangeRateUsdToEgp || 50) * 45).toLocaleString()} EGP.`}
+            </span>
+          </div>
+
+          {/* Shehnawi Merchant ID */}
+          <div className="md:col-span-1">
+            <label className="font-bold text-navy-800 block mb-1.5">
+              {isRtl ? 'معرّف التاجر في شحناوي (Merchant ID)' : 'Shehnawi Merchant ID'}
+            </label>
+            <input
+              type="text"
+              dir="ltr"
+              value={shehnawi.merchantId || ''}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  shehnawi: { ...shehnawi, merchantId: e.target.value },
+                })
+              }
+              placeholder="SHH-ABEER-2026"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+            />
+          </div>
+
+          {/* Shehnawi API Key */}
+          <div className="md:col-span-1">
+            <label className="font-bold text-navy-800 block mb-1.5">
+              {isRtl ? 'مفتاح الـ API لشحناوي (API Key)' : 'Shehnawi API Key'}
+            </label>
+            <input
+              type="text"
+              dir="ltr"
+              value={shehnawi.apiKey || ''}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  shehnawi: { ...shehnawi, apiKey: e.target.value },
+                })
+              }
+              placeholder="shh_api_live_..."
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+            />
+          </div>
+
+          {/* Shehnawi Secret Key */}
+          <div className="md:col-span-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="font-bold text-navy-800 block">
+                {isRtl ? 'المفتاح السري (Secret Key)' : 'Shehnawi Secret Key'}
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowShehnawiSecret(!showShehnawiSecret)}
+                className="text-[11px] font-bold text-purple-700 hover:text-purple-900 flex items-center gap-1"
+              >
+                {showShehnawiSecret ? (
+                  <>
+                    <EyeOff className="w-3.5 h-3.5" />
+                    <span>{isRtl ? 'إخفاء' : 'Hide'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{isRtl ? 'إظهار' : 'Show'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <input
+              type={showShehnawiSecret ? 'text' : 'password'}
+              dir="ltr"
+              value={shehnawi.secretKey || ''}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  shehnawi: { ...shehnawi, secretKey: e.target.value },
+                })
+              }
+              placeholder="shh_sec_live_..."
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+            />
+          </div>
+
+          {/* Payment Instructions Ar */}
+          <div className="md:col-span-3">
+            <label className="font-bold text-navy-800 block mb-1.5">
+              {isRtl ? 'إرشادات الدفع الموضحة للطالب (بالعربية)' : 'Payment Instructions (Arabic)'}
+            </label>
+            <textarea
+              rows={2}
+              value={shehnawi.instructionsAr || ''}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  shehnawi: { ...shehnawi, instructionsAr: e.target.value },
+                })
+              }
+              placeholder="قم بالتحويل عبر فودافون كاش أو إنستاباي إلى الرقم الموضح، ثم اكتب رقم محفظتك وكود العملية..."
+              className="w-full px-3.5 py-2 rounded-xl border border-surface-border text-xs focus:ring-2 focus:ring-purple-500/20"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const handleUpdateServiceField = (serviceId: string, field: keyof ServiceCardItem, value: any) => {
     setSettings((prev) => ({
       ...prev,
@@ -2585,7 +3010,20 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     }`}
                   >
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span>{isRtl ? 'إعدادات الربط بـ PayPal' : 'PayPal Settings'}</span>
+                    <span>{isRtl ? 'إعدادات PayPal' : 'PayPal'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCmsSubTab('SHEHNAWI')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      cmsSubTab === 'SHEHNAWI'
+                        ? 'bg-purple-800 text-white shadow-card-subtle'
+                        : 'bg-purple-100 text-purple-900 border border-purple-200 hover:bg-purple-200'
+                    }`}
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>{isRtl ? 'بوابة شحناوي (محافظ مصر)' : 'Shehnawi Wallets'}</span>
                   </button>
                 </div>
 
@@ -4462,6 +4900,13 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                   {renderPayPalSettingsCard()}
                 </div>
               )}
+
+              {/* Sub-tab 6: SHEHNAWI E-WALLETS SETTINGS */}
+              {cmsSubTab === 'SHEHNAWI' && (
+                <div className="space-y-6">
+                  {renderShehnawiSettingsCard()}
+                </div>
+              )}
             </div>
           )}
 
@@ -5279,88 +5724,181 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     </div>
                   </div>
 
-                  {/* 2 Interactive Period Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* DAYTIME CARD */}
-                    <div className="p-4 rounded-2xl bg-white/90 border border-amber-200 shadow-sm space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">☀️</span>
-                          <div>
-                            <h5 className="font-extrabold text-xs text-navy-950">
-                              {isRtl ? 'الفترة الصباحية / النهارية' : 'Daytime Window'}
-                            </h5>
-                            <span className="text-[11px] font-mono text-amber-700 font-semibold block">
-                              {isRtl ? 'من 10:00 صباحاً حتى 10:00 مساءً (10:00 - 22:00)' : '10:00 AM - 10:00 PM'}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold border border-amber-200">
-                          {isRtl ? '12 ساعة نهارية' : '12 Hours Day'}
-                        </span>
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'سعر الحصة الصباحية ($ USD)' : 'Daytime Lesson Rate ($ USD)'}
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={slotPricingForm.dayPrice}
-                            onChange={(e) => setSlotPricingForm({ ...slotPricingForm, dayPrice: Number(e.target.value) })}
-                            className="w-full px-3 py-2 ps-8 rounded-xl border border-surface-border text-xs font-mono font-bold text-navy-900 focus:ring-2 focus:ring-brand-500/20"
-                          />
-                          <span className="absolute start-3 top-2 font-mono font-bold text-navy-400 text-xs">$</span>
-                        </div>
-                        <span className="text-[10px] text-navy-400 mt-1 block">
-                          {isRtl ? 'السعر التلقائي للحصص بين 10:00 ص و 10:00 م' : 'Applied to slots between 10:00 AM & 10:00 PM'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* NIGHTTIME CARD */}
-                    <div className="p-4 rounded-2xl bg-white/90 border border-indigo-200 shadow-sm space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">🌙</span>
-                          <div>
-                            <h5 className="font-extrabold text-xs text-navy-950">
-                              {isRtl ? 'الفترة المسائية / الليلية' : 'Nighttime Window'}
-                            </h5>
-                            <span className="text-[11px] font-mono text-indigo-700 font-semibold block">
-                              {isRtl ? 'من 10:00 مساءً حتى 10:00 صباحاً (22:00 - 10:00)' : '10:00 PM - 10:00 AM'}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold border border-indigo-200">
-                          {isRtl ? '12 ساعة ليلية' : '12 Hours Night'}
-                        </span>
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'سعر الحصة المسائية/الليلية ($ USD)' : 'Nighttime Lesson Rate ($ USD)'}
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={slotPricingForm.nightPrice}
-                            onChange={(e) => setSlotPricingForm({ ...slotPricingForm, nightPrice: Number(e.target.value) })}
-                            className="w-full px-3 py-2 ps-8 rounded-xl border border-surface-border text-xs font-mono font-bold text-navy-900 focus:ring-2 focus:ring-brand-500/20"
-                          />
-                          <span className="absolute start-3 top-2 font-mono font-bold text-navy-400 text-xs">$</span>
-                        </div>
-                        <span className="text-[10px] text-navy-400 mt-1 block">
-                          {isRtl ? 'السعر التلقائي للحصص بين 10:00 م و 10:00 ص' : 'Applied to slots between 10:00 PM & 10:00 AM'}
-                        </span>
-                      </div>
-                    </div>
+                  {/* Quick Preset Buttons for Admin */}
+                  <div className="flex items-center gap-2 flex-wrap text-xs bg-white/70 p-3 rounded-2xl border border-surface-border">
+                    <span className="font-extrabold text-navy-800 text-[11px] me-1">
+                      {isRtl ? 'قوالب توقيت سريعة جاهزة:' : 'Quick Presets:'}
+                    </span>
+                    {[
+                      { label: isRtl ? '☀️ 10:00 ص - 10:00 م (الافتراضي)' : '10 AM - 10 PM (Default)', start: 10, end: 22 },
+                      { label: isRtl ? '☀️ 08:00 ص - 08:00 م (12 ساعة)' : '8 AM - 8 PM (12h)', start: 8, end: 20 },
+                      { label: isRtl ? '☀️ 09:00 ص - 05:00 م (دوام 8 ساعات)' : '9 AM - 5 PM (8h)', start: 9, end: 17 },
+                      { label: isRtl ? '☀️ 07:00 ص - 07:00 م (12 ساعة)' : '7 AM - 7 PM (12h)', start: 7, end: 19 },
+                    ].map((p) => {
+                      const isActive = slotPricingForm.dayStartHour === p.start && slotPricingForm.dayEndHour === p.end;
+                      return (
+                        <button
+                          key={p.label}
+                          type="button"
+                          onClick={() => setSlotPricingForm({ ...slotPricingForm, dayStartHour: p.start, dayEndHour: p.end })}
+                          className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
+                            isActive
+                              ? 'bg-brand-700 text-white shadow-sm'
+                              : 'bg-surface-muted text-navy-700 hover:bg-brand-50 hover:text-brand-800 border border-surface-borderSubtle'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      );
+                    })}
                   </div>
+
+                  {/* 2 Interactive Period Cards */}
+                  {(() => {
+                    const currentWindows = getPeriodWindows(slotPricingForm);
+                    return (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* DAYTIME CARD */}
+                        <div className="p-4 rounded-2xl bg-white/90 border-2 border-amber-300 shadow-sm space-y-3.5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl">☀️</span>
+                              <div>
+                                <h5 className="font-extrabold text-xs text-navy-950">
+                                  {isRtl ? 'الفترة الصباحية / النهارية' : 'Daytime Window'}
+                                </h5>
+                                <span className="text-[11px] font-mono text-amber-800 font-bold block">
+                                  {isRtl ? currentWindows.dayWindowAr : currentWindows.dayWindowEn}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 font-extrabold border border-amber-300">
+                              {currentWindows.dayHours} {isRtl ? 'ساعة نهارية' : 'Hours Day'}
+                            </span>
+                          </div>
+
+                          {/* Day Period Start & End Hour Selectors */}
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <div>
+                              <label className="text-[10px] font-bold text-navy-700 block mb-1">
+                                {isRtl ? 'بداية الفترة الصباحية' : 'Day Starts At'}
+                              </label>
+                              <select
+                                value={slotPricingForm.dayStartHour ?? 10}
+                                onChange={(e) =>
+                                  setSlotPricingForm({
+                                    ...slotPricingForm,
+                                    dayStartHour: Number(e.target.value),
+                                  })
+                                }
+                                className="w-full px-2.5 py-1.5 rounded-xl border border-surface-border text-xs font-mono font-bold text-navy-900 bg-amber-50/30 focus:ring-2 focus:ring-brand-500/20"
+                              >
+                                {Array.from({ length: 24 }).map((_, h) => (
+                                  <option key={h} value={h}>
+                                    {formatHour12(h, isRtl ? 'ar' : 'en')}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-bold text-navy-700 block mb-1">
+                                {isRtl ? 'نهاية الفترة الصباحية' : 'Day Ends At'}
+                              </label>
+                              <select
+                                value={slotPricingForm.dayEndHour ?? 22}
+                                onChange={(e) =>
+                                  setSlotPricingForm({
+                                    ...slotPricingForm,
+                                    dayEndHour: Number(e.target.value),
+                                  })
+                                }
+                                className="w-full px-2.5 py-1.5 rounded-xl border border-surface-border text-xs font-mono font-bold text-navy-900 bg-amber-50/30 focus:ring-2 focus:ring-brand-500/20"
+                              >
+                                {Array.from({ length: 24 }).map((_, h) => (
+                                  <option key={h} value={h}>
+                                    {formatHour12(h, isRtl ? 'ar' : 'en')}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'سعر الحصة الصباحية ($ USD)' : 'Daytime Lesson Rate ($ USD)'}
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={slotPricingForm.dayPrice}
+                                onChange={(e) => setSlotPricingForm({ ...slotPricingForm, dayPrice: Number(e.target.value) })}
+                                className="w-full px-3 py-2 ps-8 rounded-xl border border-surface-border text-xs font-mono font-bold text-navy-900 focus:ring-2 focus:ring-brand-500/20"
+                              />
+                              <span className="absolute start-3 top-2 font-mono font-bold text-navy-400 text-xs">$</span>
+                            </div>
+                            <span className="text-[10px] text-navy-500 mt-1 block">
+                              {isRtl
+                                ? `السعر التلقائي لجميع الحصص من ${formatHour12(slotPricingForm.dayStartHour ?? 10, 'ar')} حتى ${formatHour12(slotPricingForm.dayEndHour ?? 22, 'ar')}`
+                                : `Applied to slots between ${formatHour12(slotPricingForm.dayStartHour ?? 10, 'en')} & ${formatHour12(slotPricingForm.dayEndHour ?? 22, 'en')}`}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* NIGHTTIME CARD */}
+                        <div className="p-4 rounded-2xl bg-white/90 border-2 border-indigo-300 shadow-sm space-y-3.5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl">🌙</span>
+                              <div>
+                                <h5 className="font-extrabold text-xs text-navy-950">
+                                  {isRtl ? 'الفترة المسائية / الليلية' : 'Nighttime Window'}
+                                </h5>
+                                <span className="text-[11px] font-mono text-indigo-800 font-bold block">
+                                  {isRtl ? currentWindows.nightWindowAr : currentWindows.nightWindowEn}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-900 font-extrabold border border-indigo-300">
+                              {currentWindows.nightHours} {isRtl ? 'ساعة ليلية' : 'Hours Night'}
+                            </span>
+                          </div>
+
+                          {/* Night Period Auto Complement Banner */}
+                          <div className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200 text-indigo-950 text-[11px] leading-relaxed">
+                            💡{' '}
+                            {isRtl
+                              ? `تبدأ الفترة المسائية تلقائياً من (${formatHour12(slotPricingForm.dayEndHour ?? 22, 'ar')}) وتستمر طوال الليل حتى (${formatHour12(slotPricingForm.dayStartHour ?? 10, 'ar')}) صباحاً.`
+                              : `Night window automatically covers from ${formatHour12(slotPricingForm.dayEndHour ?? 22, 'en')} until ${formatHour12(slotPricingForm.dayStartHour ?? 10, 'en')} morning.`}
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-navy-700 block mb-1">
+                              {isRtl ? 'سعر الحصة المسائية/الليلية ($ USD)' : 'Nighttime Lesson Rate ($ USD)'}
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={slotPricingForm.nightPrice}
+                                onChange={(e) => setSlotPricingForm({ ...slotPricingForm, nightPrice: Number(e.target.value) })}
+                                className="w-full px-3 py-2 ps-8 rounded-xl border border-surface-border text-xs font-mono font-bold text-navy-900 focus:ring-2 focus:ring-brand-500/20"
+                              />
+                              <span className="absolute start-3 top-2 font-mono font-bold text-navy-400 text-xs">$</span>
+                            </div>
+                            <span className="text-[10px] text-navy-500 mt-1 block">
+                              {isRtl
+                                ? `السعر التلقائي لجميع الحصص من ${formatHour12(slotPricingForm.dayEndHour ?? 22, 'ar')} حتى ${formatHour12(slotPricingForm.dayStartHour ?? 10, 'ar')}`
+                                : `Applied to slots between ${formatHour12(slotPricingForm.dayEndHour ?? 22, 'en')} & ${formatHour12(slotPricingForm.dayStartHour ?? 10, 'en')}`}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* ========================================================== */}
@@ -5613,29 +6151,31 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                             placeholder="e.g. 10:00 AM UTC"
                             className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono"
                           />
-                          {/* Quick Time Preset Chips */}
+                          {/* Quick Time Preset Chips with Dynamic Day/Night Icon */}
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {[
-                              { label: '☀️ 10:00 ص', time: '10:00 AM UTC' },
-                              { label: '☀️ 02:00 م', time: '02:00 PM UTC' },
-                              { label: '☀️ 06:00 م', time: '06:00 PM UTC' },
-                              { label: '☀️ 09:00 م', time: '09:00 PM UTC' },
-                              { label: '🌙 10:00 م', time: '10:00 PM UTC' },
-                              { label: '🌙 11:30 م', time: '11:30 PM UTC' },
-                              { label: '🌙 02:00 ص', time: '02:00 AM UTC' },
-                            ].map((preset) => (
-                              <button
-                                key={preset.time}
-                                type="button"
-                                onClick={() => {
-                                  const calc = calculateSlotPrice(preset.time, slotPricingForm);
-                                  setSlotFormData({ ...slotFormData, time: preset.time, price: calc.price });
-                                }}
-                                className="px-1.5 py-0.5 rounded text-[10px] bg-surface-muted hover:bg-brand-50 hover:text-brand-800 border border-surface-borderSubtle font-mono"
-                              >
-                                {preset.label}
-                              </button>
-                            ))}
+                              { label: formatHour12(slotPricingForm.dayStartHour ?? 10, 'ar'), time: `${formatHour12(slotPricingForm.dayStartHour ?? 10, 'en')} UTC` },
+                              { label: '02:00 م', time: '02:00 PM UTC' },
+                              { label: '06:00 م', time: '06:00 PM UTC' },
+                              { label: formatHour12(slotPricingForm.dayEndHour ?? 22, 'ar'), time: `${formatHour12(slotPricingForm.dayEndHour ?? 22, 'en')} UTC` },
+                              { label: '11:00 م', time: '11:00 PM UTC' },
+                              { label: '02:00 ص', time: '02:00 AM UTC' },
+                            ].map((preset) => {
+                              const calc = calculateSlotPrice(preset.time, slotPricingForm);
+                              return (
+                                <button
+                                  key={preset.time}
+                                  type="button"
+                                  onClick={() => {
+                                    setSlotFormData({ ...slotFormData, time: preset.time, price: calc.price });
+                                  }}
+                                  className="px-1.5 py-0.5 rounded text-[10px] bg-surface-muted hover:bg-brand-50 hover:text-brand-800 border border-surface-borderSubtle font-mono flex items-center gap-1"
+                                >
+                                  <span>{calc.icon}</span>
+                                  <span>{preset.label}</span>
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -6067,7 +6607,20 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     }`}
                   >
                     <Settings className="w-4 h-4 shrink-0" />
-                    <span>{isRtl ? 'إعدادات الربط بـ PayPal (Client ID & Secret)' : 'PayPal API Settings'}</span>
+                    <span>{isRtl ? 'إعدادات PayPal' : 'PayPal Settings'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFinanceSubTab('SHEHNAWI_SETTINGS')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      financeSubTab === 'SHEHNAWI_SETTINGS'
+                        ? 'bg-purple-800 text-white shadow-card-subtle'
+                        : 'bg-purple-100 text-purple-900 border border-purple-200 hover:bg-purple-200'
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4 shrink-0" />
+                    <span>{isRtl ? 'بوابة شحناوي (محافظ مصر)' : 'Shehnawi Wallets'}</span>
                   </button>
                 </div>
 
@@ -6254,19 +6807,55 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           ) : (
                             transactions.map((tx) => (
                               <tr key={tx.id} className="hover:bg-surface-muted/50 transition-colors">
-                                <td className="p-4 font-mono font-bold text-navy-900">{tx.paypalOrderId}</td>
+                                <td className="p-4 font-mono text-xs">
+                                  <div className="font-bold text-navy-950">{tx.paypalOrderId}</div>
+                                  <div className="mt-1">
+                                    {tx.paymentMethod === 'SHEHNAWI' || (tx.paypalOrderId && tx.paypalOrderId.startsWith('SHEHNAWI')) ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-100 text-purple-900 border border-purple-200 inline-flex items-center gap-1">
+                                        <Smartphone className="w-3 h-3 text-purple-700" />
+                                        <span>
+                                          {isRtl
+                                            ? `شحناوي (${tx.walletProvider ? (tx.walletProvider === 'VODAFONE_CASH' ? 'فودافون كاش' : tx.walletProvider === 'INSTAPAY' ? 'إنستاباي' : tx.walletProvider) : 'محافظ مصر'})`
+                                            : `Shehnawi (${tx.walletProvider || 'E-Wallet'})`}
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-900 border border-blue-200 inline-flex items-center gap-1">
+                                        <CreditCard className="w-3 h-3 text-blue-700" />
+                                        <span>PayPal</span>
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
                                 <td className="p-4 text-navy-600">
                                   {tx.payerName && <div className="font-bold text-navy-900">{tx.payerName}</div>}
                                   <div>{tx.payerEmail}</div>
+                                  {tx.senderWalletNumber && (
+                                    <div className="text-[11px] font-mono text-purple-800 font-semibold mt-0.5">
+                                      📱 {isRtl ? 'محفظة العميل:' : 'Wallet:'} {tx.senderWalletNumber}
+                                    </div>
+                                  )}
+                                  {tx.transactionRef && (
+                                    <div className="text-[10px] font-mono text-navy-400">
+                                      # {tx.transactionRef}
+                                    </div>
+                                  )}
                                 </td>
                                 <td className="p-4 font-bold text-navy-900">{tx.itemTitle}</td>
-                                <td className="p-4 font-extrabold text-brand-700">{formatCurrency(tx.amount)}</td>
+                                <td className="p-4">
+                                  <div className="font-extrabold text-brand-700">{formatCurrency(tx.amount)}</div>
+                                  {(tx.amountEgp || tx.paymentMethod === 'SHEHNAWI') && (
+                                    <div className="text-[10px] font-mono font-bold text-purple-800">
+                                      {(tx.amountEgp || Math.round(tx.amount * 50)).toLocaleString()} ج.م
+                                    </div>
+                                  )}
+                                </td>
                                 <td className="p-4">
                                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
                                     {tx.status}
                                   </span>
                                 </td>
-                                <td className="p-4 text-navy-500">{tx.date}</td>
+                                <td className="p-4 text-navy-500 text-[11px] font-mono">{tx.date}</td>
                                 <td className="p-4 text-end">
                                   <button
                                     type="button"
@@ -6519,6 +7108,13 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
               {financeSubTab === 'PAYPAL_SETTINGS' && (
                 <div className="space-y-6">
                   {renderPayPalSettingsCard()}
+                </div>
+              )}
+
+              {/* Sub-tab 4: SHEHNAWI E-WALLETS SETTINGS */}
+              {financeSubTab === 'SHEHNAWI_SETTINGS' && (
+                <div className="space-y-6">
+                  {renderShehnawiSettingsCard()}
                 </div>
               )}
             </div>

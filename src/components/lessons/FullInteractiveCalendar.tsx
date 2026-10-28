@@ -19,10 +19,14 @@ import { formatCurrency } from '@/lib/utils';
 import {
   calculateSlotPrice,
   DEFAULT_SLOT_PRICING,
+  generateDayTimeSlots,
+  generateNightTimeSlots,
+  getPeriodWindows,
   type SlotPricingSettings,
 } from '@/lib/slot-pricing';
 import type { SlotData } from '@/lib/data-store';
 import { PayPalCheckoutButton } from '@/components/checkout/PayPalCheckoutButton';
+import { ShehnawiCheckoutButton } from '@/components/checkout/ShehnawiCheckoutButton';
 
 interface FullInteractiveCalendarProps {
   currentLocale: string;
@@ -200,6 +204,21 @@ export function FullInteractiveCalendar({
   const currentPriceInfo = useMemo(
     () => calculateSlotPrice(selectedTime, slotPricing),
     [selectedTime, slotPricing]
+  );
+
+  const dayTimeSlots = useMemo(
+    () => generateDayTimeSlots(slotPricing.dayStartHour, slotPricing.dayEndHour),
+    [slotPricing.dayStartHour, slotPricing.dayEndHour]
+  );
+
+  const nightTimeSlots = useMemo(
+    () => generateNightTimeSlots(slotPricing.dayStartHour, slotPricing.dayEndHour),
+    [slotPricing.dayStartHour, slotPricing.dayEndHour]
+  );
+
+  const periodWindows = useMemo(
+    () => getPeriodWindows(slotPricing),
+    [slotPricing]
   );
 
   const handlePrevMonth = () => {
@@ -487,11 +506,11 @@ export function FullInteractiveCalendar({
             {/* Live Pricing Legend Pills */}
             <div className="flex items-center gap-2 flex-wrap text-[11px] font-bold">
               <span className="px-2.5 py-1 rounded-xl bg-amber-50 text-amber-900 border border-amber-200">
-                ☀️ {isRtl ? '10 ص - 10 م:' : '10 AM - 10 PM:'}{' '}
+                ☀️ {isRtl ? `${periodWindows.dayWindowAr}:` : `${periodWindows.dayWindowEn}:`}{' '}
                 <strong className="font-mono">${slotPricing.dayPrice}</strong>
               </span>
               <span className="px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-900 border border-indigo-200">
-                🌙 {isRtl ? '10 م - 10 ص:' : '10 PM - 10 AM:'}{' '}
+                🌙 {isRtl ? `${periodWindows.nightWindowAr}:` : `${periodWindows.nightWindowEn}:`}{' '}
                 <strong className="font-mono">${slotPricing.nightPrice}</strong>
               </span>
             </div>
@@ -511,8 +530,8 @@ export function FullInteractiveCalendar({
               <span>☀️</span>
               <span>
                 {isRtl
-                  ? `الفترة الصباحية (10 ص - 10 م) • $${slotPricing.dayPrice}`
-                  : `Daytime (10 AM - 10 PM) • $${slotPricing.dayPrice}`}
+                  ? `الفترة الصباحية (${periodWindows.dayWindowAr}) • $${slotPricing.dayPrice}`
+                  : `Daytime (${periodWindows.dayWindowEn}) • $${slotPricing.dayPrice}`}
               </span>
             </button>
             <button
@@ -527,15 +546,15 @@ export function FullInteractiveCalendar({
               <span>🌙</span>
               <span>
                 {isRtl
-                  ? `الفترة المسائية (10 م - 10 ص) • $${slotPricing.nightPrice}`
-                  : `Nighttime (10 PM - 10 AM) • $${slotPricing.nightPrice}`}
+                  ? `الفترة المسائية (${periodWindows.nightWindowAr}) • $${slotPricing.nightPrice}`
+                  : `Nighttime (${periodWindows.nightWindowEn}) • $${slotPricing.nightPrice}`}
               </span>
             </button>
           </div>
 
           {/* Time Slots Grid for Active Period */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-            {(periodTab === 'DAY' ? DEFAULT_DAY_TIMES : DEFAULT_NIGHT_TIMES).map((timeStr) => {
+            {(periodTab === 'DAY' ? dayTimeSlots : nightTimeSlots).map((timeStr) => {
               const booked = isTimeBookedOnSelectedDate(timeStr);
               const isSelected =
                 selectedTime.replace(/\s*UTC$/i, '').trim().toLowerCase() ===
@@ -788,14 +807,33 @@ export function FullInteractiveCalendar({
             </button>
 
             {!isSelectedDateBlocked && (
-              <div className="pt-2">
-                <div className="relative flex py-2 items-center">
+              <div className="pt-2 space-y-2">
+                <div className="relative flex py-1 items-center">
                   <div className="flex-grow border-t border-surface-borderSubtle"></div>
                   <span className="flex-shrink mx-2 text-[10px] text-navy-400 font-bold uppercase">
-                    {isRtl ? 'أو الدفع والتأكيد المباشر عبر PayPal' : 'Or pay securely with PayPal'}
+                    {isRtl ? 'أو الدفع الإلكتروني المباشر' : 'Or pay instantly online'}
                   </span>
                   <div className="flex-grow border-t border-surface-borderSubtle"></div>
                 </div>
+
+                {/* Shehnawi Egyptian E-Wallets Gateway */}
+                <ShehnawiCheckoutButton
+                  itemId={`slot-${selectedDate}-${selectedTime}`}
+                  itemType="PRIVATE_LESSON"
+                  itemTitle={`${isRtl ? 'جلسة فردية خاصة' : 'Private Lesson'} (${selectedDate} - ${selectedTime})`}
+                  amount={currentPriceInfo.price}
+                  slotDate={selectedDate}
+                  slotTime={selectedTime}
+                  studentName={studentName}
+                  studentEmail={studentEmail}
+                  studentPhone={studentPhone}
+                  locale={currentLocale}
+                  onSuccess={() => {
+                    handleBookingSubmit();
+                  }}
+                />
+
+                {/* PayPal International Checkout */}
                 <PayPalCheckoutButton
                   itemId={`slot-${selectedDate}-${selectedTime}`}
                   itemType="PRIVATE_LESSON"

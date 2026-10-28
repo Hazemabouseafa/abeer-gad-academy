@@ -17,10 +17,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, settings });
     }
 
-    // Mask secret key for public frontend consumers
+    // Mask secret keys for public frontend consumers
     const publicSettings = {
       ...settings,
       paypalClientSecret: undefined,
+      shehnawi: settings.shehnawi
+        ? {
+            ...settings.shehnawi,
+            apiKey: undefined,
+            secretKey: undefined,
+          }
+        : undefined,
     };
     return NextResponse.json({ success: true, settings: publicSettings });
   } catch (error) {

@@ -84,6 +84,19 @@ export interface SlotData {
   createdAt: string;
 }
 
+export interface ShehnawiSettings {
+  enabled: boolean;
+  merchantId?: string;
+  apiKey?: string;
+  secretKey?: string;
+  walletNumber: string;
+  instapayHandle?: string;
+  exchangeRateUsdToEgp: number;
+  instructionsAr?: string;
+  instructionsEn?: string;
+  testMode?: boolean;
+}
+
 export interface TransactionData {
   id: string;
   paypalOrderId: string;
@@ -96,6 +109,12 @@ export interface TransactionData {
   currency: string;
   status: 'COMPLETED' | 'PENDING' | 'REFUNDED';
   date: string;
+  paymentMethod?: 'PAYPAL' | 'SHEHNAWI' | string;
+  walletProvider?: string;
+  senderWalletNumber?: string;
+  transactionRef?: string;
+  amountEgp?: number;
+  receiptUrl?: string;
 }
 
 export interface StudentData {
@@ -241,6 +260,9 @@ export interface SiteSettingsData {
   paypalClientId?: string;
   paypalClientSecret?: string;
   paypalMode?: 'live' | 'sandbox';
+
+  // Shehnawi (Egyptian Wallets & InstaPay) Gateway Integration
+  shehnawi?: ShehnawiSettings;
 
   updatedAt: string;
 }
@@ -418,6 +440,22 @@ const INITIAL_SETTINGS: SiteSettingsData = {
     ? 'sandbox'
     : 'live') as 'live' | 'sandbox',
 
+  // Shehnawi (Egyptian Wallets & InstaPay) Gateway Integration Defaults
+  shehnawi: {
+    enabled: true,
+    merchantId: (process.env.SHEHNAWI_MERCHANT_ID || 'SHH-ABEER-2026').replace(/['"]/g, '').trim(),
+    apiKey: (process.env.SHEHNAWI_API_KEY || '').replace(/['"]/g, '').trim(),
+    secretKey: (process.env.SHEHNAWI_SECRET_KEY || '').replace(/['"]/g, '').trim(),
+    walletNumber: (process.env.EGYPT_WALLET_NUMBER || '01012345678').replace(/['"]/g, '').trim(),
+    instapayHandle: (process.env.INSTAPAY_HANDLE || 'abeergad@instapay').replace(/['"]/g, '').trim(),
+    exchangeRateUsdToEgp: Number(process.env.USD_TO_EGP_RATE) || 50.0,
+    instructionsAr:
+      'قم بالتحويل عبر فودافون كاش أو إنستاباي أو أي محفظة مصرية إلى الرقم الموضح، ثم اكتب رقم المحفظة المحول منها ورقم العملية لتأكيد الحجز فوراً.',
+    instructionsEn:
+      'Transfer via Vodafone Cash, InstaPay, or any Egyptian wallet to the provided details, then submit your sender number and transaction reference.',
+    testMode: false,
+  },
+
   updatedAt: new Date().toISOString(),
 };
 
@@ -453,6 +491,10 @@ function ensureStoreExists(): AcademyStore {
     parsed.settings.slotPricing = {
       ...DEFAULT_SLOT_PRICING,
       ...(parsed.settings.slotPricing || {}),
+    };
+    parsed.settings.shehnawi = {
+      ...INITIAL_SETTINGS.shehnawi!,
+      ...(parsed.settings.shehnawi || {}),
     };
     if (!Array.isArray(parsed.settings.blockedDates)) {
       parsed.settings.blockedDates = [];

@@ -25,6 +25,7 @@ import {
 } from '@/lib/data-store';
 import { formatCurrency } from '@/lib/utils';
 import { PayPalCheckoutButton } from '@/components/checkout/PayPalCheckoutButton';
+import { ShehnawiCheckoutButton } from '@/components/checkout/ShehnawiCheckoutButton';
 import { FullInteractiveCalendar } from '@/components/lessons/FullInteractiveCalendar';
 import { CourseCurriculumPlayer } from '@/components/courses/CourseCurriculumPlayer';
 
@@ -413,9 +414,16 @@ export default async function TrackUnitDetailPage({
                 </div>
               </div>
 
-              {/* Direct PayPal Checkout if a fixed price is set on the unit */}
+              {/* Direct Checkout (PayPal or Egypt E-Wallets) if a fixed price is set on the unit */}
               {!item.isFree && effectivePrice > 0 && (
-                <div className="pt-2">
+                <div className="pt-2 space-y-2">
+                  <ShehnawiCheckoutButton
+                    itemId={item.id}
+                    itemType={actionType === 'COURSE' ? 'COURSE' : 'PRIVATE_LESSON'}
+                    itemTitle={`${trackTitle} - ${unitTitle}`}
+                    amount={effectivePrice}
+                    locale={lang}
+                  />
                   <PayPalCheckoutButton
                     itemId={item.id}
                     itemType={actionType === 'COURSE' ? 'COURSE' : 'PRIVATE_LESSON'}

@@ -18,6 +18,7 @@ import {
   Video,
 } from 'lucide-react';
 import { PayPalCheckoutButton } from '@/components/checkout/PayPalCheckoutButton';
+import { ShehnawiCheckoutButton } from '@/components/checkout/ShehnawiCheckoutButton';
 import { formatCurrency } from '@/lib/utils';
 import type { CourseData, LessonData } from '@/lib/data-store';
 
@@ -459,13 +460,22 @@ export function CourseCurriculumPlayer({
                 </span>
               </button>
             ) : (
-              <PayPalCheckoutButton
-                itemId={course.slug}
-                itemType="COURSE"
-                itemTitle={title}
-                amount={course.price}
-                currency="USD"
-              />
+              <div className="space-y-2">
+                <ShehnawiCheckoutButton
+                  itemId={course.slug}
+                  itemType="COURSE"
+                  itemTitle={title}
+                  amount={course.price}
+                  locale={currentLocale}
+                />
+                <PayPalCheckoutButton
+                  itemId={course.slug}
+                  itemType="COURSE"
+                  itemTitle={title}
+                  amount={course.price}
+                  currency="USD"
+                />
+              </div>
             )}
           </div>
 
