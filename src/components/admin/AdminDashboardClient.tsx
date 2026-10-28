@@ -65,7 +65,7 @@ import {
 } from '@/lib/slot-pricing';
 import {
   SUPPORTED_WALLETS,
-} from '@/lib/shehnawi';
+} from '@/lib/shehnawi-constants';
 import type {
   CourseData,
   SlotData,

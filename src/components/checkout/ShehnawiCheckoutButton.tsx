@@ -17,7 +17,7 @@ import {
   Phone,
   FileCheck,
 } from 'lucide-react';
-import { SUPPORTED_WALLETS, WalletProviderOption } from '@/lib/shehnawi';
+import { SUPPORTED_WALLETS, WalletProviderOption } from '@/lib/shehnawi-constants';
 
 interface ShehnawiCheckoutButtonProps {
   itemId: string;
