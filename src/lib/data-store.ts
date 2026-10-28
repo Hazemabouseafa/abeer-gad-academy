@@ -86,12 +86,15 @@ export interface SlotData {
 
 export interface ShehnawiSettings {
   enabled: boolean;
+  baseUrl: string;              // e.g. 'https://api.sha7nawy.com' or 'http://localhost:8000'
+  publicKey: string;            // Sha7nawy Public Key (Authorization in /payment/create & /confirm)
+  secretKey: string;            // Sha7nawy Secret Key (Authorization in /payment/info & HMAC-SHA256)
   merchantId?: string;
-  apiKey?: string;
-  secretKey?: string;
-  walletNumber: string;
-  instapayHandle?: string;
-  exchangeRateUsdToEgp: number;
+  apiKey?: string;              // alias for publicKey
+  walletNumber: string;         // Main wallet number
+  instapayHandle?: string;      // InstaPay address
+  exchangeRateUsdToEgp: number; // e.g. 50.0
+  webhookUrl?: string;          // Callback / Webhook URL
   instructionsAr?: string;
   instructionsEn?: string;
   testMode?: boolean;
@@ -443,16 +446,19 @@ const INITIAL_SETTINGS: SiteSettingsData = {
   // Shehnawi (Egyptian Wallets & InstaPay) Gateway Integration Defaults
   shehnawi: {
     enabled: true,
-    merchantId: (process.env.SHEHNAWI_MERCHANT_ID || 'SHH-ABEER-2026').replace(/['"]/g, '').trim(),
-    apiKey: (process.env.SHEHNAWI_API_KEY || '').replace(/['"]/g, '').trim(),
+    baseUrl: (process.env.SHEHNAWI_BASE_URL || 'https://api.sha7nawy.com').replace(/['"]/g, '').trim(),
+    publicKey: (process.env.SHEHNAWI_PUBLIC_KEY || process.env.SHEHNAWI_API_KEY || '').replace(/['"]/g, '').trim(),
     secretKey: (process.env.SHEHNAWI_SECRET_KEY || '').replace(/['"]/g, '').trim(),
+    merchantId: (process.env.SHEHNAWI_MERCHANT_ID || 'SHH-ABEER-2026').replace(/['"]/g, '').trim(),
+    apiKey: (process.env.SHEHNAWI_PUBLIC_KEY || process.env.SHEHNAWI_API_KEY || '').replace(/['"]/g, '').trim(),
     walletNumber: (process.env.EGYPT_WALLET_NUMBER || '01012345678').replace(/['"]/g, '').trim(),
     instapayHandle: (process.env.INSTAPAY_HANDLE || 'abeergad@instapay').replace(/['"]/g, '').trim(),
     exchangeRateUsdToEgp: Number(process.env.USD_TO_EGP_RATE) || 50.0,
+    webhookUrl: '',
     instructionsAr:
-      'قم بالتحويل عبر فودافون كاش أو إنستاباي أو أي محفظة مصرية إلى الرقم الموضح، ثم اكتب رقم المحفظة المحول منها ورقم العملية لتأكيد الحجز فوراً.',
+      'قم باختيار المحفظة وإدخال رقم هاتفك لتنفيذ السحب الآمن عبر بوابة شحناوي الرسمية (API v2).',
     instructionsEn:
-      'Transfer via Vodafone Cash, InstaPay, or any Egyptian wallet to the provided details, then submit your sender number and transaction reference.',
+      'Select your wallet provider and enter your mobile number for secure instant deduction via Sha7nawy Gate (API v2).',
     testMode: false,
   },
 

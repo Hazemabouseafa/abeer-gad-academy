@@ -52,6 +52,7 @@ import {
   Smartphone,
   Wallet,
   AlertCircle,
+  Copy,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -1453,7 +1454,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     </div>
   );
 
-  // --- Shehnawi (Egyptian Wallets & InstaPay) Settings Handlers ---
+  // --- Sha7nawy Gate Payment API v2.0 Official Settings Handlers ---
   const handleSaveShehnawiSettings = async (testConnectionAfterSave = false) => {
     try {
       if (testConnectionAfterSave) {
@@ -1463,14 +1464,20 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       }
       setShehnawiTestResult(null);
 
+      const pubKey = (settings.shehnawi?.publicKey || settings.shehnawi?.apiKey || '').trim();
+      const secKey = (settings.shehnawi?.secretKey || '').trim();
+
       const payload = {
         enabled: settings.shehnawi?.enabled ?? true,
+        baseUrl: (settings.shehnawi?.baseUrl || 'https://api.sha7nawy.com').replace(/\/+$/, '').trim(),
+        publicKey: pubKey,
+        secretKey: secKey,
+        merchantId: settings.shehnawi?.merchantId || 'SHH-ABEER-2026',
+        apiKey: pubKey,
         walletNumber: settings.shehnawi?.walletNumber || '01012345678',
         instapayHandle: settings.shehnawi?.instapayHandle || 'abeergad@instapay',
         exchangeRateUsdToEgp: Number(settings.shehnawi?.exchangeRateUsdToEgp) || 50.0,
-        merchantId: settings.shehnawi?.merchantId || '',
-        apiKey: settings.shehnawi?.apiKey || '',
-        secretKey: settings.shehnawi?.secretKey || '',
+        webhookUrl: settings.shehnawi?.webhookUrl || '',
         instructionsAr: settings.shehnawi?.instructionsAr || '',
         instructionsEn: settings.shehnawi?.instructionsEn || '',
         testMode: Boolean(settings.shehnawi?.testMode),
@@ -1498,7 +1505,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
             valid: true,
             message: isRtl ? `✅ ${testData.messageAr}` : `✅ ${testData.messageEn}`,
           });
-          triggerToast(isRtl ? 'تم التحقق من بوابة شحناوي وحفظ البيانات بنجاح' : 'Shehnawi gateway verified & saved!');
+          triggerToast(isRtl ? 'تم التحقق من بوابة شحناوي وحفظ البيانات بنجاح' : 'Sha7nawy Gate verified & saved!');
         } else {
           setShehnawiTestResult({
             valid: false,
@@ -1508,15 +1515,15 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       } else if (data.success) {
         setShehnawiTestResult({
           valid: true,
-          message: isRtl ? 'تم حفظ إعدادات بوابة شحناوي وتفعيلها بنجاح.' : 'Shehnawi settings saved and activated.',
+          message: isRtl ? 'تم حفظ إعدادات بوابة شحناوي (API v2.0) وتفعيلها بنجاح.' : 'Sha7nawy Gate settings saved and activated.',
         });
-        triggerToast(isRtl ? 'تم حفظ إعدادات بوابة شحناوي بنجاح' : 'Shehnawi settings saved!');
+        triggerToast(isRtl ? 'تم حفظ إعدادات بوابة شحناوي بنجاح' : 'Sha7nawy settings saved!');
       }
     } catch (err: any) {
       console.error(err);
       setShehnawiTestResult({
         valid: false,
-        message: isRtl ? 'حدث خطأ أثناء حفظ أو فحص بوابة شحناوي' : 'Error saving or testing Shehnawi settings',
+        message: isRtl ? 'حدث خطأ أثناء حفظ أو فحص بوابة شحناوي' : 'Error saving or testing Sha7nawy settings',
       });
     } finally {
       setSavingShehnawi(false);
@@ -1527,21 +1534,26 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const renderShehnawiSettingsCard = () => {
     const shehnawi = settings.shehnawi || {
       enabled: true,
+      baseUrl: 'https://api.sha7nawy.com',
+      publicKey: '',
+      secretKey: '',
       walletNumber: '01012345678',
       instapayHandle: 'abeergad@instapay',
       exchangeRateUsdToEgp: 50.0,
       merchantId: 'SHH-ABEER-2026',
       apiKey: '',
-      secretKey: '',
       instructionsAr:
-        'قم بالتحويل عبر فودافون كاش أو إنستاباي أو أي محفظة مصرية إلى الرقم الموضح، ثم اكتب رقم المحفظة المحول منها ورقم العملية لتأكيد الحجز فوراً.',
+        'قم باختيار المحفظة وإدخال رقم هاتفك لتنفيذ السحب الآمن عبر بوابة شحناوي الرسمية (API v2).',
       instructionsEn:
-        'Transfer via Vodafone Cash, InstaPay, or any Egyptian wallet to the provided details, then submit your sender number and transaction reference.',
+        'Select your wallet provider and enter your mobile number for secure instant deduction via Sha7nawy Gate (API v2).',
       testMode: false,
     };
 
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://abeergad.academy';
+    const computedWebhookUrl = `${origin}/api/webhooks/sha7nawy`;
+
     const shehnawiTransactions = transactions.filter(
-      (t) => t.paymentMethod === 'SHEHNAWI' || (t.paypalOrderId && t.paypalOrderId.startsWith('SHEHNAWI'))
+      (t) => t.paymentMethod === 'SHEHNAWI' || (t.paypalOrderId && t.paypalOrderId.startsWith('SHEHNAWI')) || (t.paypalOrderId && t.paypalOrderId.startsWith('ORD-'))
     );
     const totalShehnawiEgp = shehnawiTransactions.reduce(
       (acc, t) => acc + (t.amountEgp || t.amount * (shehnawi.exchangeRateUsdToEgp || 50)),
@@ -1559,17 +1571,17 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
               <div className="flex items-center gap-2">
                 <h4 className="font-extrabold text-navy-950 text-base">
                   {isRtl
-                    ? 'بوابة شحناوي • المحافظ الإلكترونية وإنستاباي في مصر'
-                    : 'Shehnawi Gateway • Egyptian E-Wallets & InstaPay'}
+                    ? 'بوابة شحناوي الرسمية • Sha7nawy Gate Payment API v2.0'
+                    : 'Sha7nawy Gate Official Payment API v2.0'}
                 </h4>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200">
-                  {isRtl ? 'فودافون كاش / إنستاباي' : 'Egypt Cash & IPN'}
+                  الإصدار 2.0 المعتمد
                 </span>
               </div>
               <p className="text-xs text-navy-500 mt-0.5">
                 {isRtl
-                  ? 'تمكين الطلاب من الدفع الفوري بالجنيه المصري عبر فودافون كاش، إنستاباي، أورنج، اتصالات، وي باي، والمحافظ البنكية'
-                  : 'Allows Egyptian students to pay in EGP via Vodafone Cash, InstaPay IPN, Orange, Etisalat, WE, and Bank Wallets'}
+                  ? 'دعم السحب الفوري المباشر: فودافون كاش، أورنج كاش، اتصالات كاش، إنستاباي والمحافظ الذكية مع توقيع HMAC-SHA256'
+                  : 'Direct instant cash deduction with idempotency order_id and HMAC-SHA256 webhook signatures'}
               </p>
             </div>
           </div>
@@ -1585,7 +1597,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
               <span>
                 {savingShehnawi
                   ? isRtl ? 'جاري الحفظ...' : 'Saving...'
-                  : isRtl ? 'حفظ إعدادات شحناوي' : 'Save Shehnawi Settings'}
+                  : isRtl ? 'حفظ إعدادات شحناوي' : 'Save Sha7nawy Settings'}
               </span>
             </button>
 
@@ -1674,12 +1686,141 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
           </div>
         )}
 
-        {/* Shehnawi Settings Grid */}
+        {/* Sha7nawy Settings Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          {/* Base URL */}
+          <div className="md:col-span-1">
+            <label className="font-bold text-navy-800 block mb-1.5">
+              {isRtl ? 'رابط خادم شحناوي (API Base URL) *' : 'Sha7nawy API Base URL *'}
+            </label>
+            <input
+              type="text"
+              dir="ltr"
+              value={shehnawi.baseUrl || 'https://api.sha7nawy.com'}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  shehnawi: { ...shehnawi, baseUrl: e.target.value },
+                })
+              }
+              placeholder="https://api.sha7nawy.com أو http://localhost:8000"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs font-bold text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+            />
+            <span className="text-[11px] text-navy-400 mt-1 block">
+              {isRtl ? 'رابط بوابة شحناوي (الافتراضي: https://api.sha7nawy.com)' : 'Sha7nawy server base URL.'}
+            </span>
+          </div>
+
+          {/* Public Key (used in Authorization for /create and /confirm) */}
+          <div className="md:col-span-1">
+            <label className="font-bold text-navy-800 block mb-1.5">
+              {isRtl ? 'المفتاح العام (Public Key - Authorization) *' : 'Sha7nawy Public Key *'}
+            </label>
+            <input
+              type="text"
+              dir="ltr"
+              value={shehnawi.publicKey || shehnawi.apiKey || ''}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  shehnawi: { ...shehnawi, publicKey: e.target.value, apiKey: e.target.value },
+                })
+              }
+              placeholder="shh_pub_live_..."
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs font-bold text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+            />
+            <span className="text-[11px] text-navy-400 mt-1 block">
+              {isRtl
+                ? 'يُستخدم في ترويسة Authorization لإنشاء وتأكيد عمليات الدفع.'
+                : 'Used in Authorization header for /payment/create and /confirm.'}
+            </span>
+          </div>
+
+          {/* Secret Key (used in Authorization for /info and HMAC-SHA256 signature) */}
+          <div className="md:col-span-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="font-bold text-navy-800 block">
+                {isRtl ? 'المفتاح السري (Secret Key - Info & HMAC) *' : 'Sha7nawy Secret Key *'}
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowShehnawiSecret(!showShehnawiSecret)}
+                className="text-[11px] font-bold text-purple-700 hover:text-purple-900 flex items-center gap-1"
+              >
+                {showShehnawiSecret ? (
+                  <>
+                    <EyeOff className="w-3.5 h-3.5" />
+                    <span>{isRtl ? 'إخفاء' : 'Hide'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{isRtl ? 'إظهار' : 'Show'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <input
+              type={showShehnawiSecret ? 'text' : 'password'}
+              dir="ltr"
+              value={shehnawi.secretKey || ''}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  shehnawi: { ...shehnawi, secretKey: e.target.value },
+                })
+              }
+              placeholder="shh_sec_live_..."
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs font-bold text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+            />
+            <span className="text-[11px] text-navy-400 mt-1 block">
+              {isRtl
+                ? 'يُستخدم للاستعلام عن العمليات والتحقق من توقيع X-Sha7nawy-Signature-256.'
+                : 'Used for status info query and verifying X-Sha7nawy-Signature-256.'}
+            </span>
+          </div>
+
+          {/* Webhook URL Field with 1-click Copy */}
+          <div className="md:col-span-3 p-3.5 rounded-xl bg-purple-50/80 border border-purple-200">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="font-extrabold text-purple-950 block">
+                {isRtl ? 'رابط الويب هوك الخاص بك (Webhook URL) لتلقي الإشعارات الفورية:' : 'Your Webhook URL (for Sha7nawy Webhook):'}
+              </label>
+              <span className="text-[10px] font-mono text-purple-700 bg-white px-2 py-0.5 rounded border border-purple-200">
+                HMAC-SHA256 Encrypted
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                dir="ltr"
+                value={computedWebhookUrl}
+                className="w-full px-3 py-2 rounded-xl border border-purple-200 font-mono text-xs text-purple-900 bg-white select-all"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(computedWebhookUrl);
+                  triggerToast(isRtl ? 'تم نسخ رابط الويب هوك بنجاح' : 'Webhook URL copied!');
+                }}
+                className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>{isRtl ? 'نسخ الرابط' : 'Copy URL'}</span>
+              </button>
+            </div>
+            <span className="text-[11px] text-purple-900/80 mt-1.5 block">
+              💡 {isRtl
+                ? 'انسخ هذا الرابط والصقه في حقل Webhook URL في لوحة تحكم شحناوي لتأكيد الحجوزات والدفع تلقائياً.'
+                : 'Paste this URL in your Sha7nawy Dashboard under Webhook URL for automated instant payment callbacks.'}
+            </span>
+          </div>
+
           {/* Main Egypt Wallet Phone Number */}
           <div className="md:col-span-1">
             <label className="font-bold text-navy-800 block mb-1.5">
-              {isRtl ? 'رقم محفظة الكاش للتحويل (فودافون كاش / كاش مصر) *' : 'Main Cash Wallet Number *'}
+              {isRtl ? 'رقم محفظة الكاش للتحويل المباشر (فودافون كاش / كاش مصر)' : 'Direct Cash Wallet Number'}
             </label>
             <input
               type="text"
@@ -1694,17 +1835,12 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
               placeholder="01012345678"
               className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs font-bold text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
             />
-            <span className="text-[11px] text-navy-400 mt-1 block">
-              {isRtl
-                ? 'الرقم الذي يقوم الطالب بتحويل الرسوم إليه عبر فودافون كاش أو أي محفظة إلكترونية.'
-                : 'Recipient number for Vodafone Cash, Orange, Etisalat, WE.'}
-            </span>
           </div>
 
           {/* InstaPay IPN Address */}
           <div className="md:col-span-1">
             <label className="font-bold text-navy-800 block mb-1.5">
-              {isRtl ? 'عنوان / معرّف إنستاباي للتحويل اللحظي (InstaPay IPN)' : 'InstaPay Handle (IPN)'}
+              {isRtl ? 'معرّف إنستاباي للتحويل اللحظي (InstaPay IPN)' : 'InstaPay Handle (IPN)'}
             </label>
             <input
               type="text"
@@ -1719,11 +1855,6 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
               placeholder="username@instapay"
               className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs font-bold text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
             />
-            <span className="text-[11px] text-navy-400 mt-1 block">
-              {isRtl
-                ? 'عنوان حسابك على تطبيق إنستاباي للتحويلات الفورية من البنوك المصرية.'
-                : 'InstaPay address for instant bank-to-wallet transfers.'}
-            </span>
           </div>
 
           {/* USD to EGP Rate */}
@@ -1756,85 +1887,6 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
             </span>
           </div>
 
-          {/* Shehnawi Merchant ID */}
-          <div className="md:col-span-1">
-            <label className="font-bold text-navy-800 block mb-1.5">
-              {isRtl ? 'معرّف التاجر في شحناوي (Merchant ID)' : 'Shehnawi Merchant ID'}
-            </label>
-            <input
-              type="text"
-              dir="ltr"
-              value={shehnawi.merchantId || ''}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  shehnawi: { ...shehnawi, merchantId: e.target.value },
-                })
-              }
-              placeholder="SHH-ABEER-2026"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
-            />
-          </div>
-
-          {/* Shehnawi API Key */}
-          <div className="md:col-span-1">
-            <label className="font-bold text-navy-800 block mb-1.5">
-              {isRtl ? 'مفتاح الـ API لشحناوي (API Key)' : 'Shehnawi API Key'}
-            </label>
-            <input
-              type="text"
-              dir="ltr"
-              value={shehnawi.apiKey || ''}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  shehnawi: { ...shehnawi, apiKey: e.target.value },
-                })
-              }
-              placeholder="shh_api_live_..."
-              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
-            />
-          </div>
-
-          {/* Shehnawi Secret Key */}
-          <div className="md:col-span-1">
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="font-bold text-navy-800 block">
-                {isRtl ? 'المفتاح السري (Secret Key)' : 'Shehnawi Secret Key'}
-              </label>
-              <button
-                type="button"
-                onClick={() => setShowShehnawiSecret(!showShehnawiSecret)}
-                className="text-[11px] font-bold text-purple-700 hover:text-purple-900 flex items-center gap-1"
-              >
-                {showShehnawiSecret ? (
-                  <>
-                    <EyeOff className="w-3.5 h-3.5" />
-                    <span>{isRtl ? 'إخفاء' : 'Hide'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>{isRtl ? 'إظهار' : 'Show'}</span>
-                  </>
-                )}
-              </button>
-            </div>
-            <input
-              type={showShehnawiSecret ? 'text' : 'password'}
-              dir="ltr"
-              value={shehnawi.secretKey || ''}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  shehnawi: { ...shehnawi, secretKey: e.target.value },
-                })
-              }
-              placeholder="shh_sec_live_..."
-              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border font-mono text-xs text-navy-900 bg-[#FAF9F6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
-            />
-          </div>
-
           {/* Payment Instructions Ar */}
           <div className="md:col-span-3">
             <label className="font-bold text-navy-800 block mb-1.5">
@@ -1849,7 +1901,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                   shehnawi: { ...shehnawi, instructionsAr: e.target.value },
                 })
               }
-              placeholder="قم بالتحويل عبر فودافون كاش أو إنستاباي إلى الرقم الموضح، ثم اكتب رقم محفظتك وكود العملية..."
+              placeholder="قم باختيار المحفظة وإدخال رقم هاتفك لتنفيذ السحب الآمن عبر بوابة شحناوي الرسمية (API v2)."
               className="w-full px-3.5 py-2 rounded-xl border border-surface-border text-xs focus:ring-2 focus:ring-purple-500/20"
             />
           </div>

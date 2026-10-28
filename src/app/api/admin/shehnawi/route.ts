@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const result = await verifyShehnawiCredentials({
-      merchantId: body.merchantId,
-      apiKey: body.apiKey,
+      baseUrl: body.baseUrl,
+      publicKey: body.publicKey || body.apiKey,
       secretKey: body.secretKey,
       walletNumber: body.walletNumber,
     });
