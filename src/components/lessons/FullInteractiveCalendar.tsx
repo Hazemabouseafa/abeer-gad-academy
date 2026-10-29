@@ -27,6 +27,7 @@ import {
 import type { SlotData } from '@/lib/data-store';
 import { PayPalCheckoutButton } from '@/components/checkout/PayPalCheckoutButton';
 import { ShehnawiCheckoutButton } from '@/components/checkout/ShehnawiCheckoutButton';
+import { CustomPaymentCheckoutButton } from '@/components/checkout/CustomPaymentCheckoutButton';
 
 interface FullInteractiveCalendarProps {
   currentLocale: string;
@@ -88,6 +89,7 @@ export function FullInteractiveCalendar({
 
   const [slots, setSlots] = useState<SlotData[]>([]);
   const [blockedDates, setBlockedDates] = useState<string[]>([]);
+  const [blockedHoursByDate, setBlockedHoursByDate] = useState<Record<string, string[]>>({});
   const [slotPricing, setSlotPricing] = useState<SlotPricingSettings>(DEFAULT_SLOT_PRICING);
   const [loading, setLoading] = useState(true);
 
@@ -115,8 +117,12 @@ export function FullInteractiveCalendar({
       if (data.success) {
         const fetchedSlots: SlotData[] = Array.isArray(data.slots) ? data.slots : [];
         const fetchedBlocked: string[] = Array.isArray(data.blockedDates) ? data.blockedDates : [];
+        const fetchedBlockedHours: Record<string, string[]> = data.blockedHoursByDate && typeof data.blockedHoursByDate === 'object'
+          ? data.blockedHoursByDate
+          : {};
         setSlots(fetchedSlots);
         setBlockedDates(fetchedBlocked);
+        setBlockedHoursByDate(fetchedBlockedHours);
         if (data.slotPricing) {
           setSlotPricing({
             ...DEFAULT_SLOT_PRICING,
@@ -187,14 +193,21 @@ export function FullInteractiveCalendar({
     return map;
   }, [slots]);
 
-  // Check if a specific time on selectedDate is already booked
+  // Check if a specific time on selectedDate is already booked or blocked by Admin
   const isTimeBookedOnSelectedDate = (timeLabel: string): boolean => {
     const daySlots = slotsByDate.get(selectedDate) || [];
     const normalized = timeLabel.replace(/\s*UTC$/i, '').trim().toLowerCase();
-    return daySlots.some(
+    const isBookedSlot = daySlots.some(
       (s) =>
         s.status === 'BOOKED' &&
         s.time.replace(/\s*UTC$/i, '').trim().toLowerCase() === normalized
+    );
+    if (isBookedSlot) return true;
+
+    // Check if the hour is explicitly marked unavailable for selectedDate
+    const dayBlockedHours = blockedHoursByDate[selectedDate] || [];
+    return dayBlockedHours.some(
+      (h) => h.replace(/\s*UTC$/i, '').trim().toLowerCase() === normalized
     );
   };
 
@@ -843,6 +856,24 @@ export function FullInteractiveCalendar({
                   studentName={studentName}
                   studentEmail={studentEmail}
                   studentPhone={studentPhone}
+                  onSuccess={() => {
+                    handleBookingSubmit();
+                  }}
+                />
+
+                {/* Custom International Payment Methods (Western Union, Wise, Tab Tab...) */}
+                <CustomPaymentCheckoutButton
+                  itemId={`slot-${selectedDate}-${selectedTime}`}
+                  itemType="PRIVATE_LESSON"
+                  itemTitle={`${isRtl ? 'جلسة فردية خاصة' : 'Private Lesson'} (${selectedDate} - ${selectedTime})`}
+                  amount={currentPriceInfo.price}
+                  currency={slotPricing.currency || 'USD'}
+                  slotDate={selectedDate}
+                  slotTime={selectedTime}
+                  studentName={studentName}
+                  studentEmail={studentEmail}
+                  studentPhone={studentPhone}
+                  locale={currentLocale}
                   onSuccess={() => {
                     handleBookingSubmit();
                   }}

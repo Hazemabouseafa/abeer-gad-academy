@@ -26,6 +26,7 @@ import {
 import { formatCurrency } from '@/lib/utils';
 import { PayPalCheckoutButton } from '@/components/checkout/PayPalCheckoutButton';
 import { ShehnawiCheckoutButton } from '@/components/checkout/ShehnawiCheckoutButton';
+import { CustomPaymentCheckoutButton } from '@/components/checkout/CustomPaymentCheckoutButton';
 import { FullInteractiveCalendar } from '@/components/lessons/FullInteractiveCalendar';
 import { CourseCurriculumPlayer } from '@/components/courses/CourseCurriculumPlayer';
 
@@ -429,6 +430,13 @@ export default async function TrackUnitDetailPage({
                     itemType={actionType === 'COURSE' ? 'COURSE' : 'PRIVATE_LESSON'}
                     itemTitle={`${trackTitle} - ${unitTitle}`}
                     amount={effectivePrice}
+                  />
+                  <CustomPaymentCheckoutButton
+                    itemId={item.id}
+                    itemType={actionType === 'COURSE' ? 'COURSE' : 'PRIVATE_LESSON'}
+                    itemTitle={`${trackTitle} - ${unitTitle}`}
+                    amount={effectivePrice}
+                    locale={lang}
                   />
                 </div>
               )}

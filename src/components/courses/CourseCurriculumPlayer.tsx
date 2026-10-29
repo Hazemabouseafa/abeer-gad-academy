@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { PayPalCheckoutButton } from '@/components/checkout/PayPalCheckoutButton';
 import { ShehnawiCheckoutButton } from '@/components/checkout/ShehnawiCheckoutButton';
+import { CustomPaymentCheckoutButton } from '@/components/checkout/CustomPaymentCheckoutButton';
 import { formatCurrency } from '@/lib/utils';
 import type { CourseData, LessonData } from '@/lib/data-store';
 
@@ -474,6 +475,14 @@ export function CourseCurriculumPlayer({
                   itemTitle={title}
                   amount={course.price}
                   currency="USD"
+                />
+                <CustomPaymentCheckoutButton
+                  itemId={course.slug}
+                  itemType="COURSE"
+                  itemTitle={title}
+                  amount={course.price}
+                  currency="USD"
+                  locale={currentLocale}
                 />
               </div>
             )}

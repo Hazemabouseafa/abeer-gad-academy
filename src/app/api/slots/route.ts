@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSlots, getBlockedDates, getSiteSettings } from '@/lib/data-store';
+import { getSlots, getBlockedDates, getBlockedHours, getSiteSettings } from '@/lib/data-store';
 import { DEFAULT_SLOT_PRICING } from '@/lib/slot-pricing';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +16,7 @@ export async function GET(request: Request) {
     }
 
     const blockedDates = getBlockedDates();
+    const blockedHoursByDate = getBlockedHours();
     const settings = getSiteSettings();
     const slotPricing = settings.slotPricing || DEFAULT_SLOT_PRICING;
 
@@ -23,6 +24,7 @@ export async function GET(request: Request) {
       success: true,
       slots,
       blockedDates,
+      blockedHoursByDate,
       slotPricing,
     });
   } catch (error) {

@@ -64,6 +64,9 @@ export interface ResourceData {
   fileUrl: string;
   fileSizeMb: number;
   isPremium: boolean;
+  isFree?: boolean;
+  price?: number;
+  currency?: string;
   downloads: number;
   createdAt: string;
 }
@@ -100,6 +103,89 @@ export interface ShehnawiSettings {
   testMode?: boolean;
 }
 
+export interface CategoryItem {
+  id: string;
+  name: string;
+  nameAr: string;
+  createdAt?: string;
+}
+
+export const INITIAL_CATEGORIES: CategoryItem[] = [
+  { id: 'cat-tajweed', name: 'Tajweed', nameAr: 'علم التجويد' },
+  { id: 'cat-arabic', name: 'Learn Arabic', nameAr: 'تعلم العربية' },
+  { id: 'cat-quran-reading', name: 'Quran Reading', nameAr: 'تلاوة القرآن' },
+  { id: 'cat-quran-hifz', name: 'Quran Memorization', nameAr: 'حفظ القرآن' },
+  { id: 'cat-specialized', name: 'Specialized Arabic', nameAr: 'العربية التخصصية' },
+  { id: 'cat-grammar', name: 'Arabic Grammar', nameAr: 'النحو والصرف' },
+  { id: 'cat-audio', name: 'Audio Guide', nameAr: 'ملفات صوتية' },
+  { id: 'cat-general', name: 'General', nameAr: 'عام' },
+];
+
+export interface CustomPaymentMethod {
+  id: string;
+  name: string;
+  nameAr: string;
+  type?: 'western_union' | 'wise' | 'tab_tab' | 'bank_transfer' | 'other';
+  recipientName?: string;
+  recipientNameAr?: string;
+  country?: string;
+  countryAr?: string;
+  accountNumber?: string;
+  phone?: string;
+  emailOrIban?: string;
+  instructions: string;
+  instructionsAr: string;
+  isActive: boolean;
+  requiresReferenceNumber?: boolean;
+  createdAt?: string;
+}
+
+export const INITIAL_CUSTOM_PAYMENT_METHODS: CustomPaymentMethod[] = [
+  {
+    id: 'cpm-western-union',
+    name: 'Western Union',
+    nameAr: 'ويسترن يونيون (Western Union)',
+    type: 'western_union',
+    recipientName: 'Abeer Gad Abdelhamid',
+    recipientNameAr: 'عبير جاد عبد الحميد',
+    country: 'Egypt',
+    countryAr: 'جمهورية مصر العربية',
+    phone: '+20 100 000 0000',
+    instructions: 'Transfer via any Western Union agent branch to Abeer Gad in Egypt. Once transferred, submit your MTCN (Money Transfer Control Number) below to confirm your booking instantly.',
+    instructionsAr: 'قم بإجراء التحويل عبر أي فرع ويسترن يونيون باسم الأستاذة عبير جاد عبد الحميد (جمهورية مصر العربية). بعد إتمام التحويل يرجى إدخال رقم الحوالة (MTCN) أدناه لتأكيد حجزك فوراً.',
+    isActive: true,
+    requiresReferenceNumber: true,
+  },
+  {
+    id: 'cpm-wise',
+    name: 'Wise (TransferWise)',
+    nameAr: 'وايز (Wise)',
+    type: 'wise',
+    recipientName: 'Abeer Gad Academy',
+    recipientNameAr: 'أكاديمية عبير جاد',
+    emailOrIban: 'payments@abeergadacademy.com',
+    instructions: 'Transfer funds securely to our official Wise account using the email above. Enter your Wise transfer reference/ID below.',
+    instructionsAr: 'قم بإرسال المبلغ لحسابنا في Wise باستخدام البريد الإلكتروني الموضح أعلاه، ثم أدخل رقم عملية التحويل (Wise Transaction ID) لتأكيد الحجز.',
+    isActive: true,
+    requiresReferenceNumber: true,
+  },
+  {
+    id: 'cpm-tab-tab',
+    name: 'Tab Tab / Tap Tap Send',
+    nameAr: 'تاب تاب (Tab Tab / Tap Tap Send)',
+    type: 'tab_tab',
+    recipientName: 'Abeer Gad',
+    recipientNameAr: 'عبير جاد',
+    phone: '+20 100 000 0000',
+    country: 'Egypt',
+    countryAr: 'مصر',
+    instructions: 'Send money easily via Tap Tap Send / Tab Tab app to Egypt using the phone number above. Enter your transfer confirmation code below.',
+    instructionsAr: 'قم بالتحويل عبر تطبيق تاب تاب سند (Tap Tap Send) إلى مصر على رقم الهاتف الموضح أعلاه، ثم اكتب كود المعاملة أو رقم الحوالة أدناه.',
+    isActive: true,
+    requiresReferenceNumber: true,
+  },
+];
+
 export interface TransactionData {
   id: string;
   paypalOrderId: string;
@@ -107,17 +193,21 @@ export interface TransactionData {
   payerName?: string;
   payerPhone?: string;
   itemTitle: string;
-  itemType: 'COURSE' | 'PRIVATE_LESSON';
+  itemType: 'COURSE' | 'PRIVATE_LESSON' | 'RESOURCE';
   amount: number;
   currency: string;
   status: 'COMPLETED' | 'PENDING' | 'REFUNDED';
   date: string;
-  paymentMethod?: 'PAYPAL' | 'SHEHNAWI' | string;
+  paymentMethod?: 'PAYPAL' | 'SHEHNAWI' | 'CUSTOM' | string;
   walletProvider?: string;
   senderWalletNumber?: string;
   transactionRef?: string;
   amountEgp?: number;
   receiptUrl?: string;
+  customMethodId?: string;
+  customMethodName?: string;
+  referenceNumber?: string;
+  notes?: string;
 }
 
 export interface StudentData {
@@ -258,6 +348,15 @@ export interface SiteSettingsData {
 
   // Blocked Dates (Days marked by Admin as busy / unavailable; all other days are open by default)
   blockedDates?: string[];
+
+  // Blocked Hours by Date (date string YYYY-MM-DD -> array of unavailable time strings e.g. ["10:00 AM", "02:00 PM"])
+  blockedHoursByDate?: Record<string, string[]>;
+
+  // Dynamic Categories Management (Courses & Digital Resources)
+  categories?: CategoryItem[];
+
+  // Custom / Manual Payment Methods (Western Union, Wise, Tab Tab, Bank Transfer, etc.)
+  customPaymentMethods?: CustomPaymentMethod[];
 
   // PayPal Integration Settings
   paypalClientId?: string;
@@ -436,6 +535,15 @@ const INITIAL_SETTINGS: SiteSettingsData = {
   // Blocked Dates Default (empty = all days are available by default)
   blockedDates: [],
 
+  // Blocked Hours by Date Default
+  blockedHoursByDate: {},
+
+  // Default Managed Categories
+  categories: INITIAL_CATEGORIES,
+
+  // Default Custom / Manual Payment Methods
+  customPaymentMethods: INITIAL_CUSTOM_PAYMENT_METHODS,
+
   // PayPal Settings Defaults (reads from env if available, editable from Admin Dashboard)
   paypalClientId: (process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '').replace(/['"]/g, '').trim(),
   paypalClientSecret: (process.env.PAYPAL_CLIENT_SECRET || '').replace(/['"]/g, '').trim(),
@@ -504,6 +612,15 @@ function ensureStoreExists(): AcademyStore {
     };
     if (!Array.isArray(parsed.settings.blockedDates)) {
       parsed.settings.blockedDates = [];
+    }
+    if (!parsed.settings.blockedHoursByDate || typeof parsed.settings.blockedHoursByDate !== 'object') {
+      parsed.settings.blockedHoursByDate = {};
+    }
+    if (!Array.isArray(parsed.settings.categories) || parsed.settings.categories.length === 0) {
+      parsed.settings.categories = INITIAL_CATEGORIES;
+    }
+    if (!Array.isArray(parsed.settings.customPaymentMethods) || parsed.settings.customPaymentMethods.length === 0) {
+      parsed.settings.customPaymentMethods = INITIAL_CUSTOM_PAYMENT_METHODS;
     }
     if (!parsed.settings.services || parsed.settings.services.length === 0) {
       parsed.settings.services = INITIAL_SERVICES;
@@ -753,10 +870,20 @@ export function saveResource(data: Partial<ResourceData> & { title: string }): R
   const store = ensureStoreExists();
   const now = new Date().toISOString();
 
+  const isFree = data.isFree !== undefined ? data.isFree : (data.price !== undefined ? data.price <= 0 : !data.isPremium);
+  const price = typeof data.price === 'number' && data.price >= 0 ? data.price : (isFree ? 0 : 10);
+
   if (data.id) {
     const idx = store.resources.findIndex((r) => r.id === data.id);
     if (idx >= 0) {
-      store.resources[idx] = { ...store.resources[idx], ...data } as ResourceData;
+      store.resources[idx] = {
+        ...store.resources[idx],
+        ...data,
+        isFree,
+        isPremium: !isFree,
+        price,
+        currency: data.currency || store.resources[idx].currency || 'USD',
+      } as ResourceData;
       saveStore(store);
       return store.resources[idx];
     }
@@ -770,7 +897,10 @@ export function saveResource(data: Partial<ResourceData> & { title: string }): R
     fileType: data.fileType || 'PDF',
     fileUrl: data.fileUrl || '/downloads/resource.pdf',
     fileSizeMb: data.fileSizeMb || 2.5,
-    isPremium: data.isPremium ?? false,
+    isPremium: !isFree,
+    isFree: isFree,
+    price: price,
+    currency: data.currency || 'USD',
     downloads: 0,
     createdAt: now,
   };
@@ -894,6 +1024,60 @@ export function setBlockedDates(dates: string[]): string[] {
   return clean;
 }
 
+// Blocked Hours per Day CRUD
+export function getBlockedHours(dateStr?: string): Record<string, string[]> | string[] {
+  const store = ensureStoreExists();
+  const blocked = store.settings?.blockedHoursByDate || {};
+  if (dateStr) {
+    return Array.isArray(blocked[dateStr]) ? blocked[dateStr] : [];
+  }
+  return blocked;
+}
+
+export function toggleBlockedHour(dateStr: string, timeStr: string): string[] {
+  const store = ensureStoreExists();
+  if (!store.settings.blockedHoursByDate) {
+    store.settings.blockedHoursByDate = {};
+  }
+  const current = Array.isArray(store.settings.blockedHoursByDate[dateStr])
+    ? [...store.settings.blockedHoursByDate[dateStr]]
+    : [];
+
+  const normalized = timeStr.trim();
+  const idx = current.findIndex((t) => t.trim().toLowerCase() === normalized.toLowerCase());
+  if (idx >= 0) {
+    current.splice(idx, 1);
+  } else {
+    current.push(normalized);
+  }
+
+  if (current.length === 0) {
+    delete store.settings.blockedHoursByDate[dateStr];
+  } else {
+    store.settings.blockedHoursByDate[dateStr] = current;
+  }
+
+  store.settings.updatedAt = new Date().toISOString();
+  saveStore(store);
+  return current;
+}
+
+export function setBlockedHoursForDate(dateStr: string, hours: string[]): string[] {
+  const store = ensureStoreExists();
+  if (!store.settings.blockedHoursByDate) {
+    store.settings.blockedHoursByDate = {};
+  }
+  const clean = Array.from(new Set((hours || []).map((h) => h.trim()).filter(Boolean)));
+  if (clean.length === 0) {
+    delete store.settings.blockedHoursByDate[dateStr];
+  } else {
+    store.settings.blockedHoursByDate[dateStr] = clean;
+  }
+  store.settings.updatedAt = new Date().toISOString();
+  saveStore(store);
+  return clean;
+}
+
 export function bookSlot(
   id: string,
   bookingInfo: {
@@ -921,6 +1105,12 @@ export function bookSlot(
 
   // Reject if the date is blocked by Admin
   if (blockedDates.includes(targetDate)) {
+    return null;
+  }
+
+  // Reject if this specific hour is blocked by Admin on targetDate
+  const blockedHours = store.settings?.blockedHoursByDate?.[targetDate] || [];
+  if (blockedHours.some((h) => h.trim().toLowerCase() === targetTime.trim().toLowerCase())) {
     return null;
   }
 
@@ -1049,7 +1239,7 @@ export function recordStudent(data: {
   name: string;
   email: string;
   phone?: string;
-  itemType?: 'COURSE' | 'PRIVATE_LESSON';
+  itemType?: 'COURSE' | 'PRIVATE_LESSON' | 'RESOURCE' | string;
   itemId?: string;
 }): StudentData {
   const store = ensureStoreExists();
@@ -1331,4 +1521,132 @@ export function deleteTrackItem(trackId: string, itemId: string): boolean {
     return true;
   }
   return false;
+}
+
+// Categories Management CRUD
+export function getCategories(): CategoryItem[] {
+  const store = ensureStoreExists();
+  return Array.isArray(store.settings?.categories) && store.settings.categories.length > 0
+    ? store.settings.categories
+    : INITIAL_CATEGORIES;
+}
+
+export function saveCategory(data: Partial<CategoryItem> & { name: string; nameAr: string }): CategoryItem {
+  const store = ensureStoreExists();
+  const categories = getCategories();
+  const now = new Date().toISOString();
+
+  if (data.id) {
+    const idx = categories.findIndex((c) => c.id === data.id);
+    if (idx >= 0) {
+      categories[idx] = { ...categories[idx], ...data } as CategoryItem;
+      store.settings.categories = categories;
+      store.settings.updatedAt = now;
+      saveStore(store);
+      return categories[idx];
+    }
+  }
+
+  const newCat: CategoryItem = {
+    id: data.id || `cat-${Date.now()}`,
+    name: data.name.trim(),
+    nameAr: data.nameAr.trim(),
+    createdAt: now,
+  };
+  categories.push(newCat);
+  store.settings.categories = categories;
+  store.settings.updatedAt = now;
+  saveStore(store);
+  return newCat;
+}
+
+export function deleteCategory(id: string): boolean {
+  const store = ensureStoreExists();
+  const categories = getCategories();
+  const initialLength = categories.length;
+  const filtered = categories.filter((c) => c.id !== id);
+  if (filtered.length !== initialLength) {
+    store.settings.categories = filtered;
+    store.settings.updatedAt = new Date().toISOString();
+    saveStore(store);
+    return true;
+  }
+  return false;
+}
+
+// Custom / Manual Payment Methods CRUD (Western Union, Wise, Tab Tab, Bank Transfer, etc.)
+export function getCustomPaymentMethods(): CustomPaymentMethod[] {
+  const store = ensureStoreExists();
+  return Array.isArray(store.settings?.customPaymentMethods) && store.settings.customPaymentMethods.length > 0
+    ? store.settings.customPaymentMethods
+    : INITIAL_CUSTOM_PAYMENT_METHODS;
+}
+
+export function saveCustomPaymentMethod(
+  data: Partial<CustomPaymentMethod> & { name: string; nameAr: string }
+): CustomPaymentMethod {
+  const store = ensureStoreExists();
+  const methods = getCustomPaymentMethods();
+  const now = new Date().toISOString();
+
+  if (data.id) {
+    const idx = methods.findIndex((m) => m.id === data.id);
+    if (idx >= 0) {
+      methods[idx] = { ...methods[idx], ...data } as CustomPaymentMethod;
+      store.settings.customPaymentMethods = methods;
+      store.settings.updatedAt = now;
+      saveStore(store);
+      return methods[idx];
+    }
+  }
+
+  const newMethod: CustomPaymentMethod = {
+    id: data.id || `cpm-${Date.now()}`,
+    name: data.name.trim(),
+    nameAr: data.nameAr.trim(),
+    type: data.type || 'other',
+    recipientName: data.recipientName || '',
+    recipientNameAr: data.recipientNameAr || '',
+    country: data.country || '',
+    countryAr: data.countryAr || '',
+    accountNumber: data.accountNumber || '',
+    phone: data.phone || '',
+    emailOrIban: data.emailOrIban || '',
+    instructions: data.instructions || '',
+    instructionsAr: data.instructionsAr || '',
+    isActive: data.isActive ?? true,
+    requiresReferenceNumber: data.requiresReferenceNumber ?? true,
+    createdAt: now,
+  };
+  methods.push(newMethod);
+  store.settings.customPaymentMethods = methods;
+  store.settings.updatedAt = now;
+  saveStore(store);
+  return newMethod;
+}
+
+export function deleteCustomPaymentMethod(id: string): boolean {
+  const store = ensureStoreExists();
+  const methods = getCustomPaymentMethods();
+  const initialLength = methods.length;
+  const filtered = methods.filter((m) => m.id !== id);
+  if (filtered.length !== initialLength) {
+    store.settings.customPaymentMethods = filtered;
+    store.settings.updatedAt = new Date().toISOString();
+    saveStore(store);
+    return true;
+  }
+  return false;
+}
+
+export function toggleCustomPaymentMethod(id: string): boolean {
+  const store = ensureStoreExists();
+  const methods = getCustomPaymentMethods();
+  const method = methods.find((m) => m.id === id);
+  if (!method) return false;
+  method.isActive = !method.isActive;
+  store.settings.customPaymentMethods = methods;
+  store.settings.updatedAt = new Date().toISOString();
+  saveStore(store);
+  return method.isActive;
 }

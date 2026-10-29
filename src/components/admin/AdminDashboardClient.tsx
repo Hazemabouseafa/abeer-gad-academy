@@ -53,6 +53,8 @@ import {
   Wallet,
   AlertCircle,
   Copy,
+  Send,
+  Building2,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -80,6 +82,8 @@ import type {
   ServiceCardItem,
   TrackItem,
   TrackItemActionType,
+  CategoryItem,
+  CustomPaymentMethod,
 } from '@/lib/data-store';
 import { MediaInputWithChoice } from './MediaInputWithChoice';
 
@@ -100,7 +104,40 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const [cmsSubTab, setCmsSubTab] = useState<'HERO' | 'SERVICES' | 'TESTIMONIALS' | 'COMMUNICATION' | 'PAYPAL' | 'SHEHNAWI'>('HERO');
 
   // Sub-tab inside FINANCIALS_STUDENTS
-  const [financeSubTab, setFinanceSubTab] = useState<'TRANSACTIONS' | 'STUDENTS' | 'PAYPAL_SETTINGS' | 'SHEHNAWI_SETTINGS'>('TRANSACTIONS');
+  const [financeSubTab, setFinanceSubTab] = useState<'TRANSACTIONS' | 'STUDENTS' | 'PAYPAL_SETTINGS' | 'SHEHNAWI_SETTINGS' | 'CUSTOM_PAYMENTS'>('TRANSACTIONS');
+
+  // Custom / Manual Payment Methods States (Western Union, Wise, Tab Tab, etc.)
+  const [customMethodsList, setCustomMethodsList] = useState<CustomPaymentMethod[]>([]);
+  const [showAddMethodModal, setShowAddMethodModal] = useState(false);
+  const [editingMethod, setEditingMethod] = useState<CustomPaymentMethod | null>(null);
+  const [methodFormData, setMethodFormData] = useState({
+    name: '',
+    nameAr: '',
+    type: 'western_union' as 'western_union' | 'wise' | 'tab_tab' | 'bank_transfer' | 'other',
+    recipientName: '',
+    recipientNameAr: '',
+    country: '',
+    countryAr: '',
+    accountNumber: '',
+    phone: '',
+    emailOrIban: '',
+    instructions: '',
+    instructionsAr: '',
+    isActive: true,
+    requiresReferenceNumber: true,
+  });
+
+  // Dynamic Categories Management States
+  const [categoriesList, setCategoriesList] = useState<CategoryItem[]>([]);
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const [newCatNameEn, setNewCatNameEn] = useState('');
+  const [newCatNameAr, setNewCatNameAr] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
+
+  // Day & Hour Blocked Slots State
+  const [blockedHoursByDate, setBlockedHoursByDate] = useState<Record<string, string[]>>({});
+  const [adminSelectedHourDate, setAdminSelectedHourDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [customUnavailableHour, setCustomUnavailableHour] = useState('');
 
   // PayPal Configuration States
   const [showPayPalSecret, setShowPayPalSecret] = useState(false);
@@ -242,11 +279,14 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const [resourceFormData, setResourceFormData] = useState({
     title: '',
     titleAr: '',
-    category: 'Tajweed Chart',
+    category: 'Tajweed',
     fileType: 'PDF',
     fileUrl: '/downloads/resource.pdf',
     fileSizeMb: 3.5,
     isPremium: false,
+    isFree: true,
+    price: 0,
+    currency: 'USD',
   });
 
   // Testimonial Form
@@ -556,7 +596,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
   const fetchData = async () => {
     try {
       setRefreshing(true);
-      const [resCourses, resSlots, resResources, resSettings, resTransactions, resStudents, resStorage] = await Promise.all([
+      const [resCourses, resSlots, resResources, resSettings, resTransactions, resStudents, resStorage, resCats, resCustomMethods] = await Promise.all([
         fetch('/api/admin/courses').then((r) => r.json()),
         fetch('/api/admin/slots').then((r) => r.json()),
         fetch('/api/admin/resources').then((r) => r.json()),
@@ -564,6 +604,8 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
         fetch('/api/admin/transactions').then((r) => r.json()).catch(() => ({ transactions: [] })),
         fetch('/api/admin/students').then((r) => r.json()).catch(() => ({ students: [] })),
         fetch('/api/admin/upload').then((r) => r.json()).catch(() => null),
+        fetch('/api/admin/categories').then((r) => r.json()).catch(() => ({ categories: [] })),
+        fetch('/api/admin/payment-methods').then((r) => r.json()).catch(() => ({ methods: [] })),
       ]);
 
       if (resStorage && resStorage.success) {
@@ -579,10 +621,19 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
 
       if (resCourses.courses) setCourses(resCourses.courses);
       if (resSlots.slots) setSlots(resSlots.slots);
+      if (resSlots.blockedHoursByDate && typeof resSlots.blockedHoursByDate === 'object') {
+        setBlockedHoursByDate(resSlots.blockedHoursByDate);
+      }
       if (Array.isArray(resSlots.blockedDates)) {
         setBlockedDates(resSlots.blockedDates);
       } else if (Array.isArray(resSettings.settings?.blockedDates)) {
         setBlockedDates(resSettings.settings.blockedDates);
+      }
+      if (Array.isArray(resCats?.categories)) {
+        setCategoriesList(resCats.categories);
+      }
+      if (Array.isArray(resCustomMethods?.methods)) {
+        setCustomMethodsList(resCustomMethods.methods);
       }
       if (resResources.resources) setResources(resResources.resources);
       if (resSettings.settings) {
@@ -1910,6 +1961,360 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     );
   };
 
+  const renderCustomPaymentMethodsTab = () => {
+    return (
+      <div className="bg-white rounded-3xl border border-surface-border p-6 sm:p-8 space-y-6 shadow-card-subtle">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-surface-border">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+              <Globe className="w-6 h-6 text-amber-700" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-navy-950">
+                {isRtl ? 'طرق الدفع الإضافية (Western Union, Wise, Tab Tab...)' : 'Custom Payment Methods'}
+              </h3>
+              <p className="text-xs text-navy-500">
+                {isRtl
+                  ? 'إدارة وسائل التحويل الدولي المباشر وتحديد بيانات المستلم والتعليمات الخاصة بكل وسيلة.'
+                  : 'Manage international transfer methods, recipient details, and transfer instructions.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingMethod(null);
+              setMethodFormData({
+                name: '',
+                nameAr: '',
+                type: 'western_union',
+                recipientName: 'Abeer Gad Abdelhamid',
+                recipientNameAr: 'عبير جاد عبد الحميد',
+                country: 'Egypt',
+                countryAr: 'مصر',
+                accountNumber: '',
+                phone: '+20 100 000 0000',
+                emailOrIban: '',
+                instructions: '',
+                instructionsAr: '',
+                isActive: true,
+                requiresReferenceNumber: true,
+              });
+              setShowAddMethodModal(true);
+            }}
+            className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{isRtl ? 'إضافة وسيلة دفع جديدة' : 'Add Payment Method'}</span>
+          </button>
+        </div>
+
+        {/* Modal / Form to Add/Edit Method */}
+        {showAddMethodModal && (
+          <div className="p-5 rounded-2xl bg-amber-50/40 border-2 border-amber-300 space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between pb-2 border-b border-amber-200">
+              <h4 className="font-extrabold text-navy-950 text-sm flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-amber-700" />
+                <span>
+                  {editingMethod
+                    ? isRtl ? 'تعديل بيانات وسيلة الدفع' : 'Edit Payment Method'
+                    : isRtl ? 'إضافة وسيلة دفع وتحويل جديدة' : 'Add New Payment Method'}
+                </span>
+              </h4>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddMethodModal(false);
+                  setEditingMethod(null);
+                }}
+                className="text-navy-500 hover:text-navy-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomMethod} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-navy-800 block mb-1">
+                    {isRtl ? 'اسم الوسيلة (English)' : 'Method Name (English)'} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={methodFormData.name}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, name: e.target.value })}
+                    placeholder="e.g. Western Union"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-navy-800 block mb-1">
+                    {isRtl ? 'اسم الوسيلة (بالعربي)' : 'Method Name (Arabic)'} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={methodFormData.nameAr}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, nameAr: e.target.value })}
+                    placeholder="مثال: ويسترن يونيون"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-arabic"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-navy-800 block mb-1">
+                    {isRtl ? 'نوع الأيقونة' : 'Icon Type'}
+                  </label>
+                  <select
+                    value={methodFormData.type}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, type: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                  >
+                    <option value="western_union">Western Union (ويسترن يونيون)</option>
+                    <option value="wise">Wise (وايز)</option>
+                    <option value="tab_tab">Tab Tab / Tap Tap Send (تاب تاب)</option>
+                    <option value="bank_transfer">Bank Transfer (تحويل بنكي)</option>
+                    <option value="other">Other / Custom (أخرى)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-navy-800 block mb-1">
+                    {isRtl ? 'اسم المستلم (Recipient Name)' : 'Recipient Name'}
+                  </label>
+                  <input
+                    type="text"
+                    value={methodFormData.recipientName}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, recipientName: e.target.value })}
+                    placeholder="Abeer Gad Abdelhamid"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-navy-800 block mb-1">
+                    {isRtl ? 'اسم المستلم بالعربي' : 'Recipient Arabic Name'}
+                  </label>
+                  <input
+                    type="text"
+                    value={methodFormData.recipientNameAr}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, recipientNameAr: e.target.value })}
+                    placeholder="عبير جاد عبد الحميد"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-arabic"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-navy-800 block mb-1">
+                    {isRtl ? 'الدولة / البلد' : 'Country'}
+                  </label>
+                  <input
+                    type="text"
+                    value={methodFormData.country}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, country: e.target.value })}
+                    placeholder="Egypt (مصر)"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-navy-800 block mb-1">
+                    {isRtl ? 'رقم الهاتف / الواتساب' : 'Phone / Mobile'}
+                  </label>
+                  <input
+                    type="text"
+                    value={methodFormData.phone}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, phone: e.target.value })}
+                    placeholder="+20 100 000 0000"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-navy-800 block mb-1">
+                    {isRtl ? 'الحساب / البريد / IBAN' : 'Email / Account / IBAN'}
+                  </label>
+                  <input
+                    type="text"
+                    value={methodFormData.emailOrIban}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, emailOrIban: e.target.value })}
+                    placeholder="payments@abeergadacademy.com أو رقم الحساب"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-navy-800 block mb-1">
+                    {isRtl ? 'تعليمات التحويل للطلاب (بالعربية)' : 'Instructions (Arabic)'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={methodFormData.instructionsAr}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, instructionsAr: e.target.value })}
+                    placeholder="قم بالتحويل عبر أي فرع باسم... ثم أدخل كود التحويل أدناه"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-arabic text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-navy-800 block mb-1">
+                    {isRtl ? 'تعليمات التحويل للطلاب (English)' : 'Instructions (English)'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={methodFormData.instructions}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, instructions: e.target.value })}
+                    placeholder="Transfer via... and submit your MTCN / transfer code below"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-6 pt-1">
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-navy-800 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={methodFormData.requiresReferenceNumber}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, requiresReferenceNumber: e.target.checked })}
+                    className="rounded text-amber-600"
+                  />
+                  <span>{isRtl ? 'مطالبة الطالب برقم الحوالة أو كود العملية (MTCN / Ref Code)' : 'Require Reference Number / MTCN'}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-navy-800 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={methodFormData.isActive}
+                    onChange={(e) => setMethodFormData({ ...methodFormData, isActive: e.target.checked })}
+                    className="rounded text-amber-600"
+                  />
+                  <span>{isRtl ? 'تفعيل وسيلة الدفع لتظهر للطلاب' : 'Active and visible to students'}</span>
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-amber-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMethodModal(false);
+                    setEditingMethod(null);
+                  }}
+                  className="px-3 py-2 rounded-xl border border-surface-border bg-white text-navy-700 font-bold hover:bg-surface-muted"
+                >
+                  {isRtl ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1.5 shadow-sm"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isRtl ? 'حفظ وسيلة الدفع' : 'Save Method'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Existing Custom Methods Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {customMethodsList.map((m) => (
+            <div
+              key={m.id}
+              className={`p-5 rounded-2xl border transition-all space-y-3.5 flex flex-col justify-between ${
+                m.isActive ? 'bg-white border-amber-200 shadow-sm' : 'bg-surface-muted/60 border-surface-border opacity-70'
+              }`}
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center">
+                      <Globe className="w-4 h-4 text-amber-700" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-navy-950 text-sm">
+                        {isRtl ? m.nameAr || m.name : m.name}
+                      </h4>
+                      <span className="text-[10px] text-navy-400 font-mono block">{m.type || 'Custom'}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleCustomMethod(m.id)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold transition-colors ${
+                      m.isActive
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                        : 'bg-gray-100 text-gray-600 border border-gray-200'
+                    }`}
+                  >
+                    {m.isActive ? (isRtl ? '✓ مفعلة' : 'Active') : (isRtl ? 'معطلة' : 'Disabled')}
+                  </button>
+                </div>
+
+                {m.recipientName && (
+                  <div className="p-2.5 rounded-xl bg-surface-muted/70 text-xs space-y-1 border border-surface-borderSubtle">
+                    <span className="text-navy-500 block text-[10px] uppercase font-bold">{isRtl ? 'المستلم:' : 'Recipient:'}</span>
+                    <strong className="text-navy-950 block">{isRtl ? m.recipientNameAr || m.recipientName : m.recipientName}</strong>
+                    {m.country && <span className="text-navy-600 block text-[11px]">📍 {m.country}</span>}
+                    {m.phone && <span className="text-navy-600 block text-[11px] font-mono">📞 {m.phone}</span>}
+                    {m.emailOrIban && <span className="text-navy-600 block text-[11px] font-mono truncate">✉️ {m.emailOrIban}</span>}
+                  </div>
+                )}
+
+                <p className="text-[11px] text-navy-600 line-clamp-2">
+                  {isRtl ? m.instructionsAr || m.instructions : m.instructions}
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-surface-border flex items-center justify-between">
+                <span className="text-[10px] text-navy-400">
+                  {m.requiresReferenceNumber ? (isRtl ? 'يتطلب كود حوالة' : 'Ref Code Required') : ''}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingMethod(m);
+                      setMethodFormData({
+                        name: m.name,
+                        nameAr: m.nameAr,
+                        type: m.type || 'western_union',
+                        recipientName: m.recipientName || '',
+                        recipientNameAr: m.recipientNameAr || '',
+                        country: m.country || '',
+                        countryAr: m.countryAr || '',
+                        accountNumber: m.accountNumber || '',
+                        phone: m.phone || '',
+                        emailOrIban: m.emailOrIban || '',
+                        instructions: m.instructions || '',
+                        instructionsAr: m.instructionsAr || '',
+                        isActive: m.isActive,
+                        requiresReferenceNumber: m.requiresReferenceNumber ?? true,
+                      });
+                      setShowAddMethodModal(true);
+                    }}
+                    className="p-1.5 rounded-lg text-navy-600 hover:bg-surface-muted transition-colors"
+                    title={isRtl ? 'تعديل' : 'Edit'}
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCustomMethod(m.id, m.name)}
+                    className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                    title={isRtl ? 'حذف' : 'Delete'}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const handleUpdateServiceField = (serviceId: string, field: keyof ServiceCardItem, value: any) => {
     setSettings((prev) => ({
       ...prev,
@@ -2199,6 +2604,146 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     }
   };
 
+  // Toggle Unavailable Hour for Selected Date
+  const handleToggleBlockedHour = async (timeStr: string) => {
+    try {
+      const res = await fetch('/api/admin/slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggle-blocked-hour',
+          date: adminSelectedHourDate,
+          time: timeStr,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.blockedHoursByDate) {
+        setBlockedHoursByDate(data.blockedHoursByDate);
+        const dayHours = data.blockedHoursByDate[adminSelectedHourDate] || [];
+        const isNowBlocked = dayHours.includes(timeStr);
+        triggerToast(
+          isNowBlocked
+            ? isRtl
+              ? `🔒 تم تحديد ساعة (${timeStr}) كـ غير متاحة للطلاب`
+              : `🔒 Marked (${timeStr}) as unavailable`
+            : isRtl
+            ? `✅ تم إتاحة ساعة (${timeStr}) للطلاب للحجز`
+            : `✅ Opened (${timeStr}) for student bookings`
+        );
+      }
+    } catch (err) {
+      console.error('Error toggling blocked hour:', err);
+    }
+  };
+
+  // Add Custom Unavailable Hour
+  const handleAddCustomUnavailableHour = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customUnavailableHour.trim()) return;
+    await handleToggleBlockedHour(customUnavailableHour.trim());
+    setCustomUnavailableHour('');
+  };
+
+  // Categories Handlers
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatNameEn.trim() || !newCatNameAr.trim()) return;
+    try {
+      setSavingCategory(true);
+      const res = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCatNameEn.trim(),
+          nameAr: newCatNameAr.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.categories)) {
+        setCategoriesList(data.categories);
+        setNewCatNameEn('');
+        setNewCatNameAr('');
+        triggerToast(isRtl ? 'تمت إضافة التصنيف بنجاح' : 'Category added successfully');
+      }
+    } catch (err) {
+      console.error('Error adding category:', err);
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string, name: string) => {
+    if (!confirm(isRtl ? `هل أنت متأكد من حذف التصنيف "${name}"؟` : `Delete category "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/categories?id=${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.categories)) {
+        setCategoriesList(data.categories);
+        triggerToast(isRtl ? 'تم حذف التصنيف بنجاح' : 'Category deleted');
+      }
+    } catch (err) {
+      console.error('Error deleting category:', err);
+    }
+  };
+
+  // Custom Payment Methods Handlers
+  const handleSaveCustomMethod = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!methodFormData.name.trim() || !methodFormData.nameAr.trim()) return;
+    try {
+      const res = await fetch('/api/admin/payment-methods', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingMethod?.id,
+          ...methodFormData,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.methods)) {
+        setCustomMethodsList(data.methods);
+        setShowAddMethodModal(false);
+        setEditingMethod(null);
+        triggerToast(isRtl ? 'تم حفظ وسيلة الدفع بنجاح' : 'Payment method saved');
+      }
+    } catch (err) {
+      console.error('Error saving custom payment method:', err);
+    }
+  };
+
+  const handleToggleCustomMethod = async (id: string) => {
+    try {
+      const res = await fetch('/api/admin/payment-methods', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle', id }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.methods)) {
+        setCustomMethodsList(data.methods);
+        triggerToast(isRtl ? 'تم تحديث حالة وسيلة الدفع' : 'Payment method updated');
+      }
+    } catch (err) {
+      console.error('Error toggling payment method:', err);
+    }
+  };
+
+  const handleDeleteCustomMethod = async (id: string, name: string) => {
+    if (!confirm(isRtl ? `هل أنت متأكد من حذف وسيلة الدفع "${name}"؟` : `Delete payment method "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/payment-methods?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.methods)) {
+        setCustomMethodsList(data.methods);
+        triggerToast(isRtl ? 'تم حذف وسيلة الدفع' : 'Payment method deleted');
+      }
+    } catch (err) {
+      console.error('Error deleting custom payment method:', err);
+    }
+  };
+
   // --- Real Transactions & Students Handlers ---
   const handleSaveManualTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2247,6 +2792,24 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleApproveTransaction = async (id: string) => {
+    try {
+      const res = await fetch('/api/admin/transactions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'COMPLETED' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTransactions(data.transactions || []);
+        triggerToast(isRtl ? 'تم اعتماد المعاملة وتأكيد الدفع بنجاح' : 'Transaction approved successfully');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast(isRtl ? 'حدث خطأ أثناء اعتماد المعاملة' : 'Failed to approve transaction');
     }
   };
 
@@ -4988,12 +5551,21 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     className="text-xs border border-surface-border rounded-xl px-3 py-2 bg-white text-navy-700 focus:outline-none"
                   >
                     <option value="ALL">{isRtl ? 'جميع التصنيفات' : 'All Categories'}</option>
-                    <option value="Learn Arabic">{isRtl ? 'تعلم العربية' : 'Learn Arabic'}</option>
-                    <option value="Tajweed">{isRtl ? 'التجويد' : 'Tajweed'}</option>
-                    <option value="Quran Memorization">{isRtl ? 'حفظ القرآن' : 'Quran Memorization'}</option>
-                    <option value="Quran Reading">{isRtl ? 'تلاوة القرآن' : 'Quran Reading'}</option>
-                    <option value="Specialized Arabic">{isRtl ? 'العربية التخصصية' : 'Specialized Arabic'}</option>
+                    {categoriesList.map((cat) => (
+                      <option key={cat.id} value={cat.name}>
+                        {isRtl ? cat.nameAr || cat.name : cat.name}
+                      </option>
+                    ))}
                   </select>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoriesModal(true)}
+                    className="px-3 py-2 rounded-xl bg-surface-muted hover:bg-surface-elevated text-navy-800 border border-surface-border text-xs font-bold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Layers className="w-4 h-4 text-brand-700" />
+                    <span>{isRtl ? `إدارة التصنيفات (${categoriesList.length})` : `Categories (${categoriesList.length})`}</span>
+                  </button>
 
                   <button
                     type="button"
@@ -5110,20 +5682,20 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           value={courseFormData.category}
                           onChange={(e) => {
                             const cat = e.target.value;
-                            let catAr = 'تعلم العربية';
-                            if (cat === 'Tajweed') catAr = 'علم التجويد';
-                            if (cat === 'Quran Memorization') catAr = 'حفظ القرآن';
-                            if (cat === 'Quran Reading') catAr = 'تلاوة القرآن';
-                            if (cat === 'Specialized Arabic') catAr = 'العربية التخصصية';
-                            setCourseFormData({ ...courseFormData, category: cat, categoryAr: catAr });
+                            const matched = categoriesList.find((c) => c.name === cat);
+                            setCourseFormData({
+                              ...courseFormData,
+                              category: cat,
+                              categoryAr: matched?.nameAr || cat,
+                            });
                           }}
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border"
+                          className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
                         >
-                          <option value="Learn Arabic">Learn Arabic (تعلم العربية)</option>
-                          <option value="Tajweed">Tajweed (علم التجويد)</option>
-                          <option value="Quran Memorization">Quran Memorization (حفظ القرآن)</option>
-                          <option value="Quran Reading">Quran Reading (تلاوة القرآن)</option>
-                          <option value="Specialized Arabic">Specialized Arabic (العربية التخصصية)</option>
+                          {categoriesList.map((cat) => (
+                            <option key={cat.id} value={cat.name}>
+                              {cat.name} ({cat.nameAr})
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -6034,25 +6606,32 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                       const daySlots = slots.filter((s) => s.date === dateStr);
                       const bookedCount = daySlots.filter((s) => s.status === 'BOOKED').length;
                       const isBlocked = blockedDates.includes(dateStr);
+                      const isSelectedForHourEdit = adminSelectedHourDate === dateStr;
+                      const dayBlockedHours = blockedHoursByDate[dateStr] || [];
 
                       return (
                         <button
                           key={dateStr}
                           type="button"
-                          onClick={() => handleToggleBlockedDate(dateStr)}
+                          onClick={() => {
+                            setAdminSelectedHourDate(dateStr);
+                            setAdminSelectedFilterDate(dateStr);
+                          }}
                           className={`aspect-square p-1.5 sm:p-2 rounded-2xl border text-center transition-all flex flex-col justify-between items-center relative ${
+                            isSelectedForHourEdit ? 'ring-2 ring-brand-700 shadow-md' : ''
+                          } ${
                             isBlocked
                               ? 'border-red-300 bg-red-50 hover:bg-red-100/80 text-red-900 shadow-sm'
+                              : dayBlockedHours.length > 0
+                              ? 'border-orange-300 bg-orange-50/60 hover:bg-orange-100/80 text-orange-950'
                               : 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/70 text-navy-900'
                           }`}
                           title={
                             isBlocked
-                              ? isRtl
-                                ? 'هذا اليوم محجوز بالكامل — اضغط لإتاحته للطلاب'
-                                : 'Blocked Day — Click to open'
+                              ? isRtl ? 'هذا اليوم محجوز بالكامل' : 'Fully Blocked Day'
                               : isRtl
-                              ? 'هذا اليوم متاح للطلاب — اضغط لتحديده كمحجوز'
-                              : 'Open Day — Click to mark as booked'
+                              ? `اضغط لإدارة ساعات يوم ${dateStr}`
+                              : `Click to manage hours for ${dateStr}`
                           }
                         >
                           <span
@@ -6068,6 +6647,10 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                               <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full font-extrabold bg-red-600 text-white w-full truncate">
                                 {isRtl ? '🔒 محجوز' : '🔒 Busy'}
                               </span>
+                            ) : dayBlockedHours.length > 0 ? (
+                              <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full font-extrabold bg-orange-600 text-white w-full truncate">
+                                {isRtl ? `🔒 ${dayBlockedHours.length} س` : `🔒 ${dayBlockedHours.length}h`}
+                              </span>
                             ) : (
                               <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full font-extrabold bg-emerald-600 text-white w-full truncate">
                                 {isRtl ? '✓ متاح' : '✓ Open'}
@@ -6082,6 +6665,122 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         </button>
                       );
                     })}
+                  </div>
+
+                  {/* HOURLY AVAILABILITY & BLOCKED HOURS MANAGER */}
+                  <div className="p-5 rounded-3xl bg-surface-muted/60 border-2 border-brand-300 space-y-4 shadow-sm animate-in fade-in">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-surface-border">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-2xl bg-brand-100 text-brand-800 flex items-center justify-center font-bold shrink-0">
+                          <Clock className="w-5 h-5 text-brand-700" />
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-navy-950 text-sm flex items-center gap-2">
+                            <span>{isRtl ? 'إدارة الساعات المتاحة والغير متاحة ليوم:' : 'Hourly Availability for:'}</span>
+                            <span className="font-mono text-brand-800 bg-white px-2 py-0.5 rounded-lg border border-brand-200">
+                              {adminSelectedHourDate}
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-navy-500">
+                            {isRtl
+                              ? 'اضغط على أي ساعة لتحديدها كـ "غير متاحة / محجوزة" أو "متاحة" للطلاب. الساعات المحجوزة ستظهر للطلاب مقفلة ولا يمكن حجزها.'
+                              : 'Click any hour to toggle between (Available) and (Blocked). Blocked hours cannot be booked by students.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Quick Full-Day Toggle Button */}
+                      <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleBlockedDate(adminSelectedHourDate)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs ${
+                            blockedDates.includes(adminSelectedHourDate)
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                              : 'bg-red-600 hover:bg-red-700 text-white'
+                          }`}
+                        >
+                          {blockedDates.includes(adminSelectedHourDate)
+                            ? (isRtl ? '🔓 إلغاء قفل اليوم بالكامل' : 'Unblock Full Day')
+                            : (isRtl ? '🔒 قفل اليوم بالكامل (محجوز)' : 'Block Entire Day')}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Hourly Grid (Day + Night hours) */}
+                    {blockedDates.includes(adminSelectedHourDate) ? (
+                      <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-center text-xs text-red-800 font-bold">
+                        ⚠️ {isRtl
+                          ? 'هذا اليوم محدد كـ (محجوز بالكامل) ولن يظهر للطلاب أي ساعات متاحة فيه. لإدارة الساعات الفردية، قم بإلغاء قفل اليوم أولاً.'
+                          : 'This date is marked as Fully Blocked. Unblock the full day above to manage individual hours.'}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-xs font-extrabold text-navy-900">
+                          <span>{isRtl ? 'ساعات اليوم المتاحة للحجز (اضغط لتغيير الحالة):' : 'Day hours (click to toggle):'}</span>
+                          <span className="text-[11px] text-navy-500 font-normal">
+                            {isRtl
+                              ? `المحجوز حالياً: (${(blockedHoursByDate[adminSelectedHourDate] || []).length} ساعة)`
+                              : `Currently blocked: ${(blockedHoursByDate[adminSelectedHourDate] || []).length} hrs`}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                          {Array.from({ length: 24 }).map((_, h) => {
+                            const time12 = formatHour12(h, 'en');
+                            const time12Ar = formatHour12(h, 'ar');
+                            const isHourBlocked = (blockedHoursByDate[adminSelectedHourDate] || []).some(
+                              (bh) => bh.replace(/\s*UTC$/i, '').trim().toLowerCase() === time12.toLowerCase()
+                            );
+                            const calc = calculateSlotPrice(time12, slotPricingForm);
+
+                            return (
+                              <button
+                                key={time12}
+                                type="button"
+                                onClick={() => handleToggleBlockedHour(time12)}
+                                className={`p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-between gap-1 text-xs font-bold ${
+                                  isHourBlocked
+                                    ? 'bg-red-50 border-red-300 text-red-900 shadow-xs'
+                                    : 'bg-white border-emerald-200 text-navy-900 hover:border-brand-400 hover:shadow-xs'
+                                }`}
+                              >
+                                <div className="flex items-center gap-1 font-mono text-[11px]">
+                                  <span>{calc.icon}</span>
+                                  <span>{isRtl ? time12Ar : time12}</span>
+                                </div>
+                                <span
+                                  className={`text-[9px] px-2 py-0.5 rounded-full font-extrabold ${
+                                    isHourBlocked
+                                      ? 'bg-red-600 text-white'
+                                      : 'bg-emerald-100 text-emerald-800'
+                                  }`}
+                                >
+                                  {isHourBlocked ? (isRtl ? '🔒 غير متاح' : '🔒 Blocked') : (isRtl ? '✓ متاح' : '✓ Open')}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Custom Hour Input Form */}
+                        <form onSubmit={handleAddCustomUnavailableHour} className="pt-2 flex items-center gap-2 max-w-sm">
+                          <input
+                            type="text"
+                            value={customUnavailableHour}
+                            onChange={(e) => setCustomUnavailableHour(e.target.value)}
+                            placeholder={isRtl ? 'إضافة توقيت مخصص غير متاح (مثال: 03:30 PM)' : 'Custom blocked time (e.g. 03:30 PM)'}
+                            className="flex-1 px-3 py-1.5 rounded-xl border border-surface-border text-xs bg-white font-mono"
+                          />
+                          <button
+                            type="submit"
+                            className="px-3 py-1.5 rounded-xl bg-navy-900 text-white font-bold text-xs hover:bg-navy-950 shrink-0"
+                          >
+                            {isRtl ? 'حظر هذا التوقيت' : 'Block Time'}
+                          </button>
+                        </form>
+                      </div>
+                    )}
                   </div>
 
                   {/* Summary of Blocked Dates */}
@@ -6389,28 +7088,50 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
           {/* ============================================================== */}
           {activeNav === 'RESOURCES' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-surface-border shadow-card-subtle">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-surface-border shadow-card-subtle">
                 <div>
                   <h3 className="text-sm font-bold text-navy-950">
                     {isRtl ? 'إدارة المكتبة الرقمية والملفات التعليمية' : 'Digital Educational Library Files'}
                   </h3>
                   <p className="text-xs text-navy-500">
-                    {isRtl ? 'إضافة ملفات PDF ومخططات التجويد والملفات الصوتية للطلاب' : 'Upload downloadable charts, tables, and audio guides'}
+                    {isRtl ? 'إضافة ملفات PDF ومخططات التجويد والملفات الصوتية (مجانية أو مدفوعة) للطلاب' : 'Upload downloadable charts, tables, and audio guides'}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowResourceModal(true);
-                    setTimeout(() => {
-                      document.getElementById('resource-inline-editor')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 50);
-                  }}
-                  className="px-3 py-2 rounded-xl bg-brand-700 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-brand-800 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>{isRtl ? 'إضافة ملف للمكتبة' : 'Add Resource'}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoriesModal(true)}
+                    className="px-3 py-2 rounded-xl bg-surface-muted hover:bg-surface-elevated text-navy-800 border border-surface-border text-xs font-bold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Layers className="w-4 h-4 text-brand-700" />
+                    <span>{isRtl ? `إدارة التصنيفات (${categoriesList.length})` : `Categories (${categoriesList.length})`}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResourceFormData({
+                        title: '',
+                        titleAr: '',
+                        category: categoriesList[0]?.name || 'Tajweed',
+                        fileType: 'PDF',
+                        fileUrl: '/downloads/resource.pdf',
+                        fileSizeMb: 3.5,
+                        isPremium: false,
+                        isFree: true,
+                        price: 0,
+                        currency: 'USD',
+                      });
+                      setShowResourceModal(true);
+                      setTimeout(() => {
+                        document.getElementById('resource-inline-editor')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 50);
+                    }}
+                    className="px-3 py-2 rounded-xl bg-brand-700 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-brand-800 transition-colors shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{isRtl ? 'إضافة ملف للمكتبة' : 'Add Resource'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* INLINE RESOURCE CREATION FORM (No Popups!) */}
@@ -6477,12 +7198,13 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         <select
                           value={resourceFormData.category}
                           onChange={(e) => setResourceFormData({ ...resourceFormData, category: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border"
+                          className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
                         >
-                          <option value="Tajweed">Tajweed (التجويد)</option>
-                          <option value="Arabic Grammar">Arabic Grammar (النحو والصرف)</option>
-                          <option value="Quran Memorization">Quran Memorization (جداول الحفظ)</option>
-                          <option value="Audio Guide">Audio Guide (ملفات صوتية)</option>
+                          {categoriesList.map((cat) => (
+                            <option key={cat.id} value={cat.name}>
+                              {cat.name} ({cat.nameAr})
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -6533,6 +7255,51 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                       </div>
                     </div>
 
+                    {/* Free vs Paid Pricing Selector */}
+                    <div className="p-3.5 rounded-2xl bg-surface-muted/60 border border-surface-border space-y-2.5">
+                      <span className="font-extrabold text-navy-800 block text-xs">
+                        {isRtl ? 'تسعير وحالة الملف بالمكتبة:' : 'Resource Pricing & Availability:'}
+                      </span>
+                      <div className="flex flex-wrap items-center gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer font-bold text-navy-800 text-xs">
+                          <input
+                            type="radio"
+                            name="admin_res_pricing_choice"
+                            checked={resourceFormData.isFree}
+                            onChange={() => setResourceFormData({ ...resourceFormData, isFree: true, price: 0, isPremium: false })}
+                            className="text-brand-700"
+                          />
+                          <span>{isRtl ? '✨ مجاني للتحميل المباشر للجميع' : 'Free Download'}</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer font-bold text-navy-800 text-xs">
+                          <input
+                            type="radio"
+                            name="admin_res_pricing_choice"
+                            checked={!resourceFormData.isFree}
+                            onChange={() => setResourceFormData({ ...resourceFormData, isFree: false, price: resourceFormData.price || 10, isPremium: true })}
+                            className="text-brand-700"
+                          />
+                          <span>{isRtl ? '🔒 مدفوع / للشراء المباشر' : 'Paid Resource'}</span>
+                        </label>
+                      </div>
+
+                      {!resourceFormData.isFree && (
+                        <div className="pt-1.5 flex items-center gap-2">
+                          <label className="font-bold text-navy-700 text-xs shrink-0">
+                            {isRtl ? 'سعر الملف ($ USD):' : 'Price ($ USD):'}
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={resourceFormData.price}
+                            onChange={(e) => setResourceFormData({ ...resourceFormData, price: Number(e.target.value) })}
+                            className="w-32 px-3 py-1.5 rounded-xl border border-surface-border bg-white font-bold font-mono text-xs"
+                          />
+                        </div>
+                      )}
+                    </div>
+
                     <div className="pt-3 border-t border-surface-borderSubtle flex justify-end gap-2">
                       <button
                         type="button"
@@ -6561,9 +7328,20 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="badge-light text-[10px]">{res.category}</span>
-                        <span className="text-[11px] font-bold text-navy-500">
-                          {res.fileType} • {res.fileSizeMb} MB
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {res.isFree === false || (typeof res.price === 'number' && res.price > 0) ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-200">
+                              🔒 ${res.price || 10}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                              {isRtl ? '✨ مجاني' : 'Free'}
+                            </span>
+                          )}
+                          <span className="text-[11px] font-bold text-navy-500 font-mono">
+                            {res.fileType} • {res.fileSizeMb} MB
+                          </span>
+                        </div>
                       </div>
 
                       <h4 className="font-extrabold text-navy-950 text-sm leading-snug">
@@ -6574,6 +7352,32 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     <div className="pt-3 border-t border-surface-border flex items-center justify-between text-xs text-navy-500">
                       <span>{res.downloads.toLocaleString()} {isRtl ? 'تحميل' : 'Downloads'}</span>
                       <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResourceFormData({
+                              title: res.title,
+                              titleAr: res.titleAr || res.title,
+                              category: res.category,
+                              fileType: res.fileType,
+                              fileUrl: res.fileUrl,
+                              fileSizeMb: res.fileSizeMb,
+                              isPremium: res.isPremium,
+                              isFree: res.isFree ?? !res.isPremium,
+                              price: res.price || 0,
+                              currency: res.currency || 'USD',
+                              ...({ id: res.id } as any),
+                            });
+                            setShowResourceModal(true);
+                            setTimeout(() => {
+                              document.getElementById('resource-inline-editor')?.scrollIntoView({ behavior: 'smooth' });
+                            }, 50);
+                          }}
+                          className="p-1 text-navy-600 hover:text-navy-900"
+                          title={isRtl ? 'تعديل' : 'Edit'}
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
                         <a
                           href={res.fileUrl}
                           target="_blank"
@@ -6673,6 +7477,28 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                   >
                     <Smartphone className="w-4 h-4 shrink-0" />
                     <span>{isRtl ? 'بوابة شحناوي (محافظ مصر)' : 'Shehnawi Wallets'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFinanceSubTab('CUSTOM_PAYMENTS')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      financeSubTab === 'CUSTOM_PAYMENTS'
+                        ? 'bg-amber-700 text-white shadow-card-subtle'
+                        : 'bg-amber-100 text-amber-900 border border-amber-200 hover:bg-amber-200'
+                    }`}
+                  >
+                    <Globe className="w-4 h-4 shrink-0" />
+                    <span>{isRtl ? 'طرق الدفع الإضافية (Western Union, Wise...)' : 'Custom Payment Methods'}</span>
+                    <span
+                      className={`ms-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                        financeSubTab === 'CUSTOM_PAYMENTS'
+                          ? 'bg-white/20 text-white'
+                          : 'bg-amber-200 text-amber-950'
+                      }`}
+                    >
+                      {customMethodsList.length}
+                    </span>
                   </button>
                 </div>
 
@@ -6871,6 +7697,13 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                             : `Shehnawi (${tx.walletProvider || 'E-Wallet'})`}
                                         </span>
                                       </span>
+                                    ) : tx.paymentMethod === 'CUSTOM' || tx.customMethodName || (tx.paypalOrderId && tx.paypalOrderId.startsWith('CUST-')) ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-200 inline-flex items-center gap-1">
+                                        <Building2 className="w-3 h-3 text-amber-700" />
+                                        <span>
+                                          {tx.customMethodName || (isRtl ? 'تحويل مخصص' : 'Custom Transfer')}
+                                        </span>
+                                      </span>
                                     ) : (
                                       <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-900 border border-blue-200 inline-flex items-center gap-1">
                                         <CreditCard className="w-3 h-3 text-blue-700" />
@@ -6885,6 +7718,16 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                   {tx.senderWalletNumber && (
                                     <div className="text-[11px] font-mono text-purple-800 font-semibold mt-0.5">
                                       📱 {isRtl ? 'محفظة العميل:' : 'Wallet:'} {tx.senderWalletNumber}
+                                    </div>
+                                  )}
+                                  {tx.referenceNumber && (
+                                    <div className="text-[11px] font-mono text-amber-900 font-semibold mt-0.5 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block">
+                                      🔑 {isRtl ? 'رقم الحوالة / MTCN:' : 'Ref / MTCN:'} {tx.referenceNumber}
+                                    </div>
+                                  )}
+                                  {tx.notes && (
+                                    <div className="text-[10px] text-navy-500 italic mt-0.5">
+                                      {tx.notes}
                                     </div>
                                   )}
                                   {tx.transactionRef && (
@@ -6903,9 +7746,28 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                   )}
                                 </td>
                                 <td className="p-4">
-                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-                                    {tx.status}
+                                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                                    tx.status === 'COMPLETED'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : tx.status === 'PENDING'
+                                      ? 'bg-amber-100 text-amber-900 border border-amber-300 animate-pulse'
+                                      : 'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {tx.status === 'PENDING' && isRtl ? 'قيد المراجعة' : tx.status}
                                   </span>
+                                  {tx.status === 'PENDING' && (
+                                    <div className="mt-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleApproveTransaction(tx.id)}
+                                        className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg shadow-sm flex items-center gap-1 transition-colors"
+                                        title={isRtl ? 'اعتماد واستلام المبلغ' : 'Approve payment'}
+                                      >
+                                        <Check className="w-3 h-3" />
+                                        <span>{isRtl ? 'اعتماد واستلام' : 'Approve'}</span>
+                                      </button>
+                                    </div>
+                                  )}
                                 </td>
                                 <td className="p-4 text-navy-500 text-[11px] font-mono">{tx.date}</td>
                                 <td className="p-4 text-end">
@@ -7169,10 +8031,130 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                   {renderShehnawiSettingsCard()}
                 </div>
               )}
+
+              {/* Sub-tab 5: CUSTOM PAYMENT METHODS (Western Union, Wise, Tab Tab...) */}
+              {financeSubTab === 'CUSTOM_PAYMENTS' && (
+                <div className="space-y-6">
+                  {renderCustomPaymentMethodsTab()}
+                </div>
+              )}
             </div>
           )}
         </main>
       </div>
+
+      {/* CATEGORIES MANAGEMENT MODAL */}
+      {showCategoriesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/70 backdrop-blur-xs animate-in fade-in">
+          <div
+            className="bg-white rounded-3xl border border-surface-border shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-5 animate-in zoom-in-95"
+            dir={isRtl ? 'rtl' : 'ltr'}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-200">
+                  <Layers className="w-5 h-5 text-brand-700" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-navy-950 text-base">
+                    {isRtl ? 'إدارة التصنيفات (Categories)' : 'Manage Categories'}
+                  </h3>
+                  <p className="text-[11px] text-navy-500">
+                    {isRtl ? 'إضافة أو حذف تصنيفات الدورات والمكتبة الرقمية' : 'Add or delete course and resource categories'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCategoriesModal(false)}
+                className="w-8 h-8 rounded-full bg-surface-muted hover:bg-surface-elevated text-navy-600 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form to Add New Category */}
+            <form onSubmit={handleSaveCategory} className="p-4 rounded-2xl bg-surface-muted/60 border border-surface-border space-y-3 text-xs">
+              <span className="font-extrabold text-navy-900 block">
+                {isRtl ? '➕ إضافة تصنيف جديد:' : '➕ Add New Category:'}
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="font-bold text-navy-700 block mb-1">
+                    {isRtl ? 'اسم التصنيف (English)' : 'Category Name (English)'} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newCatNameEn}
+                    onChange={(e) => setNewCatNameEn(e.target.value)}
+                    placeholder="e.g. Islamic Studies"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-navy-700 block mb-1">
+                    {isRtl ? 'اسم التصنيف (بالعربي)' : 'Category Name (Arabic)'} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newCatNameAr}
+                    onChange={(e) => setNewCatNameAr(e.target.value)}
+                    placeholder="مثال: الدراسات الإسلامية"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-arabic"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end pt-1">
+                <button
+                  type="submit"
+                  disabled={savingCategory}
+                  className="px-4 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{isRtl ? 'حفظ وإضافة التصنيف' : 'Add Category'}</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Existing Categories List */}
+            <div className="space-y-2">
+              <span className="font-extrabold text-navy-900 block text-xs">
+                {isRtl ? `التصنيفات الحالية (${categoriesList.length}):` : `Active Categories (${categoriesList.length}):`}
+              </span>
+              <div className="divide-y divide-surface-borderSubtle max-h-60 overflow-y-auto border border-surface-border rounded-2xl">
+                {categoriesList.map((cat) => (
+                  <div key={cat.id} className="p-3 flex items-center justify-between hover:bg-surface-muted/50 transition-colors text-xs">
+                    <div>
+                      <strong className="text-navy-950 font-bold block">{cat.name}</strong>
+                      <span className="text-navy-500 font-arabic text-[11px]">{cat.nameAr}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                      className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-800 transition-colors"
+                      title={isRtl ? 'حذف هذا التصنيف' : 'Delete category'}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCategoriesModal(false)}
+                className="px-4 py-2 rounded-xl border border-surface-border bg-surface-muted text-navy-800 font-bold text-xs hover:bg-surface-elevated"
+              >
+                {isRtl ? 'إغلاق' : 'Close'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

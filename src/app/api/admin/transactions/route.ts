@@ -71,6 +71,32 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, status } = body;
+    if (!id || !status) {
+      return NextResponse.json({ success: false, error: 'ID and status required' }, { status: 400 });
+    }
+    const txs = getTransactions();
+    const existing = txs.find((t) => t.id === id);
+    if (!existing) {
+      return NextResponse.json({ success: false, error: 'Transaction not found' }, { status: 404 });
+    }
+    const updated = saveTransaction({
+      ...existing,
+      status,
+    });
+    return NextResponse.json({
+      success: true,
+      transaction: updated,
+      transactions: getTransactions(),
+    });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: 'Failed to update transaction' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);

@@ -24,7 +24,7 @@ import { SUPPORTED_WALLETS, WalletProviderOption, SHA7NAWY_ERROR_CODES } from '@
 
 interface ShehnawiCheckoutButtonProps {
   itemId: string;
-  itemType: 'COURSE' | 'PRIVATE_LESSON';
+  itemType: 'COURSE' | 'PRIVATE_LESSON' | 'RESOURCE';
   itemTitle: string;
   amount: number; // in USD
   slotDate?: string;

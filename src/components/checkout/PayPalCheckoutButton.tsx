@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils';
 
 interface PayPalCheckoutButtonProps {
   itemId: string;
-  itemType: 'COURSE' | 'PRIVATE_LESSON';
+  itemType: 'COURSE' | 'PRIVATE_LESSON' | 'RESOURCE';
   itemTitle: string;
   amount: number;
   currency?: string;
