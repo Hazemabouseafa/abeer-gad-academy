@@ -189,7 +189,7 @@ export function MediaInputWithChoice({
   // Fetch current server storage usage
   const fetchStorageUsage = async () => {
     try {
-      const res = await fetch('/api/admin/upload');
+      const res = await fetch('/api/admin/upload', { cache: 'no-store' });
       const data = await res.json();
       if (data.success) {
         setServerStorage({
@@ -269,7 +269,7 @@ export function MediaInputWithChoice({
           fetchStorageUsage(); // Update storage usage
         } else {
           setUploadPhase('ERROR');
-          // Exact error from server when 5GB limit is hit
+          // Exact error from server when 10GB limit is hit
           setUploadError(data.error || (isRtl ? 'فشل رفع الملف إلى السيرفر' : 'Failed to upload file'));
           fetchStorageUsage();
         }
@@ -349,7 +349,7 @@ export function MediaInputWithChoice({
       {/* Mode 1: Server Direct Upload with Compression & Progress Bar */}
       {mode === 'UPLOAD' && (
         <div className="space-y-2">
-          {/* Server 5 GB Storage Indicator */}
+          {/* Server 10 GB Storage Indicator */}
           {serverStorage && (
             <div className="p-2.5 rounded-xl bg-surface-muted/60 border border-surface-borderSubtle flex items-center justify-between gap-2 text-[11px]">
               <div className="flex items-center gap-1.5 text-navy-700">
@@ -492,7 +492,7 @@ export function MediaInputWithChoice({
             </div>
           )}
 
-          {/* ERROR ALERT (e.g. 5 GB Storage Exceeded) */}
+          {/* ERROR ALERT (e.g. 10 GB Storage Exceeded) */}
           {uploadError && (
             <div className="flex items-start gap-2 text-red-700 text-xs bg-red-50 p-3 rounded-2xl border-2 border-red-300 shadow-sm animate-in fade-in">
               <AlertCircle className="w-5 h-5 shrink-0 text-red-600 mt-0.5" />
@@ -500,8 +500,8 @@ export function MediaInputWithChoice({
                 <span className="font-black block text-sm">{uploadError}</span>
                 <span className="text-[11px] text-red-600 block">
                   {isRtl
-                    ? 'الحد الأقصى المسموح به لرفع الملفات على السيرفر هو 5 جيجابايت. يُرجى مراجعة الملفات أو التواصل مع الدعم.'
-                    : 'The total storage limit is 5 GB. Please contact the administrator.'}
+                    ? 'الحد الأقصى المسموح به لرفع الملفات على السيرفر هو 10 جيجابايت. يُرجى مراجعة الملفات أو التواصل مع الدعم.'
+                    : 'The total storage limit is 10 GB. Please contact the administrator.'}
                 </span>
               </div>
             </div>

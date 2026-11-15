@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from '@/i18n/routing';
 import type { ServiceCardItem } from '@/lib/data-store';
+import { formatWhatsAppNumber } from '@/lib/utils';
 import {
   BookOpen,
   ScrollText,
@@ -629,14 +630,13 @@ export function ServicesCardsSection({ currentLocale }: ServicesCardsSectionProp
     let isMounted = true;
     async function loadSettings() {
       try {
-        const res = await fetch('/api/admin/settings');
+        const res = await fetch('/api/admin/settings', { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
         if (!isMounted) return;
 
         if (data.settings?.whatsappNumber) {
-          const rawWa = data.settings.whatsappNumber.replace(/[^0-9]/g, '');
-          if (rawWa) setWhatsappNum(rawWa);
+          setWhatsappNum(formatWhatsAppNumber(data.settings.whatsappNumber));
         }
 
         if (Array.isArray(data.settings?.services) && data.settings.services.length > 0) {

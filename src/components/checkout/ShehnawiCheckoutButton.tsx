@@ -452,7 +452,7 @@ export function ShehnawiCheckoutButton({
                     </p>
 
                     {selectedWallet.ussdCode && (
-                      <div className="p-2.5 rounded-xl bg-white border border-amber-200 text-center font-mono font-black text-sm text-brand-800">
+                      <div dir="ltr" className="p-2.5 rounded-xl bg-white border border-amber-200 text-center font-mono font-black text-sm text-brand-800 [unicode-bidi:isolate]">
                         {selectedWallet.ussdCode}
                       </div>
                     )}
@@ -625,10 +625,11 @@ export function ShehnawiCheckoutButton({
                           <input
                             type="tel"
                             required
+                            dir="ltr"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="010XXXXXXXX"
-                            className="w-full px-3 py-2 ps-8 rounded-xl border border-surface-border text-xs focus:ring-2 focus:ring-brand-500/20 font-mono"
+                            className="w-full px-3 py-2 ps-8 rounded-xl border border-surface-border text-xs text-start focus:ring-2 focus:ring-brand-500/20 font-mono"
                           />
                           <Phone className="w-3.5 h-3.5 absolute start-2.5 top-2.5 text-navy-400" />
                         </div>
@@ -644,10 +645,11 @@ export function ShehnawiCheckoutButton({
                           <input
                             type="text"
                             required
+                            dir="ltr"
                             value={senderWallet}
                             onChange={(e) => setSenderWallet(e.target.value)}
                             placeholder="010XXXXXXXX"
-                            className="w-full px-3 py-2 ps-8 rounded-xl border border-brand-300 bg-brand-50/20 text-xs focus:ring-2 focus:ring-brand-500/20 font-mono font-bold text-navy-950"
+                            className="w-full px-3 py-2 ps-8 rounded-xl border border-brand-300 bg-brand-50/20 text-xs text-start focus:ring-2 focus:ring-brand-500/20 font-mono font-bold text-navy-950"
                           />
                           <Smartphone className="w-3.5 h-3.5 absolute start-2.5 top-2.5 text-brand-600" />
                         </div>

@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { MessageCircle, Phone, Sparkles, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import {
+  formatPhoneDisplay,
+  formatTelHref,
+  formatWhatsAppNumber,
+} from '@/lib/utils';
 
 interface QuickConsultationBannerProps {
   currentLocale: string;
@@ -16,16 +21,15 @@ export function QuickConsultationBanner({ currentLocale }: QuickConsultationBann
     let isMounted = true;
     async function loadSettings() {
       try {
-        const res = await fetch('/api/admin/settings');
+        const res = await fetch('/api/admin/settings', { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
         if (!isMounted) return;
         if (data.settings?.whatsappNumber) {
-          const rawWa = data.settings.whatsappNumber.replace(/[^0-9]/g, '');
-          if (rawWa) setWhatsappNum(rawWa);
+          setWhatsappNum(formatWhatsAppNumber(data.settings.whatsappNumber));
         }
         if (data.settings?.contactPhone) {
-          setPhoneDisplay(data.settings.contactPhone);
+          setPhoneDisplay(formatPhoneDisplay(data.settings.contactPhone));
         }
       } catch (e) {
         // Fallback gracefully
@@ -99,11 +103,13 @@ export function QuickConsultationBanner({ currentLocale }: QuickConsultationBann
               </a>
 
               <a
-                href={`tel:${phoneDisplay.replace(/\s+/g, '')}`}
+                href={formatTelHref(phoneDisplay)}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs sm:text-sm backdrop-blur-md transition-all duration-200"
               >
                 <Phone className="w-4 h-4 text-gold-300" />
-                <span dir="ltr">{phoneDisplay}</span>
+                <span dir="ltr" className="inline-block [unicode-bidi:isolate] font-mono tabular-nums">
+                  {phoneDisplay}
+                </span>
               </a>
             </div>
           </div>

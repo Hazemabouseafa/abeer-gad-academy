@@ -17,6 +17,12 @@ import {
   Video,
 } from 'lucide-react';
 import type { SiteSettingsData } from '@/lib/data-store';
+import {
+  formatPhoneDisplay,
+  formatTelHref,
+  formatTelegramUrl,
+  formatWhatsAppNumber,
+} from '@/lib/utils';
 
 interface FooterProps {
   currentLocale: string;
@@ -32,7 +38,7 @@ export function Footer({ currentLocale }: FooterProps) {
   const [settings, setSettings] = useState<Partial<SiteSettingsData>>({});
 
   useEffect(() => {
-    fetch('/api/admin/settings')
+    fetch('/api/admin/settings', { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => {
         if (d.settings) setSettings(d.settings);
@@ -47,8 +53,10 @@ export function Footer({ currentLocale }: FooterProps) {
 
   const currentYear = new Date().getFullYear();
   const contactEmail = settings.contactEmail || 'contact@abeergadacademy.com';
-  const contactPhone = settings.contactPhone || '+20 100 000 0000';
-  const whatsappNum = settings.whatsappNumber ? settings.whatsappNumber.replace(/[^0-9]/g, '') : '201000000000';
+  const contactPhone = formatPhoneDisplay(settings.contactPhone || '+20 100 000 0000');
+  const contactTelHref = formatTelHref(contactPhone);
+  const whatsappNum = formatWhatsAppNumber(settings.whatsappNumber);
+  const telegramHref = formatTelegramUrl(settings.telegramLink);
   const aboutText = isRtl
     ? (settings.footerAboutAr || tFooter('about'))
     : (settings.footerAboutEn || tFooter('about'));
@@ -239,11 +247,13 @@ export function Footer({ currentLocale }: FooterProps) {
 
               {contactPhone && (
                 <a
-                  href={`tel:${contactPhone.replace(/\s+/g, '')}`}
-                  className="p-3 bg-white hover:bg-surface-muted rounded-xl border border-surface-border shadow-card-subtle flex items-center gap-3 transition-colors text-xs font-semibold text-navy-800 font-mono"
+                  href={contactTelHref}
+                  className="p-3 bg-white hover:bg-surface-muted rounded-xl border border-surface-border shadow-card-subtle flex items-center gap-3 transition-colors text-xs font-semibold text-navy-800"
                 >
                   <Phone className="w-4 h-4 text-brand-700 shrink-0" />
-                  <span>{contactPhone}</span>
+                  <span dir="ltr" className="inline-block [unicode-bidi:isolate] font-mono tabular-nums">
+                    {contactPhone}
+                  </span>
                 </a>
               )}
 
@@ -260,9 +270,9 @@ export function Footer({ currentLocale }: FooterProps) {
                   <span>{isRtl ? 'واتساب' : 'WhatsApp'}</span>
                 </a>
 
-                {settings.telegramLink && (
+                {telegramHref && (
                   <a
-                    href={settings.telegramLink}
+                    href={telegramHref}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-xs font-bold flex items-center gap-1.5 transition-colors"

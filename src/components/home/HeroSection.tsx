@@ -31,7 +31,7 @@ export function HeroSection({ currentLocale, initialSettings }: HeroSectionProps
   const [settings, setSettings] = useState<Partial<SiteSettingsData>>(initialSettings || {});
 
   useEffect(() => {
-    fetch('/api/admin/settings')
+    fetch('/api/admin/settings', { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => {
         if (d.settings) setSettings(d.settings);

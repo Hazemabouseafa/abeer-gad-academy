@@ -4,8 +4,10 @@ import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-// Maximum allowed storage for uploads: 5 Gigabytes (5 * 1024 * 1024 * 1024 bytes)
-const MAX_STORAGE_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB = 5,368,709,120 bytes
+// Maximum allowed storage for uploads: 10 Gigabytes (10 * 1024 * 1024 * 1024 bytes)
+const MAX_STORAGE_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB = 10,737,418,240 bytes
+const MAX_STORAGE_GB = 10;
+const MAX_STORAGE_MB = MAX_STORAGE_GB * 1024; // 10240 MB
 
 /**
  * Recursively calculates the total disk size in bytes of a directory
@@ -47,9 +49,9 @@ export async function GET() {
       usedBytes: currentUsageBytes,
       maxBytes: MAX_STORAGE_BYTES,
       usedMb,
-      maxMb: 5120,
+      maxMb: MAX_STORAGE_MB,
       usedGb,
-      maxGb: 5,
+      maxGb: MAX_STORAGE_GB,
       percentage: Math.min(percentage, 100),
       isExceeded: currentUsageBytes >= MAX_STORAGE_BYTES,
     });
@@ -73,7 +75,7 @@ export async function POST(request: Request) {
       fs.mkdirSync(baseUploadsDir, { recursive: true });
     }
 
-    // 1. Check current storage usage before saving file (Strict 5 GB Limit)
+    // 1. Check current storage usage before saving file (Strict 10 GB Limit)
     const currentUsageBytes = getDirectorySizeBytes(baseUploadsDir);
     const newFileSize = file.size;
 
@@ -82,7 +84,7 @@ export async function POST(request: Request) {
         {
           success: false,
           error: 'لقد استنفذت المساحة المتاحة لك على السيرفر تواصل مع المدير',
-          errorEn: 'You have exhausted the available server storage space (5 GB limit). Please contact the administrator.',
+          errorEn: 'You have exhausted the available server storage space (10 GB limit). Please contact the administrator.',
           storageExceeded: true,
           currentUsageBytes,
           maxStorageBytes: MAX_STORAGE_BYTES,
@@ -130,7 +132,8 @@ export async function POST(request: Request) {
         usedBytes: updatedUsageBytes,
         maxBytes: MAX_STORAGE_BYTES,
         usedMb: parseFloat((updatedUsageBytes / (1024 * 1024)).toFixed(2)),
-        maxMb: 5120,
+        maxMb: MAX_STORAGE_MB,
+        maxGb: MAX_STORAGE_GB,
         percentage: parseFloat(((updatedUsageBytes / MAX_STORAGE_BYTES) * 100).toFixed(1)),
       },
     });

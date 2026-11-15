@@ -121,7 +121,8 @@ export async function PATCH(request: Request) {
       }
     }
 
-    const updated = updateSiteSettings(body);
+    const { autoTranslate: _autoTranslate, ...cleanSettingsBody } = body;
+    const updated = updateSiteSettings(cleanSettingsBody);
     return NextResponse.json({ success: true, settings: updated });
   } catch (error) {
     console.error('Settings update error:', error);

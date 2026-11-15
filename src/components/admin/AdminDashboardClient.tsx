@@ -56,7 +56,7 @@ import {
   Send,
   Building2,
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatPhoneDisplay } from '@/lib/utils';
 import {
   calculateSlotPrice,
   DEFAULT_SLOT_PRICING,
@@ -182,6 +182,10 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     contactEmail: 'contact@abeergadacademy.com',
     contactPhone: '+20 100 000 0000',
     whatsappNumber: '+201000000000',
+    telegramLink: 'https://t.me/AbeerGadAcademy',
+    youtubeLink: 'https://youtube.com/@AbeerGadAcademy',
+    showFloatingWhatsapp: true,
+    showFloatingTelegram: true,
     heroBadgeAr: 'أكاديمية عبير جاد لعلوم القرآن والعربية',
     heroBadgeEn: 'Abeer Gad Academy • Quran & Arabic Mastery',
     heroTitleAr: 'تعلّم العربية، اقرأ واحفظ القرآن الكريم',
@@ -410,7 +414,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     progressPercentage: 0,
   });
 
-  // Server 5 GB Storage Usage State
+  // Server 10 GB Storage Usage State
   const [serverStorage, setServerStorage] = useState<{
     usedMb: number;
     maxMb: number;
@@ -1258,6 +1262,24 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
     } catch (err) {
       console.error(err);
       alert('Error updating settings');
+    }
+  };
+
+  const handleQuickPatchSettings = async (patch: Partial<SiteSettingsData>, toastMsg?: string) => {
+    setSettings((prev) => ({ ...prev, ...patch }));
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...patch, autoTranslate: false }),
+      });
+      const data = await res.json();
+      if (data.success && data.settings) {
+        setSettings(data.settings);
+        if (toastMsg) triggerToast(toastMsg);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -2125,10 +2147,11 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                   </label>
                   <input
                     type="text"
+                    dir="ltr"
                     value={methodFormData.phone}
                     onChange={(e) => setMethodFormData({ ...methodFormData, phone: e.target.value })}
                     placeholder="+20 100 000 0000"
-                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-mono"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-mono text-start"
                   />
                 </div>
                 <div>
@@ -2256,7 +2279,14 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     <span className="text-navy-500 block text-[10px] uppercase font-bold">{isRtl ? 'المستلم:' : 'Recipient:'}</span>
                     <strong className="text-navy-950 block">{isRtl ? m.recipientNameAr || m.recipientName : m.recipientName}</strong>
                     {m.country && <span className="text-navy-600 block text-[11px]">📍 {m.country}</span>}
-                    {m.phone && <span className="text-navy-600 block text-[11px] font-mono">📞 {m.phone}</span>}
+                    {m.phone && (
+                      <span className="text-navy-600 block text-[11px] font-mono">
+                        📞{' '}
+                        <span dir="ltr" className="inline-block [unicode-bidi:isolate] tabular-nums">
+                          {formatPhoneDisplay(m.phone)}
+                        </span>
+                      </span>
+                    )}
                     {m.emailOrIban && <span className="text-navy-600 block text-[11px] font-mono truncate">✉️ {m.emailOrIban}</span>}
                   </div>
                 )}
@@ -3050,7 +3080,7 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                     <span>
                       {isRtl ? 'سعة التخزين:' : 'Disk:'}{' '}
                       <strong className="font-mono">
-                        {serverStorage.usedMb < 1000 ? `${serverStorage.usedMb} MB` : `${serverStorage.usedGb} GB`} / 5 GB
+                        {serverStorage.usedMb < 1000 ? `${serverStorage.usedMb} MB` : `${serverStorage.usedGb} GB`} / {serverStorage.maxGb || 10} GB
                       </strong>{' '}
                       ({serverStorage.percentage}%)
                     </span>
@@ -3541,7 +3571,11 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                               <td className="p-3.5 font-bold text-navy-950">{stu.name}</td>
                               <td className="p-3.5 text-navy-600">
                                 <div>{stu.email}</div>
-                                {stu.phone && <div className="text-[10px] font-mono text-emerald-700">{stu.phone}</div>}
+                                {stu.phone && (
+                                  <div dir="ltr" className="text-[10px] font-mono text-emerald-700 inline-block [unicode-bidi:isolate] tabular-nums">
+                                    {formatPhoneDisplay(stu.phone)}
+                                  </div>
+                                )}
                               </td>
                               <td className="p-3.5 font-semibold text-brand-800">
                                 {stu.enrolledCoursesCount} {isRtl ? 'دورات' : 'Courses'} • {stu.completedLessonsCount}{' '}
@@ -5413,29 +5447,191 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                       </div>
                     </div>
 
+                    {/* Floating Contact Buttons Controller (WhatsApp & Telegram) */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 via-sky-50/60 to-white border border-emerald-200/80 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <h5 className="font-extrabold text-navy-950 text-xs flex items-center gap-1.5">
+                            <Send className="w-4 h-4 text-sky-600" />
+                            <span>
+                              {isRtl
+                                ? 'التحكم في الأيقونات الطائرة العائمة بالموقع (الواتساب وتيليجرام)'
+                                : 'Floating Contact Widget (WhatsApp & Telegram)'}
+                            </span>
+                          </h5>
+                          <p className="text-[11px] text-navy-600 mt-0.5">
+                            {isRtl
+                              ? 'يمكنك التبديل الفوري بين إظهار الواتساب فقط، أو تيليجرام فقط، أو إظهارهما معاً، أو إخفائهما.'
+                              : 'Switch instantly between WhatsApp only, Telegram only, showing both together, or hiding them.'}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              settings.showFloatingWhatsapp !== false
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                : 'bg-gray-100 text-gray-500 border-gray-200'
+                            }`}
+                          >
+                            {settings.showFloatingWhatsapp !== false
+                              ? isRtl ? '✓ واتساب ظاهر' : '✓ WhatsApp Visible'
+                              : isRtl ? 'واتساب مخفي' : 'WhatsApp Hidden'}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              settings.showFloatingTelegram !== false
+                                ? 'bg-sky-100 text-sky-800 border-sky-300'
+                                : 'bg-gray-100 text-gray-500 border-gray-200'
+                            }`}
+                          >
+                            {settings.showFloatingTelegram !== false
+                              ? isRtl ? '✓ تيليجرام ظاهر' : '✓ Telegram Visible'
+                              : isRtl ? 'تيليجرام مخفي' : 'Telegram Hidden'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 4 Quick Mode Buttons */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleQuickPatchSettings(
+                              { showFloatingWhatsapp: true, showFloatingTelegram: true },
+                              isRtl ? 'تم تفعيل ظهور أيقونتي الواتساب وتيليجرام معاً ✨' : 'Showing both WhatsApp & Telegram!'
+                            )
+                          }
+                          className={`p-2.5 rounded-xl border font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            settings.showFloatingWhatsapp !== false && settings.showFloatingTelegram !== false
+                              ? 'bg-brand-700 text-white border-brand-800 shadow-sm'
+                              : 'bg-white text-navy-700 border-surface-border hover:bg-surface-muted'
+                          }`}
+                        >
+                          <span>✨ {isRtl ? 'إظهار الاثنين معاً' : 'Show Both'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleQuickPatchSettings(
+                              { showFloatingWhatsapp: true, showFloatingTelegram: false },
+                              isRtl ? 'تم التبديل إلى أيقونة الواتساب فقط' : 'Switched to WhatsApp Only'
+                            )
+                          }
+                          className={`p-2.5 rounded-xl border font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            settings.showFloatingWhatsapp !== false && settings.showFloatingTelegram === false
+                              ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                              : 'bg-white text-navy-700 border-surface-border hover:bg-emerald-50'
+                          }`}
+                        >
+                          <span>{isRtl ? 'الواتساب فقط' : 'WhatsApp Only'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleQuickPatchSettings(
+                              { showFloatingWhatsapp: false, showFloatingTelegram: true },
+                              isRtl ? 'تم التبديل إلى أيقونة تيليجرام فقط' : 'Switched to Telegram Only'
+                            )
+                          }
+                          className={`p-2.5 rounded-xl border font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            settings.showFloatingWhatsapp === false && settings.showFloatingTelegram !== false
+                              ? 'bg-sky-600 text-white border-sky-700 shadow-sm'
+                              : 'bg-white text-navy-700 border-surface-border hover:bg-sky-50'
+                          }`}
+                        >
+                          <span>{isRtl ? 'تيليجرام فقط' : 'Telegram Only'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleQuickPatchSettings(
+                              { showFloatingWhatsapp: false, showFloatingTelegram: false },
+                              isRtl ? 'تم إخفاء الأيقونات الطائرة' : 'Floating icons hidden'
+                            )
+                          }
+                          className={`p-2.5 rounded-xl border font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            settings.showFloatingWhatsapp === false && settings.showFloatingTelegram === false
+                              ? 'bg-navy-800 text-white border-navy-900 shadow-sm'
+                              : 'bg-white text-navy-600 border-surface-border hover:bg-red-50 hover:text-red-700'
+                          }`}
+                        >
+                          <EyeOff className="w-3.5 h-3.5" />
+                          <span>{isRtl ? 'إخفاء الكل' : 'Hide All'}</span>
+                        </button>
+                      </div>
+
+                      {/* Independent Visibility Toggles */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <label className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-surface-border cursor-pointer hover:border-emerald-300 transition-colors">
+                          <span className="text-xs font-bold text-navy-900">
+                            {isRtl ? 'إظهار أيقونة الواتساب الطائرة' : 'Show Floating WhatsApp'}
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={settings.showFloatingWhatsapp !== false}
+                            onChange={(e) =>
+                              handleQuickPatchSettings(
+                                { showFloatingWhatsapp: e.target.checked },
+                                e.target.checked
+                                  ? isRtl ? 'تم إظهار أيقونة الواتساب الطائرة' : 'Floating WhatsApp shown'
+                                  : isRtl ? 'تم إخفاء أيقونة الواتساب الطائرة' : 'Floating WhatsApp hidden'
+                              )
+                            }
+                            className="w-4 h-4 accent-emerald-600 rounded"
+                          />
+                        </label>
+
+                        <label className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-surface-border cursor-pointer hover:border-sky-300 transition-colors">
+                          <span className="text-xs font-bold text-navy-900">
+                            {isRtl ? 'إظهار أيقونة تيليجرام الطائرة' : 'Show Floating Telegram'}
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={settings.showFloatingTelegram !== false}
+                            onChange={(e) =>
+                              handleQuickPatchSettings(
+                                { showFloatingTelegram: e.target.checked },
+                                e.target.checked
+                                  ? isRtl ? 'تم إظهار أيقونة تيليجرام الطائرة' : 'Floating Telegram shown'
+                                  : isRtl ? 'تم إخفاء أيقونة تيليجرام الطائرة' : 'Floating Telegram hidden'
+                              )
+                            }
+                            className="w-4 h-4 accent-sky-600 rounded"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1">
                       <div>
                         <label className="font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'رقم الواتساب الرسمي (بدون مسافات)' : 'WhatsApp Official Number (e.g. +201000000000)'}
+                          {isRtl ? 'رقم الواتساب الرسمي (بصيغة دولية مثل +2010...)' : 'WhatsApp Official Number (e.g. +201000000000)'}
                         </label>
                         <input
-                          type="text"
+                          type="tel"
+                          dir="ltr"
                           value={settings.whatsappNumber}
                           onChange={(e) => setSettings({ ...settings, whatsappNumber: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono font-bold text-emerald-700"
+                          placeholder="+201000000000"
+                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono font-bold text-emerald-700 text-start"
                         />
                       </div>
 
                       <div>
                         <label className="font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'رقم الهاتف الرسمي للاتصال' : 'Official Contact Phone'}
+                          {isRtl ? 'رقم الهاتف الرسمي للاتصال (يظهر في الفوتر)' : 'Official Contact Phone'}
                         </label>
                         <input
-                          type="text"
+                          type="tel"
+                          dir="ltr"
                           value={settings.contactPhone || ''}
                           onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
                           placeholder="+20 100 000 0000"
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-navy-800"
+                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-navy-800 text-start"
                         />
                       </div>
 
@@ -5445,22 +5641,26 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         </label>
                         <input
                           type="email"
+                          dir="ltr"
                           value={settings.contactEmail}
                           onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border"
+                          className="w-full px-3 py-2 rounded-xl border border-surface-border text-start"
                         />
                       </div>
 
                       <div>
                         <label className="font-bold text-navy-700 block mb-1">
-                          {isRtl ? 'رابط قناة التيليجرام' : 'Telegram Channel URL'}
+                          {isRtl
+                            ? 'رابط أو حساب التيليجرام (https://t.me/... أو @username أو +رقم)'
+                            : 'Telegram URL / @username / +Phone'}
                         </label>
                         <input
                           type="text"
+                          dir="ltr"
                           value={settings.telegramLink || ''}
                           onChange={(e) => setSettings({ ...settings, telegramLink: e.target.value })}
-                          placeholder="https://t.me/AbeerGadAcademy"
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-[11px]"
+                          placeholder="https://t.me/AbeerGadAcademy or @username"
+                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-[11px] text-start text-sky-800"
                         />
                       </div>
 
@@ -5470,10 +5670,11 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                         </label>
                         <input
                           type="text"
+                          dir="ltr"
                           value={settings.youtubeLink || ''}
                           onChange={(e) => setSettings({ ...settings, youtubeLink: e.target.value })}
                           placeholder="https://youtube.com/@AbeerGadAcademy"
-                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-[11px]"
+                          className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-[11px] text-start"
                         />
                       </div>
 
@@ -5501,6 +5702,32 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs"
                         />
                       </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-end border-t border-surface-borderSubtle">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleQuickPatchSettings(
+                            {
+                              whatsappNumber: settings.whatsappNumber,
+                              contactPhone: settings.contactPhone,
+                              contactEmail: settings.contactEmail,
+                              telegramLink: settings.telegramLink,
+                              youtubeLink: settings.youtubeLink,
+                              footerAboutAr: settings.footerAboutAr,
+                              footerAboutEn: settings.footerAboutEn,
+                              showFloatingWhatsapp: settings.showFloatingWhatsapp,
+                              showFloatingTelegram: settings.showFloatingTelegram,
+                            },
+                            isRtl ? 'تم حفظ أرقام التواصل والأيقونات الطائرة بنجاح' : 'Communication settings saved!'
+                          )
+                        }
+                        className="px-5 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>{isRtl ? 'حفظ أرقام التواصل والروابط' : 'Save Communication Settings'}</span>
+                      </button>
                     </div>
                   </div>
 
@@ -7032,7 +7259,10 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                           {slot.studentEmail && <span className="block text-[11px] font-mono text-navy-600 truncate">{slot.studentEmail}</span>}
                           {slot.studentPhone && (
                             <span className="block text-[11px] font-mono text-emerald-700 font-bold">
-                              📞 {slot.studentPhone}
+                              📞{' '}
+                              <span dir="ltr" className="inline-block [unicode-bidi:isolate] tabular-nums">
+                                {formatPhoneDisplay(slot.studentPhone)}
+                              </span>
                             </span>
                           )}
                           {slot.notes && (
@@ -7715,9 +7945,20 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                 <td className="p-4 text-navy-600">
                                   {tx.payerName && <div className="font-bold text-navy-900">{tx.payerName}</div>}
                                   <div>{tx.payerEmail}</div>
+                                  {tx.payerPhone && (
+                                    <div className="text-[11px] font-mono text-emerald-800 font-semibold mt-0.5">
+                                      📞{' '}
+                                      <span dir="ltr" className="inline-block [unicode-bidi:isolate] tabular-nums">
+                                        {formatPhoneDisplay(tx.payerPhone)}
+                                      </span>
+                                    </div>
+                                  )}
                                   {tx.senderWalletNumber && (
                                     <div className="text-[11px] font-mono text-purple-800 font-semibold mt-0.5">
-                                      📱 {isRtl ? 'محفظة العميل:' : 'Wallet:'} {tx.senderWalletNumber}
+                                      📱 {isRtl ? 'محفظة العميل:' : 'Wallet:'}{' '}
+                                      <span dir="ltr" className="inline-block [unicode-bidi:isolate] tabular-nums">
+                                        {formatPhoneDisplay(tx.senderWalletNumber)}
+                                      </span>
                                     </div>
                                   )}
                                   {tx.referenceNumber && (
@@ -7867,10 +8108,12 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                             {isRtl ? 'رقم الهاتف / الواتساب' : 'Phone / WhatsApp'}
                           </label>
                           <input
-                            type="text"
+                            type="tel"
+                            dir="ltr"
                             value={studentFormData.phone}
                             onChange={(e) => setStudentFormData({ ...studentFormData, phone: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-mono"
+                            placeholder="+20 100 000 0000"
+                            className="w-full px-3 py-2 rounded-xl border border-surface-border bg-white font-mono text-start"
                           />
                         </div>
                         <div>
@@ -7967,7 +8210,10 @@ export function AdminDashboardClient({ currentLocale }: AdminDashboardClientProp
                                 <div>{stu.email}</div>
                                 {stu.phone && (
                                   <div className="text-[11px] font-mono text-emerald-700 font-bold">
-                                    📞 {stu.phone}
+                                    📞{' '}
+                                    <span dir="ltr" className="inline-block [unicode-bidi:isolate] tabular-nums">
+                                      {formatPhoneDisplay(stu.phone)}
+                                    </span>
                                   </div>
                                 )}
                               </td>

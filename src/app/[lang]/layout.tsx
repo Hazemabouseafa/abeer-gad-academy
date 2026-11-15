@@ -70,6 +70,7 @@ export default async function RootLayout({
   // Providing all messages to the client
   const messages = await getMessages();
   const dir = isRtlLocale(lang) ? 'rtl' : 'ltr';
+  const siteSettings = getSiteSettings();
 
   return (
     <html
@@ -82,13 +83,16 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages} locale={lang}>
           <div className="flex min-h-screen flex-col bg-[#FDFBF7]">
             <GoogleTranslateBar currentLocale={lang} />
-            <Navbar currentLocale={lang} initialSettings={getSiteSettings()} />
+            <Navbar currentLocale={lang} initialSettings={siteSettings} />
             <div className="flex-1">
               {children}
             </div>
             <FloatingWhatsAppWidget
               currentLocale={lang}
-              initialWhatsappNumber={getSiteSettings().whatsappNumber}
+              initialWhatsappNumber={siteSettings.whatsappNumber}
+              initialTelegramLink={siteSettings.telegramLink}
+              initialShowWhatsapp={siteSettings.showFloatingWhatsapp}
+              initialShowTelegram={siteSettings.showFloatingTelegram}
             />
             <Footer currentLocale={lang} />
           </div>

@@ -17,7 +17,7 @@ import {
   GraduationCap,
   MessageCircle,
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatWhatsAppNumber } from '@/lib/utils';
 import type { CourseData } from '@/lib/data-store';
 
 interface CourseCardData {
@@ -54,8 +54,18 @@ export function FeaturedCourses({ currentLocale }: FeaturedCoursesProps) {
   const [courseList, setCourseList] = useState<CourseCardData[]>(fallbackCourses);
   const [activeModalCourse, setActiveModalCourse] = useState<CourseCardData | null>(null);
   const [priceFilter, setPriceFilter] = useState<'ALL' | 'FREE' | 'PAID'>('ALL');
+  const [whatsappNum, setWhatsappNum] = useState('201000000000');
 
   useEffect(() => {
+    fetch('/api/admin/settings', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.settings?.whatsappNumber) {
+          setWhatsappNum(formatWhatsAppNumber(data.settings.whatsappNumber));
+        }
+      })
+      .catch(() => {});
+
     fetch('/api/courses')
       .then((res) => res.json())
       .then((data) => {
@@ -184,7 +194,7 @@ export function FeaturedCourses({ currentLocale }: FeaturedCoursesProps) {
                 : 'The academy is preparing and updating structured curricula under Ustadhah Abeer Gad. Inquire directly or book a private lesson.'}
             </p>
             <a
-              href={`https://wa.me/201000000000?text=${encodeURIComponent(isRtl ? 'السلام عليكم، أود الاستفسار عن برامج ودورات الأكاديمية القادمة.' : 'Hello, I would like to inquire about upcoming academy courses.')}`}
+              href={`https://wa.me/${whatsappNum}?text=${encodeURIComponent(isRtl ? 'السلام عليكم، أود الاستفسار عن برامج ودورات الأكاديمية القادمة.' : 'Hello, I would like to inquire about upcoming academy courses.')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-500 shadow-sm transition-all"

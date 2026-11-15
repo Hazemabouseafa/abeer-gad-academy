@@ -310,6 +310,8 @@ export interface SiteSettingsData {
   whatsappNumber: string;
   telegramLink?: string;
   youtubeLink?: string;
+  showFloatingWhatsapp?: boolean;
+  showFloatingTelegram?: boolean;
 
   // Hero Section
   heroBadgeAr: string;
@@ -403,6 +405,8 @@ const INITIAL_SETTINGS: SiteSettingsData = {
   whatsappNumber: '+201000000000',
   telegramLink: 'https://t.me/AbeerGadAcademy',
   youtubeLink: 'https://youtube.com/@AbeerGadAcademy',
+  showFloatingWhatsapp: true,
+  showFloatingTelegram: true,
 
   // Hero Section Defaults
   heroBadgeAr: 'أكاديمية عبير جاد لعلوم القرآن والعربية',
@@ -610,24 +614,30 @@ function ensureStoreExists(): AcademyStore {
       ...INITIAL_SETTINGS.shehnawi!,
       ...(parsed.settings.shehnawi || {}),
     };
+    if (parsed.settings.showFloatingWhatsapp === undefined) {
+      parsed.settings.showFloatingWhatsapp = true;
+    }
+    if (parsed.settings.showFloatingTelegram === undefined) {
+      parsed.settings.showFloatingTelegram = true;
+    }
     if (!Array.isArray(parsed.settings.blockedDates)) {
       parsed.settings.blockedDates = [];
     }
     if (!parsed.settings.blockedHoursByDate || typeof parsed.settings.blockedHoursByDate !== 'object') {
       parsed.settings.blockedHoursByDate = {};
     }
-    if (!Array.isArray(parsed.settings.categories) || parsed.settings.categories.length === 0) {
+    if (!Array.isArray(parsed.settings.categories)) {
       parsed.settings.categories = INITIAL_CATEGORIES;
     }
-    if (!Array.isArray(parsed.settings.customPaymentMethods) || parsed.settings.customPaymentMethods.length === 0) {
+    if (!Array.isArray(parsed.settings.customPaymentMethods)) {
       parsed.settings.customPaymentMethods = INITIAL_CUSTOM_PAYMENT_METHODS;
     }
-    if (!parsed.settings.services || parsed.settings.services.length === 0) {
+    if (!Array.isArray(parsed.settings.services)) {
       parsed.settings.services = INITIAL_SERVICES;
     } else {
-      // Ensure all services have their items populated if missing
+      // Populate default track items ONLY for legacy service records missing the `items` array
       parsed.settings.services = parsed.settings.services.map((svc) => {
-        if (!Array.isArray(svc.items) || svc.items.length === 0) {
+        if (!Array.isArray(svc.items)) {
           const match = INITIAL_SERVICES.find((init) => init.id === svc.id || init.href === svc.href);
           if (match?.items && match.items.length > 0) {
             return { ...svc, items: match.items };
@@ -1526,7 +1536,7 @@ export function deleteTrackItem(trackId: string, itemId: string): boolean {
 // Categories Management CRUD
 export function getCategories(): CategoryItem[] {
   const store = ensureStoreExists();
-  return Array.isArray(store.settings?.categories) && store.settings.categories.length > 0
+  return Array.isArray(store.settings?.categories)
     ? store.settings.categories
     : INITIAL_CATEGORIES;
 }
@@ -1577,7 +1587,7 @@ export function deleteCategory(id: string): boolean {
 // Custom / Manual Payment Methods CRUD (Western Union, Wise, Tab Tab, Bank Transfer, etc.)
 export function getCustomPaymentMethods(): CustomPaymentMethod[] {
   const store = ensureStoreExists();
-  return Array.isArray(store.settings?.customPaymentMethods) && store.settings.customPaymentMethods.length > 0
+  return Array.isArray(store.settings?.customPaymentMethods)
     ? store.settings.customPaymentMethods
     : INITIAL_CUSTOM_PAYMENT_METHODS;
 }

@@ -17,6 +17,7 @@ import {
   Phone,
 } from 'lucide-react';
 import type { CustomPaymentMethod } from '@/lib/data-store';
+import { formatPhoneDisplay, formatWhatsAppNumber } from '@/lib/utils';
 
 interface CustomPaymentCheckoutButtonProps {
   itemId: string;
@@ -279,7 +280,7 @@ export function CustomPaymentCheckoutButton({
 
                 <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center">
                   <a
-                    href={`https://wa.me/${(successData.contactPhone || '201000000000').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                    href={`https://wa.me/${formatWhatsAppNumber(successData.contactPhone)}?text=${encodeURIComponent(
                       `السلام عليكم، قمت بإجراء تحويل عبر ${selectedMethod.name} لحجز: ${itemTitle} - كود الطلب: ${successData.orderId} - رقم الحوالة: ${referenceNumber}`
                     )}`}
                     target="_blank"
@@ -339,7 +340,9 @@ export function CustomPaymentCheckoutButton({
                   {selectedMethod.phone && (
                     <div className="flex items-center justify-between text-navy-800">
                       <span className="text-navy-500">{isRtl ? 'رقم الهاتف:' : 'Phone Number:'}</span>
-                      <strong className="font-bold font-mono text-navy-950">{selectedMethod.phone}</strong>
+                      <strong dir="ltr" className="inline-block [unicode-bidi:isolate] font-bold font-mono text-navy-950 tabular-nums">
+                        {formatPhoneDisplay(selectedMethod.phone)}
+                      </strong>
                     </div>
                   )}
 
@@ -402,10 +405,11 @@ export function CustomPaymentCheckoutButton({
                     <input
                       type="tel"
                       required
+                      dir="ltr"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+20 100 000 0000"
-                      className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono"
+                      className="w-full px-3 py-2 rounded-xl border border-surface-border font-mono text-start"
                     />
                   </div>
 

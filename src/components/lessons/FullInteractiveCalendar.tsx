@@ -15,7 +15,7 @@ import {
   AlertCircle,
   Lock,
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatPhoneDisplay } from '@/lib/utils';
 import {
   calculateSlotPrice,
   DEFAULT_SLOT_PRICING,
@@ -341,7 +341,9 @@ export function FullInteractiveCalendar({
           </div>
           <div className="flex justify-between py-1">
             <span className="text-navy-500">{isRtl ? 'رقم الهاتف المسجل:' : 'Phone:'}</span>
-            <span className="font-bold text-navy-900 font-mono">{bookingSuccess.studentPhone}</span>
+            <span dir="ltr" className="inline-block [unicode-bidi:isolate] font-bold text-navy-900 font-mono tabular-nums">
+              {formatPhoneDisplay(bookingSuccess.studentPhone)}
+            </span>
           </div>
         </div>
 
@@ -741,10 +743,11 @@ export function FullInteractiveCalendar({
                 <input
                   type="tel"
                   required
+                  dir="ltr"
                   value={studentPhone}
                   onChange={(e) => setStudentPhone(e.target.value)}
                   placeholder="+20 100 000 0000 / +966 50 000 0000"
-                  className="w-full px-3 py-2 ps-9 rounded-xl border border-surface-border text-xs font-mono focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                  className="w-full px-3 py-2 ps-9 rounded-xl border border-surface-border text-xs font-mono text-start focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 />
                 <Phone className="w-4 h-4 text-navy-400 absolute start-3 top-2.5" />
               </div>
